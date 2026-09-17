@@ -1,8 +1,10 @@
 {
   "expo": {
-    "name": "Att",
-    "slug": "Att",
+    "name": "Vagai Silambam",
+    "slug": "Vagai-Silambam",
+    "scheme": "vagaisilambam",
     "version": "1.0.0",
+    "jsEngine": "hermes",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -15,6 +17,13 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.sasi.vagaisilambam",
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -24,6 +33,21 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "@react-native-community/datetimepicker",
+      "expo-web-browser",
+      "expo-sqlite",
+      "expo-sharing",
+      "expo-status-bar",
+      "expo-image-picker",
+      "expo-document-picker"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "f7660c17-f1fb-49aa-8ae5-5c37e261f657"
+      }
+    },
+    "owner": "sasikumar2005"
   }
 }
