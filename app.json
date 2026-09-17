@@ -2,7 +2,10 @@
   "expo": {
     "name": "Vagai Silambam",
     "slug": "Vagai-Silambam",
-    "scheme": "vagaisilambam",
+    "scheme": [
+      "vagaisilambam",
+      "com.sasi.vagaisilambam"
+    ],
     "version": "1.0.0",
     "jsEngine": "hermes",
     "orientation": "portrait",
@@ -41,7 +44,8 @@
       "expo-sharing",
       "expo-status-bar",
       "expo-image-picker",
-      "expo-document-picker"
+      "expo-document-picker",
+      "@react-native-google-signin/google-signin"
     ],
     "extra": {
       "eas": {
