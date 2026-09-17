@@ -129,25 +129,26 @@ export const GoogleOAuthService = {
         };
       }
 
-      // Use the auth.expo.io proxy redirect URI which is already registered
-      // in Google Cloud Console (avoids custom scheme rejection by Web client)
-      const redirectUri = Platform.OS === 'web'
+      // For production APK: PKCE + localhost redirect (always allowed by Google Web client)
+      // Add http://localhost to Authorized redirect URIs in Google Cloud Console
+      const redirectUri = isWeb
         ? AuthSession.makeRedirectUri({ scheme: 'vagaisilambam' })
-        : 'https://auth.expo.io/@sasikumar2005/Vagai-Silambam';
+        : 'http://localhost';
 
       const discovery: AuthSession.DiscoveryDocument = {
         authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
+        tokenEndpoint: 'https://oauth2.googleapis.com/token',
       };
 
       const request = new AuthSession.AuthRequest({
         clientId,
         redirectUri,
         scopes: SCOPES,
-        responseType: AuthSession.ResponseType.Token,
-        usePKCE: false,
+        responseType: AuthSession.ResponseType.Code,
+        usePKCE: true,
         extraParams: {
-          prompt: 'select_account consent',
-          include_granted_scopes: 'true',
+          prompt: 'select_account',
+          access_type: 'online',
         },
       });
 
@@ -160,22 +161,33 @@ export const GoogleOAuthService = {
       console.log('=== AUTH REQUEST RESULT ===', JSON.stringify(result));
 
       if (result.type === 'success') {
-        const params = result.params as Record<string, string>;
-        console.log('Params received:', JSON.stringify(params));
-
-        if (params.error) {
-          return { success: false, message: `Google returned error: ${params.error}` };
+        // PKCE Code flow: exchange authorization code for access token
+        const code = result.params?.code;
+        if (!code) {
+          return { success: false, message: 'No authorization code received from Google.' };
         }
 
-        const accessToken = params.access_token;
-        const expiresIn = params.expires_in ? parseInt(params.expires_in, 10) : 3600;
+        const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: [
+            `code=${encodeURIComponent(code)}`,
+            `client_id=${encodeURIComponent(clientId)}`,
+            `redirect_uri=${encodeURIComponent(redirectUri)}`,
+            `grant_type=authorization_code`,
+            `code_verifier=${encodeURIComponent(request.codeVerifier || '')}`,
+          ].join('&'),
+        });
 
-        if (accessToken) {
-          const profile = await this.fetchUserProfile(accessToken, expiresIn);
+        const tokenData = await tokenResponse.json();
+        console.log('Token exchange result:', JSON.stringify(tokenData));
+
+        if (tokenData.access_token) {
+          const profile = await this.fetchUserProfile(tokenData.access_token, tokenData.expires_in || 3600);
           return { success: true, profile };
         }
 
-        return { success: false, message: 'No access_token in Google response.' };
+        return { success: false, message: tokenData.error_description || 'Token exchange failed.' };
       }
 
       if (result.type === 'cancel' || result.type === 'dismiss') {
