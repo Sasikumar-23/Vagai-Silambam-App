@@ -73,7 +73,13 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'medium
   }
 
   return (
-    <View style={[styles.badge, { backgroundColor: bg }, size === 'small' && styles.smallBadge]}>
+    <View
+      style={[
+        styles.badge,
+        { backgroundColor: bg, borderColor: `${text}29` },
+        size === 'small' && styles.smallBadge,
+      ]}
+    >
       {icon}
       <Text style={[styles.label, { color: text }, size === 'small' && styles.smallLabel]}>
         {status}
@@ -86,10 +92,11 @@ const styles = StyleSheet.create({
   badge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
+    paddingHorizontal: 11,
     paddingVertical: 5,
     borderRadius: theme.borderRadius.full,
-    gap: 4,
+    borderWidth: 1,
+    gap: 5,
     alignSelf: 'flex-start',
   },
   smallBadge: {
@@ -99,8 +106,8 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: theme.typography.sizes.xs,
-    fontWeight: '700',
-    letterSpacing: 0.3,
+    fontWeight: theme.typography.weights.heavy,
+    letterSpacing: theme.typography.letterSpacing.wide,
   },
   smallLabel: {
     fontSize: 10,

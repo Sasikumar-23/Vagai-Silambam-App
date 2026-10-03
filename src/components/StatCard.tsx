@@ -23,7 +23,7 @@ const StatCardComponent: React.FC<StatCardProps> = ({
     <View style={[styles.card, { borderLeftColor: accentColor }]}>
       <View style={styles.topRow}>
         <Text style={styles.label}>{label.toUpperCase()}</Text>
-        {icon}
+        {icon && <View style={[styles.iconChip, { backgroundColor: `${accentColor}14` }]}>{icon}</View>}
       </View>
       <View style={styles.valueRow}>
         <Text style={[styles.value, { color: accentColor }]}>{value}</Text>
@@ -42,8 +42,8 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.lg,
     padding: theme.spacing.lg,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderLeftWidth: 5,
+    borderColor: theme.colors.borderLight,
+    borderLeftWidth: 3,
     minWidth: 140,
     flex: 1,
     ...theme.shadows.sm,
@@ -52,13 +52,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: theme.spacing.sm,
+    marginBottom: theme.spacing.md,
+  },
+  iconChip: {
+    width: 30,
+    height: 30,
+    borderRadius: theme.borderRadius.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   label: {
     fontSize: 11,
-    fontWeight: '800',
-    color: theme.colors.textSecondary,
-    letterSpacing: 0.5,
+    fontWeight: theme.typography.weights.heavy,
+    color: theme.colors.textMuted,
+    letterSpacing: theme.typography.letterSpacing.wide,
   },
   valueRow: {
     flexDirection: 'row',
@@ -66,8 +73,9 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   value: {
-    fontSize: 26,
-    fontWeight: '900',
+    fontSize: 29,
+    fontWeight: theme.typography.weights.black,
+    letterSpacing: theme.typography.letterSpacing.tight,
   },
   trend: {
     fontSize: 11,

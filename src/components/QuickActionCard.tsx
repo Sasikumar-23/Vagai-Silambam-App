@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
+import { ChevronRight } from 'lucide-react-native';
 import { theme } from '../theme';
 
 interface QuickActionCardProps {
@@ -26,7 +27,7 @@ const QuickActionCardComponent: React.FC<QuickActionCardProps> = ({
       activeOpacity={0.7}
       accessibilityRole="button"
     >
-      <View style={[styles.iconCircle, { backgroundColor: `${color}15` }]}>
+      <View style={[styles.iconCircle, { backgroundColor: `${color}16` }]}>
         {icon}
       </View>
       <View style={styles.textContainer}>
@@ -39,6 +40,7 @@ const QuickActionCardComponent: React.FC<QuickActionCardProps> = ({
           </Text>
         )}
       </View>
+      <ChevronRight size={18} color={theme.colors.textMuted} />
     </TouchableOpacity>
   );
 };
@@ -48,21 +50,21 @@ export const QuickActionCard = React.memo(QuickActionCardComponent);
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    minHeight: 56,
-    borderRadius: theme.borderRadius.md,
+    minHeight: 64,
+    borderRadius: theme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: theme.colors.borderLight,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
     gap: 12,
     ...theme.shadows.sm,
   },
   iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
+    width: 42,
+    height: 42,
+    borderRadius: theme.borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -70,8 +72,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 14,
-    fontWeight: '800',
+    fontSize: 15,
+    fontWeight: theme.typography.weights.heavy,
+    letterSpacing: theme.typography.letterSpacing.tight,
   },
   subtitle: {
     fontSize: 11,

@@ -145,10 +145,10 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.md,
+    padding: theme.spacing.lg,
     marginBottom: theme.spacing.md,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: theme.colors.borderLight,
     ...theme.shadows.sm,
   },
   contentRow: {
@@ -163,6 +163,8 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
+    borderWidth: 2,
+    borderColor: theme.colors.ring,
   },
   avatarFallback: {
     width: 52,
@@ -170,6 +172,8 @@ const styles = StyleSheet.create({
     borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: theme.colors.ring,
   },
   avatarInitial: {
     fontSize: 22,
@@ -186,8 +190,9 @@ const styles = StyleSheet.create({
   },
   nameEn: {
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: theme.typography.weights.heavy,
     color: theme.colors.textPrimary,
+    letterSpacing: theme.typography.letterSpacing.tight,
     flex: 1,
   },
   nameTa: {
@@ -222,9 +227,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: theme.borderRadius.full,
   },
   levelText: {
     fontSize: 11,
@@ -253,6 +258,8 @@ const styles = StyleSheet.create({
     height: 38,
     borderRadius: 19,
     backgroundColor: theme.colors.primaryMuted,
+    borderWidth: 1,
+    borderColor: theme.colors.ring,
     alignItems: 'center',
     justifyContent: 'center',
   },
