@@ -19,6 +19,7 @@ import { EventRepository } from '../repositories/EventRepository';
 import { FeeRepository } from '../repositories/FeeRepository';
 import { AuditRepository } from '../repositories/AuditRepository';
 import { Student, EventItem, AuditLog } from '../models/types';
+import { todayLocalDate } from '../utils/date';
 import { Cloud } from 'lucide-react-native';
 
 export default function DashboardScreen({ navigation }: any) {
@@ -49,8 +50,10 @@ export default function DashboardScreen({ navigation }: any) {
 
   const loadDashboardData = async () => {
     try {
-      const todayStr = new Date().toISOString().split('T')[0];
-      const [students, events, fees, audits] = await Promise.all([
+      const todayStr = todayLocalDate();
+      // The headline figure is a COUNT, not the length of a capped page of students.
+      const [activeCount, students, events, fees, audits] = await Promise.all([
+        StudentRepository.countStudents('ACTIVE'),
         StudentRepository.getAllStudents(undefined, 100),
         EventRepository.getAllEvents('OPEN'),
         FeeRepository.getSummaryMetrics(),
@@ -60,10 +63,10 @@ export default function DashboardScreen({ navigation }: any) {
       // Calculate attendance dynamically from Google Sheets Attendance Engine
       const sheetAttStats = await GoogleSheetsAttendanceService.getDashboardAttendanceStats(
         todayStr,
-        students.length
+        activeCount
       );
 
-      setTotalStudents(students.length);
+      setTotalStudents(activeCount);
       setRecentStudents(students.slice(0, 3));
       setTodayAttendance(sheetAttStats);
       setUpcomingEvents(events.slice(0, 2));

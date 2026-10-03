@@ -187,13 +187,18 @@ export default function AddStudentWizardScreen({ navigation }: any) {
   const handleSaveStudent = async () => {
     setSaving(true);
     try {
-      let finalPhotoUrl = photoUrl || undefined;
+      // The photo shown in the app is the copy on this device. Drive keeps a private
+      // backup, and its link is deliberately not stored: those files are not public.
+      const finalPhotoUrl = photoUrl || undefined;
       if (photoUrl && !photoUrl.startsWith('http')) {
-        const driveResult = await GoogleDriveStorageService.uploadStudentPhoto(
-          rollNumber || generatedId || 'new_student',
-          photoUrl
-        );
-        finalPhotoUrl = driveResult.photoUrl;
+        try {
+          await GoogleDriveStorageService.uploadStudentPhoto(
+            rollNumber || generatedId || 'new_student',
+            photoUrl
+          );
+        } catch (photoError) {
+          console.warn('Photo backup to Drive failed:', photoError);
+        }
       }
 
       await StudentRepository.createStudent(

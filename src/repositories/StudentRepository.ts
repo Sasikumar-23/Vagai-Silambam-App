@@ -170,6 +170,17 @@ export const StudentRepository = {
     );
   },
 
+  async countStudents(status?: Student['student_status']): Promise<number> {
+    const db = await getDatabase();
+    const row = status
+      ? await db.getFirstAsync<{ total: number }>(
+          'SELECT COUNT(*) as total FROM students WHERE student_status = ?',
+          status
+        )
+      : await db.getFirstAsync<{ total: number }>('SELECT COUNT(*) as total FROM students');
+    return row?.total ?? 0;
+  },
+
   async getAllStudents(filters?: StudentFilters, limit: number = 200, offset: number = 0): Promise<Student[]> {
     const db = await getDatabase();
     const conditions: string[] = [];

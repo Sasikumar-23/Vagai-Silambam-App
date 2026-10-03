@@ -1,0 +1,404 @@
+<title>Vagai Silambam UI Kit</title>
+<style>
+  :root {
+    /* Mirrors src/theme/index.ts */
+    --primary: #1A3673;
+    --primary-light: #2A4E9E;
+    --primary-dark: #0E214D;
+    --primary-muted: #EBF2FF;
+    --accent: #00A86B;
+    --accent-light: #E6F9F1;
+    --secondary: #82F3B2;
+    --gold: #D97706;
+    --gold-light: #FEF3C7;
+    --crimson: #E11D48;
+    --crimson-light: #FFE4E6;
+    --purple: #7C3AED;
+    --purple-light: #F3E8FF;
+    --app-bg: #F8FAFC;
+    --surface: #FFFFFF;
+    --surface-subtle: #F1F5F9;
+    --border: #E2E8F0;
+    --border-light: #F1F5F9;
+    --text-primary: #0F172A;
+    --text-secondary: #64748B;
+    --text-muted: #94A3B8;
+    --ring: rgba(26, 54, 115, 0.10);
+
+    --shadow-xs: 0 1px 3px rgba(26, 54, 115, 0.05);
+    --shadow-sm: 0 3px 8px rgba(26, 54, 115, 0.07);
+    --shadow-md: 0 6px 16px rgba(26, 54, 115, 0.10);
+    --shadow-lg: 0 12px 28px rgba(26, 54, 115, 0.14);
+
+    --page-bg: #EEF2F8;
+    --page-text: #0F172A;
+    --page-muted: #5B6679;
+    --page-card: #FFFFFF;
+    --page-line: #DDE3EC;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page-bg: #0B1220;
+      --page-text: #E8EDF6;
+      --page-muted: #9AA7BC;
+      --page-card: #151E30;
+      --page-line: #26324a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page-bg: #0B1220;
+    --page-text: #E8EDF6;
+    --page-muted: #9AA7BC;
+    --page-card: #151E30;
+    --page-line: #26324a;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page-bg);
+    color: var(--page-text);
+    font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 40px 20px 72px; }
+
+  header.hero { margin-bottom: 36px; }
+  .eyebrow { font-size: 12px; font-weight: 800; letter-spacing: 1px; color: var(--primary-light); text-transform: uppercase; }
+  h1 { margin: 8px 0 6px; font-size: clamp(26px, 4vw, 38px); letter-spacing: -0.5px; }
+  .lede { margin: 0; color: var(--page-muted); max-width: 62ch; }
+
+  section { margin-top: 44px; }
+  h2 { font-size: 20px; letter-spacing: -0.2px; margin: 0 0 4px; }
+  .hint { margin: 0 0 18px; color: var(--page-muted); font-size: 14px; }
+
+  .panel { background: var(--page-card); border: 1px solid var(--page-line); border-radius: 18px; padding: 24px; }
+
+  .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+  .swatch { border: 1px solid var(--page-line); border-radius: 12px; overflow: hidden; background: var(--page-card); }
+  .swatch .chip { height: 58px; }
+  .swatch .meta { padding: 8px 10px; }
+  .swatch .name { font-size: 12px; font-weight: 700; }
+  .swatch .hex { font-size: 11px; color: var(--page-muted); font-family: ui-monospace, Menlo, Consolas, monospace; }
+
+  .scale-row { display: flex; align-items: baseline; gap: 14px; padding: 9px 0; border-bottom: 1px dashed var(--page-line); }
+  .scale-row:last-child { border-bottom: 0; }
+  .scale-key { width: 92px; font-size: 12px; font-weight: 700; color: var(--page-muted); font-family: ui-monospace, Menlo, Consolas, monospace; }
+  .bar { height: 12px; background: var(--primary); border-radius: 4px; }
+  .radius-demo { width: 68px; height: 46px; background: var(--primary-muted); border: 2px solid var(--primary); }
+  .shadow-demo { width: 92px; height: 52px; background: var(--surface); border-radius: 14px; border: 1px solid var(--border-light); }
+
+  /* ---- Device frames: these render the app's own light theme ---- */
+  .devices { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 26px; }
+  .device {
+    background: var(--app-bg); border-radius: 26px; border: 1px solid var(--page-line);
+    box-shadow: var(--shadow-lg); overflow: hidden; color: var(--text-primary);
+  }
+  .device-label {
+    font-size: 12px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase;
+    color: var(--page-muted); margin: 0 0 10px 4px;
+  }
+  .appbar {
+    background: var(--primary); color: #fff; padding: 18px 18px 22px;
+    border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;
+  }
+  .appbar .title { font-size: 18px; font-weight: 800; letter-spacing: -0.2px; }
+  .appbar .sub { font-size: 12px; opacity: .72; margin-top: 2px; }
+  .screen { padding: 16px; display: grid; gap: 14px; }
+
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stat {
+    background: var(--surface); border: 1px solid var(--border-light); border-left: 3px solid var(--primary);
+    border-radius: 16px; padding: 16px; box-shadow: var(--shadow-sm);
+  }
+  .stat .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .stat .label { font-size: 11px; font-weight: 800; letter-spacing: .5px; color: var(--text-muted); }
+  .stat .chip { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; }
+  .stat .value { font-size: 29px; font-weight: 900; letter-spacing: -0.3px; line-height: 1.1; }
+  .stat .trend { font-size: 11px; font-weight: 700; color: var(--accent); margin-left: 6px; }
+  .stat .sub { font-size: 11px; color: var(--text-muted); margin-top: 4px; font-weight: 500; }
+
+  .action {
+    background: var(--surface); border: 1px solid var(--border-light); border-radius: 16px;
+    min-height: 64px; display: flex; align-items: center; gap: 12px; padding: 12px 16px; box-shadow: var(--shadow-sm);
+  }
+  .action .ico { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; flex: none; }
+  .action .txt { flex: 1; }
+  .action .t { font-size: 15px; font-weight: 800; letter-spacing: -0.3px; }
+  .action .s { font-size: 11px; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
+  .chev { color: var(--text-muted); }
+
+  .student {
+    background: var(--surface); border: 1px solid var(--border-light); border-radius: 16px;
+    padding: 16px; box-shadow: var(--shadow-sm); display: flex; align-items: center; gap: 12px;
+  }
+  .avatar {
+    width: 52px; height: 52px; border-radius: 26px; border: 2px solid var(--ring);
+    display: grid; place-items: center; font-weight: 900; font-size: 22px; flex: none;
+  }
+  .student .name { font-size: 16px; font-weight: 800; letter-spacing: -0.3px; }
+  .student .ta { font-size: 13px; font-weight: 600; color: #047857; margin-top: 1px; }
+  .student .meta { display: flex; gap: 10px; margin-top: 4px; font-size: 12px; }
+  .student .code { color: var(--primary); font-weight: 700; }
+  .student .roll { color: var(--text-secondary); font-weight: 500; }
+  .student .foot { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }
+  .call {
+    width: 38px; height: 38px; border-radius: 19px; background: var(--primary-muted);
+    border: 1px solid var(--ring); display: grid; place-items: center; flex: none; color: var(--primary);
+  }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 999px;
+    border: 1px solid; font-size: 11px; font-weight: 800; letter-spacing: .5px;
+  }
+  .badges { display: flex; flex-wrap: wrap; gap: 10px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+  .empty { text-align: center; padding: 28px 16px; }
+  .empty .circle {
+    width: 88px; height: 88px; border-radius: 44px; background: var(--primary-muted);
+    border: 1px solid var(--ring); margin: 0 auto 20px; display: grid; place-items: center; color: var(--primary);
+  }
+  .empty .t { font-size: 18px; font-weight: 800; letter-spacing: -0.3px; }
+  .empty .s { font-size: 13px; color: var(--text-secondary); margin: 6px 0 16px; }
+  .btn {
+    display: inline-block; background: var(--primary); color: #fff; border-radius: 12px;
+    padding: 14px 24px; font-size: 14px; font-weight: 800; letter-spacing: .5px; box-shadow: var(--shadow-md);
+  }
+
+  .levels { display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; border-radius: 999px; font-size: 11px; font-weight: 800; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--page-line); }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: .6px; color: var(--page-muted); }
+  code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12.5px; }
+  .scroll-x { overflow-x: auto; }
+  footer { margin-top: 48px; color: var(--page-muted); font-size: 13px; border-top: 1px solid var(--page-line); padding-top: 16px; }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow">Vagai Silambam · வாகை சிலம்பம்</div>
+    <h1>App UI Kit</h1>
+    <p class="lede">The design tokens and shared components used across all 19 screens of the Android app. Everything here mirrors <code>src/theme/index.ts</code> and <code>src/components/</code>, so changing a token changes every screen.</p>
+  </header>
+
+  <section>
+    <h2>Colour</h2>
+    <p class="hint">Navy carries the brand, green signals success and attendance, red absence, amber pending.</p>
+    <div class="panel">
+      <div class="swatches">
+        <div class="swatch"><div class="chip" style="background:#1A3673"></div><div class="meta"><div class="name">primary</div><div class="hex">#1A3673</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#2A4E9E"></div><div class="meta"><div class="name">primaryLight</div><div class="hex">#2A4E9E</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#0E214D"></div><div class="meta"><div class="name">primaryDark</div><div class="hex">#0E214D</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#EBF2FF"></div><div class="meta"><div class="name">primaryMuted</div><div class="hex">#EBF2FF</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#00A86B"></div><div class="meta"><div class="name">accent</div><div class="hex">#00A86B</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#82F3B2"></div><div class="meta"><div class="name">secondary</div><div class="hex">#82F3B2</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#D97706"></div><div class="meta"><div class="name">gold</div><div class="hex">#D97706</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#E11D48"></div><div class="meta"><div class="name">crimson</div><div class="hex">#E11D48</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#7C3AED"></div><div class="meta"><div class="name">purple</div><div class="hex">#7C3AED</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#F8FAFC"></div><div class="meta"><div class="name">background</div><div class="hex">#F8FAFC</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#0F172A"></div><div class="meta"><div class="name">textPrimary</div><div class="hex">#0F172A</div></div></div>
+        <div class="swatch"><div class="chip" style="background:#64748B"></div><div class="meta"><div class="name">textSecondary</div><div class="hex">#64748B</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Spacing, radius, elevation</h2>
+    <p class="hint">Shadows are tinted with the brand navy rather than black, so cards sit softly on the light background.</p>
+    <div class="panel">
+      <div class="scale-row"><div class="scale-key">xs · 4</div><div class="bar" style="width:4px"></div></div>
+      <div class="scale-row"><div class="scale-key">sm · 8</div><div class="bar" style="width:8px"></div></div>
+      <div class="scale-row"><div class="scale-key">md · 12</div><div class="bar" style="width:12px"></div></div>
+      <div class="scale-row"><div class="scale-key">lg · 16</div><div class="bar" style="width:16px"></div></div>
+      <div class="scale-row"><div class="scale-key">xl · 20</div><div class="bar" style="width:20px"></div></div>
+      <div class="scale-row"><div class="scale-key">xxl · 24</div><div class="bar" style="width:24px"></div></div>
+      <div class="scale-row"><div class="scale-key">xxxl · 32</div><div class="bar" style="width:32px"></div></div>
+
+      <div style="display:flex; gap:22px; flex-wrap:wrap; margin-top:22px; align-items:flex-end">
+        <div><div class="radius-demo" style="border-radius:8px"></div><div class="hex" style="font-size:11px;margin-top:6px">sm 8</div></div>
+        <div><div class="radius-demo" style="border-radius:12px"></div><div class="hex" style="font-size:11px;margin-top:6px">md 12</div></div>
+        <div><div class="radius-demo" style="border-radius:16px"></div><div class="hex" style="font-size:11px;margin-top:6px">lg 16</div></div>
+        <div><div class="radius-demo" style="border-radius:22px"></div><div class="hex" style="font-size:11px;margin-top:6px">xl 22</div></div>
+        <div><div class="radius-demo" style="border-radius:999px"></div><div class="hex" style="font-size:11px;margin-top:6px">full</div></div>
+      </div>
+
+      <div style="display:flex; gap:22px; flex-wrap:wrap; margin-top:26px">
+        <div><div class="shadow-demo" style="box-shadow:var(--shadow-xs)"></div><div class="hex" style="font-size:11px;margin-top:8px">xs</div></div>
+        <div><div class="shadow-demo" style="box-shadow:var(--shadow-sm)"></div><div class="hex" style="font-size:11px;margin-top:8px">sm</div></div>
+        <div><div class="shadow-demo" style="box-shadow:var(--shadow-md)"></div><div class="hex" style="font-size:11px;margin-top:8px">md</div></div>
+        <div><div class="shadow-demo" style="box-shadow:var(--shadow-lg)"></div><div class="hex" style="font-size:11px;margin-top:8px">lg</div></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Status badges</h2>
+    <p class="hint">One component covers attendance, fees, events, uniforms and achievements. Colour plus icon, never colour alone.</p>
+    <div class="panel">
+      <div class="badges">
+        <span class="badge" style="background:#E6F9F1;color:#00A86B;border-color:#00A86B29"><span class="dot"></span>PRESENT</span>
+        <span class="badge" style="background:#FFE4E6;color:#E11D48;border-color:#E11D4829"><span class="dot"></span>ABSENT</span>
+        <span class="badge" style="background:#FEF3C7;color:#D97706;border-color:#D9770629"><span class="dot"></span>LATE</span>
+        <span class="badge" style="background:#E6F9F1;color:#00A86B;border-color:#00A86B29"><span class="dot"></span>PAID</span>
+        <span class="badge" style="background:#FFE4E6;color:#E11D48;border-color:#E11D4829"><span class="dot"></span>OVERDUE</span>
+        <span class="badge" style="background:#FEF3C7;color:#D97706;border-color:#D9770629"><span class="dot"></span>PENDING</span>
+        <span class="badge" style="background:#F1F5F9;color:#94A3B8;border-color:#94A3B829"><span class="dot"></span>INACTIVE</span>
+        <span class="badge" style="background:#FEF3C7;color:#B45309;border-color:#B4530929"><span class="dot"></span>WINNER</span>
+        <span class="badge" style="background:#EBF2FF;color:#1A3673;border-color:#1A367329"><span class="dot"></span>DRAFT</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Screens</h2>
+    <p class="hint">Built from the shared components, shown at phone width.</p>
+    <div class="devices">
+
+      <div>
+        <p class="device-label">Dashboard</p>
+        <div class="device">
+          <div class="appbar">
+            <div class="title">Vagai Silambam</div>
+            <div class="sub">Chennai Head Dojo · Velachery</div>
+          </div>
+          <div class="screen">
+            <div class="stat-grid">
+              <div class="stat">
+                <div class="top"><span class="label">STUDENTS</span><span class="chip" style="background:#1A367314;color:#1A3673">◍</span></div>
+                <div><span class="value" style="color:#1A3673">128</span><span class="trend">+6 this month</span></div>
+                <div class="sub">Active enrolment</div>
+              </div>
+              <div class="stat" style="border-left-color:#00A86B">
+                <div class="top"><span class="label">PRESENT TODAY</span><span class="chip" style="background:#00A86B14;color:#00A86B">✓</span></div>
+                <div><span class="value" style="color:#00A86B">94</span><span class="trend">73%</span></div>
+                <div class="sub">Evening session</div>
+              </div>
+              <div class="stat" style="border-left-color:#D97706">
+                <div class="top"><span class="label">FEES DUE</span><span class="chip" style="background:#D9770614;color:#D97706">₹</span></div>
+                <div><span class="value" style="color:#D97706">12</span></div>
+                <div class="sub">₹14,400 outstanding</div>
+              </div>
+              <div class="stat" style="border-left-color:#7C3AED">
+                <div class="top"><span class="label">EVENTS</span><span class="chip" style="background:#7C3AED14;color:#7C3AED">★</span></div>
+                <div><span class="value" style="color:#7C3AED">3</span></div>
+                <div class="sub">Next: 12 Oct</div>
+              </div>
+            </div>
+
+            <div class="action">
+              <span class="ico" style="background:#1A367316;color:#1A3673">✓</span>
+              <span class="txt"><span class="t" style="color:#1A3673">Take Attendance</span><span class="s">Evening batch · 6:00 PM</span></span>
+              <span class="chev">›</span>
+            </div>
+            <div class="action">
+              <span class="ico" style="background:#00A86B16;color:#00A86B">＋</span>
+              <span class="txt"><span class="t" style="color:#00A86B">Add Student</span><span class="s">Register a new enrolment</span></span>
+              <span class="chev">›</span>
+            </div>
+            <div class="action">
+              <span class="ico" style="background:#D9770616;color:#D97706">₹</span>
+              <span class="txt"><span class="t" style="color:#D97706">Collect Payment</span><span class="s">12 pending this month</span></span>
+              <span class="chev">›</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p class="device-label">Students</p>
+        <div class="device">
+          <div class="appbar">
+            <div class="title">Students</div>
+            <div class="sub">128 enrolled · 94 active this week</div>
+          </div>
+          <div class="screen">
+            <div class="student">
+              <div class="avatar" style="background:#EBF2FF;color:#1A3673">A</div>
+              <div style="flex:1">
+                <div class="name">Anbarasu Murugesan</div>
+                <div class="ta">அன்பரசு முருகேசன்</div>
+                <div class="meta"><span class="code">VS-2026-0001</span><span class="roll">Roll 01</span></div>
+                <div class="foot">
+                  <span class="levels" style="background:#F3E8FF;color:#7C3AED">◆ INTERMEDIATE</span>
+                  <span style="font-size:12px;font-weight:900;color:#00A86B">92%</span>
+                </div>
+              </div>
+              <div class="call">☎</div>
+            </div>
+
+            <div class="student">
+              <div class="avatar" style="background:#E6F9F1;color:#00A86B">K</div>
+              <div style="flex:1">
+                <div class="name">Kavitha Ramachandran</div>
+                <div class="ta">கவிதா ராமச்சந்திரன்</div>
+                <div class="meta"><span class="code">VS-2026-0002</span><span class="roll">Roll 02</span></div>
+                <div class="foot">
+                  <span class="levels" style="background:#E6F9F1;color:#047857">◆ ADVANCED</span>
+                  <span style="font-size:12px;font-weight:900;color:#00A86B">88%</span>
+                </div>
+              </div>
+              <div class="call">☎</div>
+            </div>
+
+            <div class="student">
+              <div class="avatar" style="background:#FEF3C7;color:#92400E">S</div>
+              <div style="flex:1">
+                <div class="name">Saravanan Pitchai</div>
+                <div class="ta">சரவணன் பிச்சை</div>
+                <div class="meta"><span class="code">VS-2026-0003</span><span class="roll">Roll 03</span></div>
+                <div class="foot">
+                  <span class="levels" style="background:#FEF3C7;color:#92400E">◆ BEGINNER</span>
+                  <span style="font-size:12px;font-weight:900;color:#E11D48">61%</span>
+                </div>
+              </div>
+              <div class="call">☎</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <p class="device-label">Empty state</p>
+        <div class="device">
+          <div class="appbar">
+            <div class="title">Certificates</div>
+            <div class="sub">Awards and gradings</div>
+          </div>
+          <div class="screen">
+            <div class="empty">
+              <div class="circle" style="font-size:34px">🏅</div>
+              <div class="t">No certificates yet</div>
+              <div class="s">Issue a certificate when a student passes a grading or places in a tournament.</div>
+              <span class="btn">ISSUE CERTIFICATE</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <h2>Type scale</h2>
+    <div class="panel scroll-x">
+      <table>
+        <thead><tr><th>Token</th><th>Size</th><th>Used for</th><th>Sample</th></tr></thead>
+        <tbody>
+          <tr><td><code>display</code></td><td>34</td><td>Hero figures</td><td style="font-size:26px;font-weight:900;letter-spacing:-.5px">128</td></tr>
+          <tr><td><code>title</code></td><td>28</td><td>Screen titles</td><td style="font-size:22px;font-weight:900">Dashboard</td></tr>
+          <tr><td><code>xxl</code></td><td>24</td><td>Section headings</td><td style="font-size:20px;font-weight:800">Attendance</td></tr>
+          <tr><td><code>xl</code></td><td>20</td><td>Card headings</td><td style="font-size:18px;font-weight:800">Evening batch</td></tr>
+          <tr><td><code>lg</code></td><td>17</td><td>Names, list titles</td><td style="font-size:16px;font-weight:800">Anbarasu M.</td></tr>
+          <tr><td><code>md</code></td><td>15</td><td>Body</td><td style="font-size:15px">Marked present at 6:04 PM</td></tr>
+          <tr><td><code>sm</code></td><td>13</td><td>Secondary text</td><td style="font-size:13px;color:var(--text-secondary)">Roll 01 · Intermediate</td></tr>
+          <tr><td><code>xs</code></td><td>11</td><td>Labels, badges</td><td style="font-size:11px;font-weight:800;letter-spacing:.5px;color:var(--text-muted)">TOTAL STUDENTS</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>
+    Generated from the app source · tokens in <code>src/theme/index.ts</code>, components in <code>src/components/</code>. Print this page to save it as a PDF.
+  </footer>
+</div>

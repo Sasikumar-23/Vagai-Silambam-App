@@ -61,10 +61,14 @@ export default function StudentProfileScreen({ route, navigation }: any) {
 
   const handleUpdatePhotoUri = async (uri: string | null) => {
     try {
-      let finalPhotoUrl = uri || undefined;
+      // Keep the device copy for display; Drive holds a private backup only.
+      const finalPhotoUrl = uri || undefined;
       if (uri && student) {
-        const driveResult = await GoogleDriveStorageService.uploadStudentPhoto(student.student_id, uri);
-        finalPhotoUrl = driveResult.photoUrl;
+        try {
+          await GoogleDriveStorageService.uploadStudentPhoto(student.student_id, uri);
+        } catch (photoError) {
+          console.warn('Photo backup to Drive failed:', photoError);
+        }
       }
 
       await StudentRepository.updateStudent(studentId, { photo_url: finalPhotoUrl });

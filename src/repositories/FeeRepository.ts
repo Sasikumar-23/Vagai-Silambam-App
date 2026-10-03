@@ -104,16 +104,24 @@ export const FeeRepository = {
     description?: string,
     userId: string = 'system'
   ): Promise<{ created: number; failed: number }> {
+    const db = await getDatabase();
     let created = 0;
     let failed = 0;
-    for (const stuId of studentIds) {
-      try {
-        await this.createFee(stuId, feeTypeId, amount, dueDate, description, userId);
-        created++;
-      } catch (e) {
-        failed++;
+
+    // One transaction instead of a commit per student: assigning a fee to 300 students
+    // was hundreds of separate writes and froze the screen for minutes.
+    await db.withTransactionAsync(async () => {
+      for (const stuId of studentIds) {
+        try {
+          await this.createFee(stuId, feeTypeId, amount, dueDate, description, userId);
+          created++;
+        } catch (e) {
+          console.warn('Bulk fee failed for student', stuId, e);
+          failed++;
+        }
       }
-    }
+    });
+
     return { created, failed };
   },
 

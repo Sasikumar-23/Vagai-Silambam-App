@@ -13,6 +13,7 @@ import { EmptyState } from '../components/EmptyState';
 import { FeeRepository, FeeWithDetails } from '../repositories/FeeRepository';
 import { StudentRepository } from '../repositories/StudentRepository';
 import { FeeStatus, FeeType, Student } from '../models/types';
+import { addMonths, toLocalDate } from '../utils/date';
 
 export default function FeesScreen({ navigation }: any) {
   const isFocused = useIsFocused();
@@ -32,11 +33,7 @@ export default function FeesScreen({ navigation }: any) {
   const [selectedStudentId, setSelectedStudentId] = useState('');
   const [selectedFeeTypeId, setSelectedFeeTypeId] = useState('');
   const [amount, setAmount] = useState('1000');
-  const [dueDate, setDueDate] = useState(() => {
-    const d = new Date();
-    d.setMonth(d.getMonth() + 1);
-    return d.toISOString().split('T')[0];
-  });
+  const [dueDate, setDueDate] = useState(() => toLocalDate(addMonths(new Date(), 1)));
   const [description, setDescription] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -112,7 +109,10 @@ export default function FeesScreen({ navigation }: any) {
         );
         Alert.alert('Success', 'Fee assigned successfully!');
       } else {
-        const studentIds = students.filter(s => s.student_status === 'ACTIVE').map(s => s.id);
+        // Read the full active roster here: the picker list is capped and would
+        // silently skip everyone past the cap.
+        const activeStudents = await StudentRepository.getAllStudents({ status: 'ACTIVE' }, 100000);
+        const studentIds = activeStudents.map(s => s.id);
         const res = await FeeRepository.createBulkFee(
           studentIds,
           selectedFeeTypeId,
@@ -121,7 +121,12 @@ export default function FeesScreen({ navigation }: any) {
           description.trim() || undefined,
           currentUser?.id || 'admin'
         );
-        Alert.alert('Success', `Fee assigned to ${res.created} active students!`);
+        Alert.alert(
+          res.failed > 0 ? 'Partly Assigned' : 'Success',
+          res.failed > 0
+            ? `Fee assigned to ${res.created} students. ${res.failed} could not be assigned.`
+            : `Fee assigned to ${res.created} active students!`
+        );
       }
 
       setModalVisible(false);

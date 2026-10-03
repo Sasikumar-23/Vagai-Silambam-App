@@ -159,12 +159,26 @@ export async function restoreDatabaseFromBackup(backup: BackupData): Promise<{ s
         DELETE FROM settings;
       `);
 
+      // Column names cannot be bound as parameters, so they are checked against the
+      // table's real schema — a hand-edited backup file must not be able to inject SQL.
+      const columnCache = new Map<string, Set<string>>();
+      const allowedColumns = async (tableName: string): Promise<Set<string>> => {
+        const cached = columnCache.get(tableName);
+        if (cached) return cached;
+        const info = await db.getAllAsync<{ name: string }>(`PRAGMA table_info(${tableName})`);
+        const columns = new Set(info.map(column => column.name));
+        columnCache.set(tableName, columns);
+        return columns;
+      };
+
       const insertTableData = async (tableName: string, rows: any[]) => {
         if (!rows || rows.length === 0) return;
+        const columns = await allowedColumns(tableName);
         for (const row of rows) {
-          const keys = Object.keys(row);
+          const keys = Object.keys(row).filter(key => columns.has(key));
+          if (keys.length === 0) continue;
           const placeholders = keys.map(() => '?').join(', ');
-          const values = Object.values(row);
+          const values = keys.map(key => row[key]);
           await db.runAsync(
             `INSERT INTO ${tableName} (${keys.join(', ')}) VALUES (${placeholders})`,
             ...values as any[]

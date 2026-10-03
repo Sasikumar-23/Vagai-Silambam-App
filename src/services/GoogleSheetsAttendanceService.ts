@@ -437,7 +437,8 @@ function doPost(e) {
       var decoded = Utilities.base64Decode(data.base64Data);
       var blob = Utilities.newBlob(decoded, data.mimeType || 'application/octet-stream', data.fileName || 'file');
       var file = targetFolder.createFile(blob);
-      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      // Files stay private to the account that owns the folder: student photos and
+      // certificates must not be readable by anyone holding the link.
 
       return ContentService.createTextOutput(JSON.stringify({ 
         status: 'success', 

@@ -5,52 +5,16 @@ import {
 } from 'react-native';
 import { TextInput } from 'react-native-paper';
 import {
-  ArrowRight, ShieldCheck, UserCheck, Lock,
-  Sparkles, UserPlus, LogIn, ArrowLeft, Check
+  ArrowRight, ShieldCheck, Lock,
+  Sparkles, UserPlus, LogIn
 } from 'lucide-react-native';
 import { theme } from '../theme';
 import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
-import { UserRole } from '../models/types';
-
-interface RoleOption {
-  role: UserRole;
-  labelEn: string;
-  labelTa: string;
-  description: string;
-  icon: string;
-}
-
-const ROLES: RoleOption[] = [
-  {
-    role: 'INSTRUCTOR',
-    labelEn: 'Instructor',
-    labelTa: 'மாஸ்டர்',
-    description: 'Attendance & Student Training',
-    icon: '🥋',
-  },
-  {
-    role: 'ADMIN',
-    labelEn: 'Admin',
-    labelTa: 'நிர்வாகி',
-    description: 'Full Academy Management',
-    icon: '🛡️',
-  },
-  {
-    role: 'STAFF',
-    labelEn: 'Staff',
-    labelTa: 'பணியாளர்',
-    description: 'Fees, Inventory & Student Records',
-    icon: '📋',
-  },
-];
 
 export default function LoginScreen({ navigation }: any) {
   const { t, language } = useI18n();
-  const { login, register, loginWithGoogle, setUserRole, currentUser } = useAuth();
-
-  // Screen step: 1 = Auth (Login / Create User / Google), 2 = Role Selection
-  const [step, setStep] = useState<1 | 2>(1);
+  const { login, register, loginWithGoogle, currentUser } = useAuth();
 
   // Auth mode: 'LOGIN' | 'REGISTER'
   const [authMode, setAuthMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
@@ -63,9 +27,6 @@ export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
 
-  // Role Selection state
-  const [selectedRole, setSelectedRole] = useState<UserRole>('INSTRUCTOR');
-
   // Loading states
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -76,10 +37,8 @@ export default function LoginScreen({ navigation }: any) {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      const result = await loginWithGoogle(selectedRole);
-      if (result.success) {
-        setStep(2);
-      } else {
+      const result = await loginWithGoogle();
+      if (!result.success) {
         Alert.alert(
           'Sign In Note',
           result.error || 'Google Sign-in was not completed.'
@@ -105,12 +64,7 @@ export default function LoginScreen({ navigation }: any) {
     const result = await login(username.trim(), password.trim());
     setLoading(false);
 
-    if (result.success) {
-      if (result.user?.role) {
-        setSelectedRole(result.user.role);
-      }
-      setStep(2);
-    } else {
+    if (!result.success) {
       Alert.alert('Login Failed', result.error || 'Invalid credentials.');
     }
   };
@@ -136,29 +90,11 @@ export default function LoginScreen({ navigation }: any) {
       password: password.trim(),
       email: email.trim() || undefined,
       phone: phone.trim() || undefined,
-      role: selectedRole,
     });
     setLoading(false);
 
-    if (result.success) {
-      setStep(2);
-    } else {
+    if (!result.success) {
       Alert.alert('Registration Failed', result.error || 'Could not create account.');
-    }
-  };
-
-  // ─────────────────────────────────────────────────────────────────
-  // Complete Role Selection & Enter App
-  // ─────────────────────────────────────────────────────────────────
-  const handleConfirmRoleAndEnter = async () => {
-    setLoading(true);
-    try {
-      await setUserRole(selectedRole);
-      navigation.replace('MainTabs');
-    } catch (e: any) {
-      Alert.alert('Error', e.message || 'Could not set active role.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -185,7 +121,7 @@ export default function LoginScreen({ navigation }: any) {
         {/* ═════════════════════════════════════════════════════════════ */}
         {/* STEP 1: AUTHENTICATION (Sign In / Create User, then Google)  */}
         {/* ═════════════════════════════════════════════════════════════ */}
-        {step === 1 ? (
+        {(
           <View style={styles.card}>
             {/* Top: Auth Mode Toggle (Sign In vs Create User) */}
             <View style={styles.authModeToggle}>
@@ -346,76 +282,6 @@ export default function LoginScreen({ navigation }: any) {
                 </Text>
               </View>
               <ArrowRight size={18} color={theme.colors.primary} />
-            </TouchableOpacity>
-          </View>
-        ) : (
-          /* ═════════════════════════════════════════════════════════════ */
-          /* STEP 2: SELECT ROLES SCREEN                                   */
-          /* ═════════════════════════════════════════════════════════════ */
-          <View style={styles.card}>
-            <View style={styles.step2Header}>
-              <View style={styles.roleIconCircle}>
-                <UserCheck size={24} color={theme.colors.primary} />
-              </View>
-              <Text style={styles.step2Title}>Select Your Role</Text>
-              <Text style={styles.step2Subtitle}>
-                Welcome{currentUser?.full_name_en ? `, ${currentUser.full_name_en}` : ''}! Choose your active role to enter:
-              </Text>
-            </View>
-
-            {/* Role Option Cards */}
-            <View style={styles.roleOptionsList}>
-              {ROLES.map((item) => {
-                const isSelected = selectedRole === item.role;
-                return (
-                  <TouchableOpacity
-                    key={item.role}
-                    style={[styles.roleOptionCard, isSelected && styles.roleOptionCardActive]}
-                    onPress={() => setSelectedRole(item.role)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.roleOptionIcon}>{item.icon}</Text>
-                    <View style={styles.roleOptionContent}>
-                      <View style={styles.roleOptionTitleRow}>
-                        <Text style={[styles.roleOptionLabel, isSelected && styles.roleOptionLabelActive]}>
-                          {item.labelEn} ({item.labelTa})
-                        </Text>
-                        {isSelected && (
-                          <View style={styles.selectedCheckBadge}>
-                            <Check size={12} color="#FFFFFF" />
-                          </View>
-                        )}
-                      </View>
-                      <Text style={styles.roleOptionDescription}>{item.description}</Text>
-                    </View>
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-
-            {/* Enter Application Button */}
-            <TouchableOpacity
-              style={[styles.primaryBtn, loading && { opacity: 0.7 }, { marginTop: theme.spacing.lg }]}
-              onPress={handleConfirmRoleAndEnter}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator size="small" color="#FFFFFF" />
-              ) : (
-                <>
-                  <Text style={styles.primaryBtnText}>Enter Vagai Silambam</Text>
-                  <ArrowRight size={18} color="#FFFFFF" />
-                </>
-              )}
-            </TouchableOpacity>
-
-            {/* Back / Change Account Option */}
-            <TouchableOpacity
-              style={styles.backToAuthBtn}
-              onPress={() => setStep(1)}
-            >
-              <ArrowLeft size={14} color={theme.colors.textSecondary} />
-              <Text style={styles.backToAuthText}>Change Account / Sign In Again</Text>
             </TouchableOpacity>
           </View>
         )}

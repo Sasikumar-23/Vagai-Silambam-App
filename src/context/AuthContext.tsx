@@ -12,11 +12,9 @@ interface AuthContextProps {
   isLoading: boolean;
   login: (username: string, password: string) => Promise<{ success: boolean; user?: User; error?: string }>;
   register: (data: { username: string; password: string; fullNameEn: string; fullNameTa?: string; email?: string; phone?: string; role?: UserRole }) => Promise<{ success: boolean; user?: User; error?: string }>;
-  loginWithGoogle: (selectedRole?: UserRole) => Promise<{ success: boolean; error?: string; needsSetup?: boolean; profile?: GoogleUserProfile; user?: User }>;
-  loginWithGoogleDemo: (email?: string, selectedRole?: UserRole) => Promise<{ success: boolean; error?: string }>;
+  loginWithGoogle: () => Promise<{ success: boolean; error?: string; needsSetup?: boolean; profile?: GoogleUserProfile; user?: User }>;
+  loginWithGoogleDemo: (email?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
-  switchRole: (role: UserRole) => Promise<void>;
-  setUserRole: (role: UserRole) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextProps>({
@@ -28,8 +26,6 @@ const AuthContext = createContext<AuthContextProps>({
   loginWithGoogle: async () => ({ success: false }),
   loginWithGoogleDemo: async () => ({ success: false }),
   logout: async () => {},
-  switchRole: async () => {},
-  setUserRole: async () => {},
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -40,26 +36,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loadStoredUser();
   }, []);
 
+  // Only the user id is persisted; the row (including its password hash) is re-read from the database.
+  const rememberSession = async (user: User) => {
+    await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify({ id: user.id }));
+  };
+
   const loadStoredUser = async () => {
     try {
       const stored = await AsyncStorage.getItem(AUTH_USER_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        const freshUser = await UserRepository.findById(parsed.id);
-        if (freshUser) {
-          setCurrentUser(freshUser);
-        } else {
-          // Fallback to instructor
-          const defaultUser = await UserRepository.switchRoleForDemo('INSTRUCTOR');
-          setCurrentUser(defaultUser);
-        }
+      if (!stored) return;
+
+      const freshUser = await UserRepository.findById(JSON.parse(stored).id);
+      if (freshUser) {
+        setCurrentUser(freshUser);
       } else {
-        // Default to instructor for fast mobile demo
-        const defaultUser = await UserRepository.switchRoleForDemo('INSTRUCTOR');
-        if (defaultUser) {
-          setCurrentUser(defaultUser);
-          await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify(defaultUser));
-        }
+        await AsyncStorage.removeItem(AUTH_USER_KEY);
       }
     } catch (e) {
       console.warn('Failed to load session:', e);
@@ -73,7 +64,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const user = await UserRepository.verifyCredentials(username, password);
       if (user) {
         setCurrentUser(user);
-        await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+        await rememberSession(user);
         return { success: true, user };
       }
       return { success: false, error: 'Invalid username or password' };
@@ -93,14 +84,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const user = await UserRepository.createUser(data);
       setCurrentUser(user);
-      await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+      await rememberSession(user);
       return { success: true, user };
     } catch (e: any) {
       return { success: false, error: e.message || 'Registration failed' };
     }
   };
 
-  const loginWithGoogle = async (selectedRole: UserRole = 'INSTRUCTOR'): Promise<{
+  const loginWithGoogle = async (): Promise<{
     success: boolean;
     error?: string;
     needsSetup?: boolean;
@@ -116,21 +107,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: false, error: result.message || 'Google Sign-In failed' };
       }
 
-      const user = await UserRepository.findOrCreateGoogleUser(result.profile, selectedRole);
+      const user = await UserRepository.findOrCreateGoogleUser(result.profile);
       setCurrentUser(user);
-      await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+      await rememberSession(user);
       return { success: true, profile: result.profile, user };
     } catch (e: any) {
       return { success: false, error: e.message || 'Google Sign-In error' };
     }
   };
 
-  const loginWithGoogleDemo = async (email = 'coach.silambam@gmail.com', selectedRole: UserRole = 'INSTRUCTOR'): Promise<{ success: boolean; error?: string }> => {
+  const loginWithGoogleDemo = async (email = 'coach.silambam@gmail.com'): Promise<{ success: boolean; error?: string }> => {
     try {
       const profile = await GoogleOAuthService.signInDemoMode(email);
-      const user = await UserRepository.findOrCreateGoogleUser(profile, selectedRole);
+      const user = await UserRepository.findOrCreateGoogleUser(profile);
       setCurrentUser(user);
-      await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
+      await rememberSession(user);
       return { success: true };
     } catch (e: any) {
       return { success: false, error: e.message || 'Demo Sign-In failed' };
@@ -141,24 +132,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCurrentUser(null);
     await AsyncStorage.removeItem(AUTH_USER_KEY);
     await GoogleOAuthService.signOut();
-  };
-
-  const switchRole = async (role: UserRole) => {
-    const user = await UserRepository.switchRoleForDemo(role);
-    if (user) {
-      setCurrentUser(user);
-      await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
-    }
-  };
-
-  const setUserRole = async (role: UserRole) => {
-    if (currentUser?.id) {
-      const updated = await UserRepository.updateUserRole(currentUser.id, role);
-      if (updated) {
-        setCurrentUser(updated);
-        await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify(updated));
-      }
-    }
   };
 
   const currentRole: UserRole = currentUser?.role || 'INSTRUCTOR';
@@ -174,8 +147,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loginWithGoogle,
         loginWithGoogleDemo,
         logout,
-        switchRole,
-        setUserRole,
       }}
     >
       {children}

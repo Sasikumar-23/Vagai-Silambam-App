@@ -8,17 +8,10 @@ import { theme } from '../theme';
 import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
 import { AppHeader } from '../components/AppHeader';
-import { UserRole } from '../models/types';
 
 export default function MoreScreen({ navigation }: any) {
   const { t, language } = useI18n();
-  const { currentRole, currentUser, logout, switchRole } = useAuth();
-
-  const handleRoleSwitch = (role: UserRole) => {
-    switchRole(role);
-    Alert.alert('Role Switched', `Switched active profile to ${role}. Navigating to dashboard.`);
-    navigation.navigate('DashboardTab');
-  };
+  const { currentRole, currentUser, logout } = useAuth();
 
   const menuItems = [
     {
@@ -72,8 +65,6 @@ export default function MoreScreen({ navigation }: any) {
     },
   ];
 
-  const demoRoles: UserRole[] = ['ADMIN', 'INSTRUCTOR', 'STAFF'];
-
   return (
     <View style={styles.container}>
       <AppHeader navigation={navigation} title={t.nav.more} />
@@ -91,24 +82,6 @@ export default function MoreScreen({ navigation }: any) {
               {language === 'ta' && currentUser?.full_name_ta ? currentUser.full_name_ta : currentUser?.full_name_en}
             </Text>
             <Text style={styles.userRoleBadge}>{currentRole}</Text>
-          </View>
-        </View>
-
-        {/* Role Switcher Section (Great for pair programming / testing) */}
-        <View style={styles.roleSwitchSection}>
-          <Text style={styles.roleSwitchTitle}>Switch Active Role (Testing & Verification)</Text>
-          <View style={styles.rolesRow}>
-            {demoRoles.map(r => (
-              <TouchableOpacity
-                key={r}
-                style={[styles.roleChip, currentRole === r && styles.roleChipActive]}
-                onPress={() => handleRoleSwitch(r)}
-              >
-                <Text style={[styles.roleChipText, currentRole === r && styles.roleChipTextActive]}>
-                  {r}
-                </Text>
-              </TouchableOpacity>
-            ))}
           </View>
         </View>
 
@@ -136,10 +109,7 @@ export default function MoreScreen({ navigation }: any) {
         {/* Logout Button */}
         <TouchableOpacity
           style={styles.logoutBtn}
-          onPress={async () => {
-            await logout();
-            navigation.replace('Login');
-          }}
+          onPress={logout}
         >
           <LogOut size={18} color={theme.colors.crimson} />
           <Text style={styles.logoutText}>{t.common.logout}</Text>
@@ -193,45 +163,6 @@ const styles = StyleSheet.create({
     color: theme.colors.accent,
     fontWeight: '800',
     marginTop: 2,
-  },
-  roleSwitchSection: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    padding: theme.spacing.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    marginBottom: theme.spacing.md,
-  },
-  roleSwitchTitle: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: theme.colors.textSecondary,
-    marginBottom: 8,
-  },
-  rolesRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  roleChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 6,
-    backgroundColor: theme.colors.surfaceSubtle,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  roleChipActive: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
-  },
-  roleChipText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: theme.colors.textSecondary,
-  },
-  roleChipTextActive: {
-    color: '#FFFFFF',
   },
   menuSection: {
     backgroundColor: theme.colors.surface,

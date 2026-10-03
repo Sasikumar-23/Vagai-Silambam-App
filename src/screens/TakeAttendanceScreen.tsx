@@ -16,6 +16,8 @@ import { StudentRepository } from '../repositories/StudentRepository';
 import { GoogleSheetsAttendanceService, SheetAttendanceRecord } from '../services/GoogleSheetsAttendanceService';
 import { GoogleDriveStorageService } from '../services/GoogleDriveStorageService';
 import { TrainingCenterRepository } from '../repositories/TrainingCenterRepository';
+import { AttendanceRepository } from '../repositories/AttendanceRepository';
+import { todayLocalDate } from '../utils/date';
 import { Student, TrainingCenter, Instructor, AttendanceStatus } from '../models/types';
 
 export default function TakeAttendanceScreen({ navigation }: any) {
@@ -26,7 +28,7 @@ export default function TakeAttendanceScreen({ navigation }: any) {
   const [selectedCenterId, setSelectedCenterId] = useState<string>('');
   const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [selectedInstructorId, setSelectedInstructorId] = useState<string>('');
-  const [sessionDate, setSessionDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [sessionDate, setSessionDate] = useState<string>(todayLocalDate());
   const [sessionName, setSessionName] = useState<string>('Morning Batch (6:00 - 8:00 AM)');
 
   const [students, setStudents] = useState<Student[]>([]);
@@ -149,31 +151,47 @@ export default function TakeAttendanceScreen({ navigation }: any) {
         };
       });
 
-      const [result] = await Promise.all([
-        GoogleSheetsAttendanceService.saveAttendanceBatch(
-          sheetPayload,
-          currentUser?.full_name_en || 'Instructor'
-        ),
-        GoogleDriveStorageService.saveAttendanceReportToDrive(
-          sessionDate,
-          sheetPayload
-        ),
-      ]);
+      // The database is the record of attendance; Sheets and Drive are copies of it.
+      // Writing here first means a failed upload can never lose the session.
+      const session = await AttendanceRepository.getOrCreateSession(
+        selectedCenterId,
+        sessionDate,
+        sessionName,
+        selectedInstructorId || undefined
+      );
+      await AttendanceRepository.saveBatchAttendance(
+        session.id,
+        students.map(s => ({
+          studentId: s.id,
+          status: attendanceState[s.id] || 'PRESENT',
+          remarks: remarksState[s.id] || undefined,
+        })),
+        currentUser?.full_name_en || 'Instructor'
+      );
 
-      const syncCount = await GoogleSheetsAttendanceService.getPendingSyncCount();
-      setPendingSyncCount(syncCount);
+      let syncNote = '☁️ Synced to Google Cloud.';
+      try {
+        const [result] = await Promise.all([
+          GoogleSheetsAttendanceService.saveAttendanceBatch(
+            sheetPayload,
+            currentUser?.full_name_en || 'Instructor'
+          ),
+          GoogleDriveStorageService.saveAttendanceReportToDrive(sessionDate, sheetPayload),
+        ]);
+        if (!result.syncedToGoogle) syncNote = '⚡ Saved on this device (will sync when online).';
+        setPendingSyncCount(await GoogleSheetsAttendanceService.getPendingSyncCount());
+      } catch (syncError: any) {
+        console.warn('Attendance sync failed:', syncError);
+        syncNote = '⚠️ Saved on this device. Google sync failed and will retry.';
+      }
 
       Alert.alert(
-        '📊 Attendance Saved to Google Sheets & Drive',
-        `${sheetPayload.length} Silambam practitioners recorded for ${sessionDate}.\n\n` +
-        `• New Entries: ${result.savedCount}\n` +
-        `• Updated: ${result.updatedCount}\n` +
-        `• Stored in: Google Sheets + Drive (Student Attendance)\n` +
-        (result.syncedToGoogle ? '☁️ Synced to Google Cloud.' : '⚡ Saved locally (will sync when online).'),
+        'Attendance Saved',
+        `${sheetPayload.length} Silambam practitioners recorded for ${sessionDate}.\n\n${syncNote}`,
         [{ text: 'OK', onPress: () => navigation.goBack() }]
       );
     } catch (e: any) {
-      Alert.alert('Save Failed', e.message || 'Could not save attendance to Google Sheets & Drive.');
+      Alert.alert('Save Failed', e.message || 'Could not save attendance.');
     } finally {
       setSaving(false);
     }

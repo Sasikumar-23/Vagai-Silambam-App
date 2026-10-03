@@ -9,6 +9,7 @@ import { AuthProvider } from './src/context/AuthContext';
 import RootNavigator from './src/navigation/RootNavigator';
 import { runMigrations } from './src/database/migrations';
 import { seedDatabase } from './src/database/seed/seedData';
+import { importLegacyAttendance } from './src/database/importLegacyAttendance';
 import { theme as appTheme } from './src/theme';
 
 const paperTheme = {
@@ -35,12 +36,18 @@ export default function App() {
       // 1. Run database migrations to ensure all 29 tables, views & indexes exist
       await runMigrations();
 
-      // 2. Populate development seed data if empty
-      await seedDatabase(false);
+      // 2. Demo accounts and sample students are for development only — a release build
+      // starts empty, and the first account created on the device becomes the admin.
+      if (__DEV__) {
+        await seedDatabase(false);
+      }
+
+      // 3. Move attendance saved by older builds out of AsyncStorage and into the database
+      await importLegacyAttendance();
     } catch (e) {
       console.error('App initialization error:', e);
     } finally {
-      setIsReady(false || true);
+      setIsReady(true);
     }
   };
 

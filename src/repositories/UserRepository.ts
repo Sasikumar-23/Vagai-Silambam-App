@@ -22,6 +22,12 @@ export const UserRepository = {
     return db.getAllAsync<User>('SELECT * FROM users ORDER BY role ASC, full_name_en ASC');
   },
 
+  async countUsers(): Promise<number> {
+    const db = await getDatabase();
+    const row = await db.getFirstAsync<{ total: number }>('SELECT COUNT(*) as total FROM users');
+    return row?.total ?? 0;
+  },
+
   async verifyCredentials(username: string, passwordAttempt: string): Promise<User | null> {
     const user = await this.findByUsername(username);
     if (!user) return null;
@@ -63,7 +69,9 @@ export const UserRepository = {
 
     const newUserId = `usr_${Date.now()}`;
     const now = new Date().toISOString();
-    const role: UserRole = data.role || 'INSTRUCTOR';
+    // Self-registration must not grant privileges: only the very first account on a
+    // fresh install bootstraps as ADMIN, everyone after that signs up as an instructor.
+    const role: UserRole = (await this.countUsers()) === 0 ? 'ADMIN' : 'INSTRUCTOR';
 
     await db.runAsync(
       `INSERT INTO users (id, username, password_hash, full_name_en, full_name_ta, email, phone, role, is_active, created_at, updated_at)
@@ -86,21 +94,6 @@ export const UserRepository = {
     return created;
   },
 
-  async updateUserRole(userId: string, role: UserRole): Promise<User | null> {
-    const db = await getDatabase();
-    await db.runAsync('UPDATE users SET role = ?, updated_at = ? WHERE id = ?', role, new Date().toISOString(), userId);
-    return this.findById(userId);
-  },
-
-  async switchRoleForDemo(role: UserRole): Promise<User | null> {
-    const db = await getDatabase();
-    const user = await db.getFirstAsync<User>(
-      'SELECT * FROM users WHERE role = ? AND is_active = 1 LIMIT 1',
-      role
-    );
-    return user || null;
-  },
-
   async findByEmail(email: string): Promise<User | null> {
     const db = await getDatabase();
     return db.getFirstAsync<User>(
@@ -109,18 +102,12 @@ export const UserRepository = {
     );
   },
 
-  async findOrCreateGoogleUser(
-    profile: { id: string; email: string; name: string },
-    selectedRole: UserRole = 'INSTRUCTOR'
-  ): Promise<User> {
+  async findOrCreateGoogleUser(profile: { id: string; email: string; name: string }): Promise<User> {
     const db = await getDatabase();
     const existing = await this.findByEmail(profile.email);
     if (existing) {
-      if (existing.role !== selectedRole) {
-        await db.runAsync('UPDATE users SET role = ?, updated_at = ? WHERE id = ?', selectedRole, new Date().toISOString(), existing.id);
-        existing.role = selectedRole;
-      }
-      await AuditRepository.log('LOGIN_GOOGLE', 'users', existing.id, existing.id, null, { email: profile.email, role: selectedRole });
+      // Signing in never changes the account's role — that would let anyone pick ADMIN.
+      await AuditRepository.log('LOGIN_GOOGLE', 'users', existing.id, existing.id, null, { email: profile.email, role: existing.role });
       return existing;
     }
 
@@ -128,18 +115,17 @@ export const UserRepository = {
     const existingByUsername = await this.findByUsername(usernamePrefix);
     if (existingByUsername) {
       await db.runAsync(
-        'UPDATE users SET email = ?, role = ?, updated_at = ? WHERE id = ?',
+        'UPDATE users SET email = ?, updated_at = ? WHERE id = ?',
         profile.email,
-        selectedRole,
         new Date().toISOString(),
         existingByUsername.id
       );
-      return { ...existingByUsername, email: profile.email, role: selectedRole };
+      return { ...existingByUsername, email: profile.email };
     }
 
     const newUserId = `usr_google_${Date.now()}`;
     const now = new Date().toISOString();
-    const role: UserRole = selectedRole;
+    const role: UserRole = (await this.countUsers()) === 0 ? 'ADMIN' : 'INSTRUCTOR';
 
     try {
       await db.runAsync(

@@ -111,17 +111,28 @@ function RoleAwareBottomTabs() {
 }
 
 export default function RootNavigator() {
-  const { currentUser } = useAuth();
+  const { currentUser, isLoading } = useAuth();
+
+  if (isLoading) return null;
+
+  // The app screens are not registered until someone is signed in, so there is no
+  // route that reaches student data without authentication.
+  if (!currentUser) {
+    return (
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="Login" component={LoginScreen} />
+      </Stack.Navigator>
+    );
+  }
 
   return (
     <Stack.Navigator
-      initialRouteName={currentUser ? 'MainTabs' : 'Login'}
+      initialRouteName="MainTabs"
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',
       }}
     >
-      <Stack.Screen name="Login" component={LoginScreen} />
       <Stack.Screen name="MainTabs" component={RoleAwareBottomTabs} />
 
       {/* Core Sub-screens */}

@@ -1,6 +1,7 @@
 import { getDatabase } from '../database/connection';
 import { AttendanceSession, AttendanceRecord, AttendanceStatus, Student } from '../models/types';
 import { AuditRepository } from './AuditRepository';
+import { todayLocalDate } from '../utils/date';
 
 export interface AttendanceBatchItem {
   studentId: string;
@@ -110,7 +111,7 @@ export const AttendanceRepository = {
     total: number;
   }> {
     const db = await getDatabase();
-    const today = new Date().toISOString().split('T')[0];
+    const today = todayLocalDate();
 
     const centerClause = centerId ? 'AND ses.training_center_id = ?' : '';
     const params = centerId ? [today, centerId] : [today];
