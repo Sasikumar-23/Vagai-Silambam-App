@@ -1,6 +1,7 @@
 import { getDatabase } from '../database/connection';
 import { User, UserRole } from '../models/types';
 import { AuditRepository } from './AuditRepository';
+import { hashPassword, isHashed, verifyPassword } from '../utils/password';
 
 export const UserRepository = {
   async findByUsername(username: string): Promise<User | null> {
@@ -25,12 +26,23 @@ export const UserRepository = {
     const user = await this.findByUsername(username);
     if (!user) return null;
 
-    // In local demo / MVP, credentials match stored hash/password
-    if (user.password_hash === passwordAttempt) {
-      await AuditRepository.log('LOGIN', 'users', user.id, user.id, null, { username });
-      return user;
+    if (!(await verifyPassword(passwordAttempt, user.password_hash))) return null;
+
+    // Accounts created before hashing still hold a plain-text password; upgrade on first successful login.
+    if (!isHashed(user.password_hash)) {
+      const db = await getDatabase();
+      const upgraded = await hashPassword(passwordAttempt);
+      await db.runAsync(
+        'UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?',
+        upgraded,
+        new Date().toISOString(),
+        user.id
+      );
+      user.password_hash = upgraded;
     }
-    return null;
+
+    await AuditRepository.log('LOGIN', 'users', user.id, user.id, null, { username });
+    return user;
   },
 
   async createUser(data: {
@@ -58,7 +70,7 @@ export const UserRepository = {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
       newUserId,
       cleanUsername,
-      data.password,
+      await hashPassword(data.password),
       data.fullNameEn.trim(),
       data.fullNameTa?.trim() || data.fullNameEn.trim(),
       data.email?.trim() || null,
