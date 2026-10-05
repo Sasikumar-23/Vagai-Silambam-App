@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { TextInput } from 'react-native-paper';
 import { useIsFocused } from '@react-navigation/native';
 import { IndianRupee, Plus, ArrowRight, AlertCircle, CheckCircle2, Check } from 'lucide-react-native';
@@ -7,6 +7,7 @@ import { theme } from '../theme';
 import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
 import { AppHeader } from '../components/AppHeader';
+import { FormScreen } from '../components/FormScreen';
 import { StatCard } from '../components/StatCard';
 import { StatusBadge } from '../components/StatusBadge';
 import { EmptyState } from '../components/EmptyState';
@@ -254,11 +255,27 @@ export default function FeesScreen({ navigation }: any) {
       )}
 
       {/* CREATE / ASSIGN FEE MODAL */}
-      <Modal visible={modalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Assign Fee / கட்டணம் ஒதுக்கு</Text>
-
+      <FormScreen
+        visible={modalVisible}
+        title="Assign Fee"
+        subtitle="கட்டணம் ஒதுக்கு"
+        onClose={() => setModalVisible(false)}
+        footer={
+          <>
+            <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setModalVisible(false)}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalSubmitBtn, saving && { opacity: 0.6 }]}
+              onPress={handleCreateFee}
+              disabled={saving}
+            >
+              <Text style={styles.modalSubmitText}>{saving ? 'Assigning...' : 'Assign Fee'}</Text>
+            </TouchableOpacity>
+          </>
+        }
+      >
+        <View>
             {/* Mode Switcher: Single Student vs All Active Students */}
             <View style={styles.modeRow}>
               <TouchableOpacity
@@ -282,25 +299,31 @@ export default function FeesScreen({ navigation }: any) {
             {assignMode === 'SINGLE' && (
               <>
                 <Text style={styles.modalLabel}>Select Student</Text>
-                <ScrollView style={{ maxHeight: 110, marginBottom: 10 }} nestedScrollEnabled>
-                  {students.map(s => (
-                    <TouchableOpacity
-                      key={s.id}
-                      style={[styles.modalStuItem, selectedStudentId === s.id && styles.modalStuItemActive]}
-                      onPress={() => setSelectedStudentId(s.id)}
-                    >
-                      <Text style={[styles.modalStuText, selectedStudentId === s.id && styles.modalStuTextActive]}>
-                        {s.name_en} ({s.student_id})
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+                {students.length === 0 ? (
+                  <Text style={styles.pickerEmpty}>No active students yet. Add a student first.</Text>
+                ) : (
+                  <View style={{ marginBottom: 10 }}>
+                    {students.map(s => (
+                      <TouchableOpacity
+                        key={s.id}
+                        style={[styles.modalStuItem, selectedStudentId === s.id && styles.modalStuItemActive]}
+                        onPress={() => setSelectedStudentId(s.id)}
+                      >
+                        <Text style={[styles.modalStuText, selectedStudentId === s.id && styles.modalStuTextActive]}>
+                          {s.name_en} ({s.student_id})
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
               </>
             )}
 
-            <Text style={styles.modalLabel}>Fee Type</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
-              <View style={styles.typesRow}>
+            <Text style={styles.modalLabel}>Fee Type *</Text>
+            {feeTypes.length === 0 ? (
+              <Text style={styles.pickerEmpty}>No fee types available.</Text>
+            ) : (
+              <View style={styles.typesColumn}>
                 {feeTypes.map(ft => (
                   <TouchableOpacity
                     key={ft.id}
@@ -311,12 +334,15 @@ export default function FeesScreen({ navigation }: any) {
                     }}
                   >
                     <Text style={[styles.typeBtnText, selectedFeeTypeId === ft.id && styles.typeBtnTextActive]}>
-                      {language === 'ta' && ft.name_ta ? ft.name_ta : ft.name_en} (₹{ft.default_amount})
+                      {language === 'ta' && ft.name_ta ? ft.name_ta : ft.name_en}
+                    </Text>
+                    <Text style={[styles.typeBtnAmount, selectedFeeTypeId === ft.id && styles.typeBtnTextActive]}>
+                      ₹{ft.default_amount}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
-            </ScrollView>
+            )}
 
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
@@ -353,23 +379,8 @@ export default function FeesScreen({ navigation }: any) {
               outlineStyle={styles.outline}
             />
 
-            <View style={styles.modalBtnRow}>
-              <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setModalVisible(false)}>
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.modalSubmitBtn, saving && { opacity: 0.6 }]}
-                onPress={handleCreateFee}
-                disabled={saving}
-              >
-                <Text style={styles.modalSubmitText}>
-                  {saving ? 'Assigning...' : 'Assign Fee'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
         </View>
-      </Modal>
+      </FormScreen>
     </View>
   );
 }
@@ -509,22 +520,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...theme.shadows.lg,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.65)',
-    justifyContent: 'flex-end',
+  typesColumn: {
+    gap: 8,
+    marginBottom: 14,
   },
-  modalContent: {
-    backgroundColor: theme.colors.surface,
-    borderTopLeftRadius: theme.borderRadius.xl,
-    borderTopRightRadius: theme.borderRadius.xl,
-    padding: theme.spacing.xl,
-    maxHeight: '85%',
+  typeBtnAmount: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: theme.colors.textSecondary,
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: theme.colors.textPrimary,
+  pickerEmpty: {
+    fontSize: 13,
+    color: theme.colors.textMuted,
+    backgroundColor: theme.colors.surfaceSubtle,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
     marginBottom: theme.spacing.md,
   },
   modeRow: {
@@ -561,13 +571,17 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   modalStuItem: {
-    padding: 8,
-    borderRadius: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.surfaceSubtle,
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1.5,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+    marginBottom: 8,
   },
   modalStuItemActive: {
     backgroundColor: theme.colors.primaryMuted,
+    borderColor: theme.colors.primary,
   },
   modalStuText: {
     fontSize: 13,
@@ -582,11 +596,15 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   typeBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: theme.colors.surfaceSubtle,
-    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1.5,
     borderColor: theme.colors.border,
   },
   typeBtnActive: {
@@ -615,11 +633,6 @@ const styles = StyleSheet.create({
   outline: {
     borderRadius: 8,
     borderColor: theme.colors.border,
-  },
-  modalBtnRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: theme.spacing.sm,
   },
   modalCancelBtn: {
     flex: 1,

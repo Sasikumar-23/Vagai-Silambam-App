@@ -69,9 +69,10 @@ export const UserRepository = {
 
     const newUserId = `usr_${Date.now()}`;
     const now = new Date().toISOString();
-    // Self-registration must not grant privileges: only the very first account on a
-    // fresh install bootstraps as ADMIN, everyone after that signs up as an instructor.
-    const role: UserRole = (await this.countUsers()) === 0 ? 'ADMIN' : 'INSTRUCTOR';
+    // The first account on a fresh install becomes the academy admin. After that a
+    // person may pick their own role, but ADMIN is never self-granted.
+    const requestedRole = data.role === 'STAFF' ? 'STAFF' : 'INSTRUCTOR';
+    const role: UserRole = (await this.countUsers()) === 0 ? 'ADMIN' : requestedRole;
 
     await db.runAsync(
       `INSERT INTO users (id, username, password_hash, full_name_en, full_name_ta, email, phone, role, is_active, created_at, updated_at)

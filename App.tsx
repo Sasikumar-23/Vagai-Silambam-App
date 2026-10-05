@@ -10,6 +10,7 @@ import RootNavigator from './src/navigation/RootNavigator';
 import { runMigrations } from './src/database/migrations';
 import { seedDatabase } from './src/database/seed/seedData';
 import { importLegacyAttendance } from './src/database/importLegacyAttendance';
+import { seedReferenceData } from './src/database/seed/referenceData';
 import { theme as appTheme } from './src/theme';
 
 const paperTheme = {
@@ -36,13 +37,17 @@ export default function App() {
       // 1. Run database migrations to ensure all 29 tables, views & indexes exist
       await runMigrations();
 
-      // 2. Demo accounts and sample students are for development only — a release build
+      // 2. Fee types, uniform types and the academy record must exist in every build,
+      // otherwise the pickers are empty and nothing can be assigned.
+      await seedReferenceData();
+
+      // 3. Demo accounts and sample students are for development only — a release build
       // starts empty, and the first account created on the device becomes the admin.
       if (__DEV__) {
         await seedDatabase(false);
       }
 
-      // 3. Move attendance saved by older builds out of AsyncStorage and into the database
+      // 4. Move attendance saved by older builds out of AsyncStorage and into the database
       await importLegacyAttendance();
     } catch (e) {
       console.error('App initialization error:', e);

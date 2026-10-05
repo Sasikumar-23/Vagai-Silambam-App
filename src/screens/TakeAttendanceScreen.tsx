@@ -6,15 +6,13 @@ import {
 import { format } from 'date-fns';
 import {
   Calendar, Check, CheckCheck, Clock, X,
-  AlertCircle, ArrowLeft, Send, Shield, Database, Cloud
+  AlertCircle, ArrowLeft, Send
 } from 'lucide-react-native';
 import { theme } from '../theme';
 import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
 import { OfflineBanner } from '../components/OfflineBanner';
 import { StudentRepository } from '../repositories/StudentRepository';
-import { GoogleSheetsAttendanceService, SheetAttendanceRecord } from '../services/GoogleSheetsAttendanceService';
-import { GoogleDriveStorageService } from '../services/GoogleDriveStorageService';
 import { TrainingCenterRepository } from '../repositories/TrainingCenterRepository';
 import { AttendanceRepository } from '../repositories/AttendanceRepository';
 import { todayLocalDate } from '../utils/date';
@@ -34,7 +32,6 @@ export default function TakeAttendanceScreen({ navigation }: any) {
   const [students, setStudents] = useState<Student[]>([]);
   const [attendanceState, setAttendanceState] = useState<Record<string, AttendanceStatus>>({});
   const [remarksState, setRemarksState] = useState<Record<string, string>>({});
-  const [pendingSyncCount, setPendingSyncCount] = useState<number>(0);
 
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
@@ -52,12 +49,8 @@ export default function TakeAttendanceScreen({ navigation }: any) {
   const initAttendanceWorkflow = async () => {
     setLoading(true);
     try {
-      const [tcList, syncCount] = await Promise.all([
-        TrainingCenterRepository.getAllCenters(),
-        GoogleSheetsAttendanceService.getPendingSyncCount(),
-      ]);
+      const tcList = await TrainingCenterRepository.getAllCenters();
       setCenters(tcList);
-      setPendingSyncCount(syncCount);
       if (tcList.length > 0) {
         const initialCenter = tcList[0];
         setSelectedCenterId(initialCenter.id);
@@ -82,24 +75,22 @@ export default function TakeAttendanceScreen({ navigation }: any) {
       });
       setStudents(stuList);
 
-      // 2. Load existing attendance from Google Sheets / Attendance Engine for this date
-      const existingDateRecords = await GoogleSheetsAttendanceService.getAttendanceForDate(sessionDate);
+      // 2. Reload whatever was already marked for this date from the database
+      const session = await AttendanceRepository.getOrCreateSession(
+        centerId,
+        sessionDate,
+        sessionName,
+        selectedInstructorId || undefined
+      );
+      const existing = await AttendanceRepository.getSessionAttendance(session.id);
       const initialMap: Record<string, AttendanceStatus> = {};
       const initialRemarks: Record<string, string> = {};
 
       stuList.forEach(s => {
-        const record = existingDateRecords[s.student_id];
-        if (record) {
-          const mapStatus: AttendanceStatus =
-            record.status === 'Present' ? 'PRESENT' :
-            record.status === 'Absent' ? 'ABSENT' :
-            record.status === 'Late' ? 'LATE' : 'LEAVE';
-          initialMap[s.id] = mapStatus;
-          if (record.remarks) initialRemarks[s.id] = record.remarks;
-        } else {
-          // Default to PRESENT for ultra-fast workflow
-          initialMap[s.id] = 'PRESENT';
-        }
+        const record = existing[s.id];
+        // Default to PRESENT for a fast workflow: the instructor only marks exceptions.
+        initialMap[s.id] = record ? record.status : 'PRESENT';
+        if (record?.remarks) initialRemarks[s.id] = record.remarks;
       });
 
       setAttendanceState(initialMap);
@@ -133,26 +124,7 @@ export default function TakeAttendanceScreen({ navigation }: any) {
     }
     setSaving(true);
     try {
-      // Transform records for Google Sheets Attendance (attendance_id, date, student_id, student_name, status, remarks, marked_by)
-      const sheetPayload = students.map(s => {
-        const rawStatus = attendanceState[s.id] || 'PRESENT';
-        const sheetStatus: 'Present' | 'Absent' | 'Late' | 'Leave' =
-          rawStatus === 'PRESENT' ? 'Present' :
-          rawStatus === 'ABSENT' ? 'Absent' :
-          rawStatus === 'LATE' ? 'Late' : 'Leave';
-
-        return {
-          student_id: s.student_id,
-          student_name: s.name_en,
-          date: sessionDate,
-          status: sheetStatus,
-          remarks: remarksState[s.id] || undefined,
-          marked_by: currentUser?.full_name_en || 'Instructor',
-        };
-      });
-
-      // The database is the record of attendance; Sheets and Drive are copies of it.
-      // Writing here first means a failed upload can never lose the session.
+      // Attendance is kept on this device only; nothing is uploaded on save.
       const session = await AttendanceRepository.getOrCreateSession(
         selectedCenterId,
         sessionDate,
@@ -169,44 +141,15 @@ export default function TakeAttendanceScreen({ navigation }: any) {
         currentUser?.full_name_en || 'Instructor'
       );
 
-      let syncNote = '☁️ Synced to Google Cloud.';
-      try {
-        const [result] = await Promise.all([
-          GoogleSheetsAttendanceService.saveAttendanceBatch(
-            sheetPayload,
-            currentUser?.full_name_en || 'Instructor'
-          ),
-          GoogleDriveStorageService.saveAttendanceReportToDrive(sessionDate, sheetPayload),
-        ]);
-        if (!result.syncedToGoogle) syncNote = '⚡ Saved on this device (will sync when online).';
-        setPendingSyncCount(await GoogleSheetsAttendanceService.getPendingSyncCount());
-      } catch (syncError: any) {
-        console.warn('Attendance sync failed:', syncError);
-        syncNote = '⚠️ Saved on this device. Google sync failed and will retry.';
-      }
-
       Alert.alert(
         'Attendance Saved',
-        `${sheetPayload.length} Silambam practitioners recorded for ${sessionDate}.\n\n${syncNote}`,
+        `${students.length} students recorded for ${sessionDate}.`,
         [{ text: 'OK', onPress: () => navigation.goBack() }]
       );
     } catch (e: any) {
       Alert.alert('Save Failed', e.message || 'Could not save attendance.');
     } finally {
       setSaving(false);
-    }
-  };
-
-  const handleSyncNow = async () => {
-    setLoading(true);
-    const res = await GoogleSheetsAttendanceService.syncPendingQueue();
-    const count = await GoogleSheetsAttendanceService.getPendingSyncCount();
-    setPendingSyncCount(count);
-    setLoading(false);
-    if (res.success) {
-      Alert.alert('Synced', `Successfully synced ${res.syncedCount} records to Google Sheets!`);
-    } else {
-      Alert.alert('Sync Note', res.error || 'Could not reach Google Sheets endpoint. Stored safely in local queue.');
     }
   };
 
@@ -234,53 +177,10 @@ export default function TakeAttendanceScreen({ navigation }: any) {
         <View style={{ width: 32 }} />
       </View>
 
-      {/* Google Sheets Engine Header Pill */}
-      <View style={styles.sheetEngineBar}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flex: 1 }}>
-          <Cloud size={14} color="#047857" />
-          <Text style={styles.sheetEngineText}>Google Sheets Database • Vagai Attendance</Text>
-        </View>
-        {pendingSyncCount > 0 && (
-          <TouchableOpacity style={styles.syncPill} onPress={handleSyncNow}>
-            <Text style={styles.syncPillText}>Sync ({pendingSyncCount})</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
       <OfflineBanner />
 
       {/* Selectors Bar */}
       <View style={styles.selectorsCard}>
-        {/* Centers Horizontal Chips - only show if more than one center */}
-        {centers.length > 1 && (
-          <>
-            <Text style={styles.selectorLabel}>{t.attendance.selectCenter}:</Text>
-            <View style={styles.chipsRow}>
-              {centers.map(c => (
-                <TouchableOpacity
-                  key={c.id}
-                  style={[styles.centerChip, selectedCenterId === c.id && styles.centerChipActive]}
-                  onPress={() => setSelectedCenterId(c.id)}
-                >
-                  <Text style={[styles.centerChipText, selectedCenterId === c.id && styles.centerChipTextActive]}>
-                    {language === 'ta' && c.name_ta ? c.name_ta : c.name_en}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </>
-        )}
-
-        {/* Single center name display when only one center */}
-        {centers.length === 1 && (
-          <View style={styles.singleCenterRow}>
-            <Shield size={13} color={theme.colors.primary} />
-            <Text style={styles.singleCenterText}>
-              {language === 'ta' && centers[0]?.name_ta ? centers[0].name_ta : centers[0]?.name_en}
-            </Text>
-          </View>
-        )}
-
         {/* Sessions & Fast "Mark All Present" Action */}
         <View style={styles.sessionRow}>
           <View style={styles.dateBlock}>
@@ -515,51 +415,6 @@ const styles = StyleSheet.create({
     borderBottomColor: theme.colors.border,
     gap: 8,
   },
-  selectorLabel: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: theme.colors.textSecondary,
-  },
-  chipsRow: {
-    flexDirection: 'row',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
-  singleCenterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: theme.colors.primaryMuted,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-  },
-  singleCenterText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: theme.colors.primary,
-  },
-  centerChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: theme.borderRadius.full,
-    backgroundColor: theme.colors.surfaceSubtle,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  centerChipActive: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
-  },
-  centerChipText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: theme.colors.textSecondary,
-  },
-  centerChipTextActive: {
-    color: '#FFFFFF',
-  },
   sessionRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -738,31 +593,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '800',
     letterSpacing: 0.5,
-  },
-  sheetEngineBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#ECFDF5',
-    paddingHorizontal: theme.spacing.lg,
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#A7F3D0',
-  },
-  sheetEngineText: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#065F46',
-  },
-  syncPill: {
-    backgroundColor: theme.colors.primary,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: theme.borderRadius.full,
-  },
-  syncPillText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: '800',
   },
 });

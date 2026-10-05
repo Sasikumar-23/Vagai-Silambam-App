@@ -7,6 +7,7 @@ import { theme } from '../theme';
 import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
 import { AppHeader } from '../components/AppHeader';
+import { FormScreen } from '../components/FormScreen';
 import { EmptyState } from '../components/EmptyState';
 import { BilingualInputField } from '../components/BilingualInputField';
 import { CertificateRepository, CertificateWithDetails } from '../repositories/CertificateRepository';
@@ -213,14 +214,30 @@ export default function CertificatesScreen({ navigation }: any) {
       )}
 
       {/* ISSUE CERTIFICATE MODAL */}
-      <Modal visible={modalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{t.certificates.issueCertificate}</Text>
-
-            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: '85%' }}>
+      <FormScreen
+        visible={modalVisible}
+        title={t.certificates.issueCertificate}
+        onClose={() => setModalVisible(false)}
+        footer={
+          <>
+            <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setModalVisible(false)}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalSubmitBtn, saving && { opacity: 0.6 }]}
+              onPress={handleIssueCertificate}
+              disabled={saving}
+            >
+              <Text style={styles.modalSubmitText}>
+                {saving ? 'Issuing...' : 'Issue Certificate'}
+              </Text>
+            </TouchableOpacity>
+          </>
+        }
+      >
+        <View>
               <Text style={styles.modalLabel}>Select Student</Text>
-              <ScrollView style={{ maxHeight: 110, marginBottom: 10 }} nestedScrollEnabled>
+              <ScrollView style={{ maxHeight: 240, marginBottom: 10 }} nestedScrollEnabled>
                 {students.map(s => (
                   <TouchableOpacity
                     key={s.id}
@@ -320,24 +337,8 @@ export default function CertificatesScreen({ navigation }: any) {
                 outlineStyle={styles.outline}
               />
 
-              <View style={styles.modalBtnRow}>
-                <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setModalVisible(false)}>
-                  <Text style={styles.modalCancelText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.modalSubmitBtn, saving && { opacity: 0.6 }]}
-                  onPress={handleIssueCertificate}
-                  disabled={saving}
-                >
-                  <Text style={styles.modalSubmitText}>
-                    {saving ? 'Issuing...' : 'Issue Certificate'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-          </View>
         </View>
-      </Modal>
+      </FormScreen>
 
       {/* VISUAL CERTIFICATE PREVIEW MODAL */}
       {previewCert && (
@@ -503,24 +504,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...theme.shadows.lg,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.65)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: theme.colors.surface,
-    borderTopLeftRadius: theme.borderRadius.xl,
-    borderTopRightRadius: theme.borderRadius.xl,
-    padding: theme.spacing.xl,
-    maxHeight: '90%',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.md,
-  },
   modalLabel: {
     fontSize: 12,
     fontWeight: '800',
@@ -582,12 +565,6 @@ const styles = StyleSheet.create({
   outline: {
     borderRadius: 8,
     borderColor: theme.colors.border,
-  },
-  modalBtnRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: theme.spacing.sm,
-    marginBottom: 20,
   },
   modalCancelBtn: {
     flex: 1,

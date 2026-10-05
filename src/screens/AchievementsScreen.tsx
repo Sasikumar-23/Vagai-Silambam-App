@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { TextInput } from 'react-native-paper';
 import { useIsFocused } from '@react-navigation/native';
 import { Award, Trophy, Calendar, Plus, Medal, Star, Shield, Check } from 'lucide-react-native';
@@ -7,6 +7,7 @@ import { theme } from '../theme';
 import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
 import { AppHeader } from '../components/AppHeader';
+import { FormScreen } from '../components/FormScreen';
 import { EmptyState } from '../components/EmptyState';
 import { BilingualInputField } from '../components/BilingualInputField';
 import { AchievementRepository, AchievementWithDetails } from '../repositories/AchievementRepository';
@@ -210,14 +211,30 @@ export default function AchievementsScreen({ navigation }: any) {
       )}
 
       {/* RECORD ACHIEVEMENT MODAL */}
-      <Modal visible={modalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>{t.achievements.addAchievement}</Text>
-
-            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: '85%' }}>
+      <FormScreen
+        visible={modalVisible}
+        title={t.achievements.addAchievement}
+        onClose={() => setModalVisible(false)}
+        footer={
+          <>
+            <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setModalVisible(false)}>
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalSubmitBtn, saving && { opacity: 0.6 }]}
+              onPress={handleSaveAchievement}
+              disabled={saving}
+            >
+              <Text style={styles.modalSubmitText}>
+                {saving ? 'Saving...' : 'Record Achievement'}
+              </Text>
+            </TouchableOpacity>
+          </>
+        }
+      >
+        <View>
               <Text style={styles.modalLabel}>Select Student</Text>
-              <ScrollView style={{ maxHeight: 110, marginBottom: 10 }} nestedScrollEnabled>
+              <ScrollView style={{ maxHeight: 240, marginBottom: 10 }} nestedScrollEnabled>
                 {students.map(s => (
                   <TouchableOpacity
                     key={s.id}
@@ -330,24 +347,8 @@ export default function AchievementsScreen({ navigation }: any) {
                 numberOfLines={2}
               />
 
-              <View style={styles.modalBtnRow}>
-                <TouchableOpacity style={styles.modalCancelBtn} onPress={() => setModalVisible(false)}>
-                  <Text style={styles.modalCancelText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.modalSubmitBtn, saving && { opacity: 0.6 }]}
-                  onPress={handleSaveAchievement}
-                  disabled={saving}
-                >
-                  <Text style={styles.modalSubmitText}>
-                    {saving ? 'Saving...' : 'Record Achievement'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </ScrollView>
-          </View>
         </View>
-      </Modal>
+      </FormScreen>
     </View>
   );
 }
@@ -453,24 +454,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     ...theme.shadows.lg,
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(15, 23, 42, 0.65)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: theme.colors.surface,
-    borderTopLeftRadius: theme.borderRadius.xl,
-    borderTopRightRadius: theme.borderRadius.xl,
-    padding: theme.spacing.xl,
-    maxHeight: '90%',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.md,
-  },
   modalLabel: {
     fontSize: 12,
     fontWeight: '800',
@@ -533,12 +516,6 @@ const styles = StyleSheet.create({
   outline: {
     borderRadius: 8,
     borderColor: theme.colors.border,
-  },
-  modalBtnRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: theme.spacing.sm,
-    marginBottom: 20,
   },
   modalCancelBtn: {
     flex: 1,

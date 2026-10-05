@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View, Text, StyleSheet, Image, TouchableOpacity,
   KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator
@@ -6,11 +6,19 @@ import {
 import { TextInput } from 'react-native-paper';
 import {
   ArrowRight, ShieldCheck, Lock,
-  Sparkles, UserPlus, LogIn
+  Sparkles, UserPlus, LogIn, Check
 } from 'lucide-react-native';
 import { theme } from '../theme';
 import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
+import { UserRepository } from '../repositories/UserRepository';
+import { UserRole } from '../models/types';
+
+// Admin is deliberately absent: it is granted to the first account only, never chosen.
+const SIGNUP_ROLES: Array<{ role: UserRole; labelEn: string; labelTa: string; icon: string }> = [
+  { role: 'INSTRUCTOR', labelEn: 'Instructor', labelTa: 'மாஸ்டர்', icon: '🥋' },
+  { role: 'STAFF', labelEn: 'Staff', labelTa: 'பணியாளர்', icon: '📋' },
+];
 
 export default function LoginScreen({ navigation }: any) {
   const { t, language } = useI18n();
@@ -27,9 +35,18 @@ export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
 
+  const [signupRole, setSignupRole] = useState<UserRole>('INSTRUCTOR');
+  const [isFirstAccount, setIsFirstAccount] = useState(false);
+
   // Loading states
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+
+  useEffect(() => {
+    UserRepository.countUsers()
+      .then(count => setIsFirstAccount(count === 0))
+      .catch(() => setIsFirstAccount(false));
+  }, []);
 
   // ─────────────────────────────────────────────────────────────────
   // Google Sign In
@@ -90,6 +107,7 @@ export default function LoginScreen({ navigation }: any) {
       password: password.trim(),
       email: email.trim() || undefined,
       phone: phone.trim() || undefined,
+      role: signupRole,
     });
     setLoading(false);
 
@@ -233,6 +251,41 @@ export default function LoginScreen({ navigation }: any) {
                   outlineStyle={styles.outline}
                   secureTextEntry
                 />
+
+                <Text style={styles.inputLabel}>YOUR ROLE *</Text>
+                {isFirstAccount ? (
+                  <View style={styles.firstAccountNote}>
+                    <Text style={styles.firstAccountNoteText}>
+                      This is the first account on this device, so it becomes the academy
+                      Admin with full access.
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={styles.roleRow}>
+                    {SIGNUP_ROLES.map(option => {
+                      const isSelected = signupRole === option.role;
+                      return (
+                        <TouchableOpacity
+                          key={option.role}
+                          style={[styles.roleCard, isSelected && styles.roleCardActive]}
+                          onPress={() => setSignupRole(option.role)}
+                          activeOpacity={0.85}
+                        >
+                          <Text style={styles.roleCardIcon}>{option.icon}</Text>
+                          <Text style={[styles.roleCardLabel, isSelected && styles.roleCardLabelActive]}>
+                            {option.labelEn}
+                          </Text>
+                          <Text style={styles.roleCardTa}>{option.labelTa}</Text>
+                          {isSelected && (
+                            <View style={styles.roleCheck}>
+                              <Check size={11} color="#FFFFFF" />
+                            </View>
+                          )}
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                )}
 
                 <TouchableOpacity
                   style={[styles.primaryBtn, { backgroundColor: '#059669' }, loading && { opacity: 0.7 }]}
@@ -379,6 +432,67 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     width: '100%',
+  },
+  roleRow: {
+    flexDirection: 'row',
+    gap: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
+  },
+  roleCard: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: theme.spacing.lg,
+    paddingHorizontal: theme.spacing.sm,
+    borderRadius: theme.borderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+  },
+  roleCardActive: {
+    borderColor: theme.colors.primary,
+    backgroundColor: theme.colors.primaryMuted,
+  },
+  roleCardIcon: {
+    fontSize: 22,
+    marginBottom: 6,
+  },
+  roleCardLabel: {
+    fontSize: 14,
+    fontWeight: theme.typography.weights.heavy,
+    color: theme.colors.textSecondary,
+  },
+  roleCardLabelActive: {
+    color: theme.colors.primary,
+  },
+  roleCardTa: {
+    fontSize: 11,
+    color: theme.colors.textMuted,
+    marginTop: 2,
+  },
+  roleCheck: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: theme.colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  firstAccountNote: {
+    backgroundColor: theme.colors.primaryMuted,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.ring,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
+  },
+  firstAccountNoteText: {
+    fontSize: 12,
+    lineHeight: 18,
+    color: theme.colors.primary,
+    fontWeight: theme.typography.weights.semibold,
   },
   inputLabel: {
     fontSize: 10,
