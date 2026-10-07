@@ -32,36 +32,55 @@ function initNavbar() {
   const header = document.querySelector('.site-header');
   const mobileToggle = document.getElementById('mobileMenuToggle');
   const navMenu = document.getElementById('siteNavMenu');
+  const MOBILE_BREAKPOINT = 768;
 
   if (header) {
     window.addEventListener('scroll', () => {
-      if (window.scrollY > 20) {
-        header.classList.add('scrolled');
-      } else {
-        header.classList.remove('scrolled');
-      }
+      header.classList.toggle('scrolled', window.scrollY > 20);
     }, { passive: true });
   }
 
-  if (mobileToggle && navMenu) {
-    mobileToggle.addEventListener('click', () => {
-      const isExpanded = mobileToggle.getAttribute('aria-expanded') === 'true';
-      mobileToggle.setAttribute('aria-expanded', !isExpanded);
-      mobileToggle.classList.toggle('open');
-      navMenu.classList.toggle('open');
-      document.body.classList.toggle('menu-open');
-    });
+  if (!mobileToggle || !navMenu) return;
 
-    // Close mobile menu on link click
-    navMenu.querySelectorAll('a').forEach(link => {
-      link.addEventListener('click', () => {
-        mobileToggle.setAttribute('aria-expanded', 'false');
-        mobileToggle.classList.remove('open');
-        navMenu.classList.remove('open');
-        document.body.classList.remove('menu-open');
-      });
-    });
-  }
+  // The mobile dropdown is position:fixed so it can cover the viewport. In this engine,
+  // a position:sticky ancestor (.site-header) breaks that: the panel gets confined to the
+  // header's own small box instead of the full screen, instead of being viewport-relative.
+  // Moving the menu to be a direct child of <body> while open sidesteps that, then it is
+  // moved back to its original spot (inside .site-header) on close so desktop layout -
+  // where it is a normal flex item next to the logo - is untouched.
+  const originalParent = navMenu.parentNode;
+
+  const openMenu = () => {
+    document.body.appendChild(navMenu);
+    mobileToggle.setAttribute('aria-expanded', 'true');
+    mobileToggle.classList.add('open');
+    navMenu.classList.add('open');
+    document.body.classList.add('menu-open');
+  };
+
+  const closeMenu = () => {
+    mobileToggle.setAttribute('aria-expanded', 'false');
+    mobileToggle.classList.remove('open');
+    navMenu.classList.remove('open');
+    document.body.classList.remove('menu-open');
+    originalParent.appendChild(navMenu);
+  };
+
+  mobileToggle.addEventListener('click', () => {
+    if (navMenu.classList.contains('open')) closeMenu(); else openMenu();
+  });
+
+  navMenu.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', closeMenu);
+  });
+
+  // Rotating a tablet past the mobile breakpoint while the menu is open must not leave
+  // it fixed-positioned and reparented underneath a desktop-width layout.
+  window.addEventListener('resize', () => {
+    if (window.innerWidth > MOBILE_BREAKPOINT && navMenu.classList.contains('open')) {
+      closeMenu();
+    }
+  });
 }
 
 /* 3. Scroll Reveal System using IntersectionObserver */

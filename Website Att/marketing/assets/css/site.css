@@ -2067,19 +2067,40 @@ input:checked + .slider-round:before {
     top: var(--header-height);
     left: 0;
     right: 0;
-    background: rgba(6, 11, 20, 0.98);
-    backdrop-filter: var(--glass-blur);
+    bottom: 0;
+    /* A fully opaque solid colour, not rgba: at high-but-not-100% alpha the bright
+       hero text underneath still ghosts through backdrop-filter's blur. */
+    background: var(--bg);
     flex-direction: column;
-    padding: 24px;
-    border-bottom: 1px solid var(--border);
+    align-items: stretch;
+    padding: 28px 24px;
+    overflow-y: auto;
     box-shadow: var(--shadow-lg);
-    transform: translateY(-120%);
+    transform: translateX(100%);
     transition: transform var(--transition-base);
     z-index: 99;
   }
 
   .site-nav.open {
-    transform: translateY(0);
+    transform: translateX(0);
+  }
+
+  /* Hamburger -> X, so the open/close state is visible, not just the panel sliding. */
+  .mobile-toggle svg line {
+    transform-origin: center;
+    transition: transform var(--transition-fast), opacity var(--transition-fast);
+  }
+
+  .mobile-toggle.open svg line:nth-child(1) {
+    transform: translateY(6px) rotate(45deg);
+  }
+
+  .mobile-toggle.open svg line:nth-child(2) {
+    opacity: 0;
+  }
+
+  .mobile-toggle.open svg line:nth-child(3) {
+    transform: translateY(-6px) rotate(-45deg);
   }
 
   .nav-links {
