@@ -278,7 +278,23 @@ script against a real exported backup.
 
 ---
 
-## 12. Decisions needed before Phase 2
+## 12. Decisions — RESOLVED 2026-10-07
+
+The follow-up brief settled the open questions. Recorded here because they shape the schema:
+
+| Question | Decision |
+|---|---|
+| Attendance storage | **Google Sheets is the permanent store.** PostgreSQL keeps only the connection config (`google_connections.attendance_spreadsheet_id`, sheet name). Mobile SQLite is an offline cache plus a pending-sync queue. |
+| Mobile app | **Kept.** React Native + Expo continues, re-pointed at the API, with offline sync. It is not replaced by the web app. |
+| Web frontend | HTML5 + CSS3 + vanilla JS, no framework. |
+| Application login | Email/password with JWT. Google OAuth is only for connecting Drive/Sheets. |
+
+Consequences accepted with the Sheets decision: Sheets API quota management, batched writes
+with exponential backoff, and attendance reporting that reads through the backend with
+caching. The `spreadsheets` scope is sensitive, so Google verification is required before
+public launch.
+
+## 12b. Former open questions (superseded)
 
 1. **Attendance:** PostgreSQL as record with optional Sheets mirror (recommended), or Sheets-only as the prompt states?
 2. **The Android app:** retire, keep as a separate offline product, or later rebuild as an API client? Does the Play Store release continue meanwhile?
