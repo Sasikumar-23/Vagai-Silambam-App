@@ -101,6 +101,51 @@ class PlanOut(BaseModel):
     price_annual: float
 
 
+class GoogleConnectRequest(BaseModel):
+    pass
+
+
+class GoogleConnectionOut(BaseModel):
+    connected: bool
+    google_email: str | None = None
+    attendance_spreadsheet_id: str | None = None
+    status: str | None = None
+
+
+class AttendanceMarkRequest(BaseModel):
+    student_id: str
+    date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    session_name: str = Field(default="Daily Training", max_length=120)
+    status: str = Field(pattern="^(Present|Absent|Late|Leave)$")
+    remarks: str | None = Field(default=None, max_length=500)
+
+
+class AttendanceMarkResponse(BaseModel):
+    attendance_id: str
+    student_id: str
+    date: str
+    status: str
+
+
+class AttendanceRecord(BaseModel):
+    attendance_id: str
+    date: str
+    student_id: str
+    student_name: str
+    session_name: str
+    status: str
+    remarks: str
+    marked_by: str
+    created_at: str
+
+
+class StudentAttendanceSummary(BaseModel):
+    records: list[AttendanceRecord]
+    total_sessions: int
+    present: int
+    percentage: float
+
+
 class SubscriptionOut(BaseModel):
     organization_name: str
     organization_code: str

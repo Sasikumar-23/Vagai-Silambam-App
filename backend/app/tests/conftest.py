@@ -13,8 +13,13 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-os.environ.setdefault("JWT_SECRET", "test-secret-not-for-production")
+os.environ.setdefault("JWT_SECRET", "test-secret-not-for-production-32b")
 os.environ.setdefault("APP_ENV", "test")
+# Fixed per test run so tests can be read deterministically; never used outside tests.
+os.environ.setdefault("TOKEN_ENCRYPTION_KEY", "KaUefbWKp0rfKKSvjGY-ZrpxBD3tDyYjt1SPmv0EIhI=")
+os.environ.setdefault("GOOGLE_CLIENT_ID", "test-client-id.apps.googleusercontent.com")
+os.environ.setdefault("GOOGLE_CLIENT_SECRET", "test-client-secret")
+os.environ.setdefault("GOOGLE_REDIRECT_URI", "http://localhost:8000/api/v1/google/callback")
 
 from app.database import Base, get_db  # noqa: E402
 from app.main import app  # noqa: E402

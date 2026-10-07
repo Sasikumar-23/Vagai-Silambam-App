@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .config import get_settings
-from .routers import auth, students, subscription
+from .routers import attendance, auth, google, students, subscription
 
 logger = logging.getLogger("vagai")
 settings = get_settings()
@@ -68,3 +68,5 @@ def health():
 app.include_router(auth.router)
 app.include_router(students.router)
 app.include_router(subscription.router)
+app.include_router(google.router)
+app.include_router(attendance.router)

@@ -62,6 +62,16 @@ def create_refresh_token(user_id: str) -> str:
     return _create_token(user_id, "refresh", timedelta(days=settings.jwt_refresh_days))
 
 
+def create_oauth_state(user_id: str, organization_id: str) -> str:
+    """
+    Short-lived, signed `state` for the Google OAuth redirect. The browser leaves our
+    site for accounts.google.com and comes back on a plain GET with no Authorization
+    header, so the callback has to recover who was connecting from this token rather
+    than from a cookie or bearer header.
+    """
+    return _create_token(user_id, "google_oauth_state", timedelta(minutes=10), org=organization_id)
+
+
 def decode_token(token: str, expected_type: str) -> dict[str, Any] | None:
     settings = get_settings()
     try:
