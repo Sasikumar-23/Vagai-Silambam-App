@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Subscription · Vagai Silambam</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+  <script type="module">
+    import { api } from './assets/js/api.js';
+    import { applyTranslations, t } from './assets/js/i18n.js';
+    import { mountShell, requireSession } from './assets/js/auth.js';
+    import { escapeHtml } from './assets/js/students.js';
+
+    if (requireSession()) render(mountShell({ titleKey: 'nav_subscription' }));
+
+    const date = (value) => (value ? new Date(value).toLocaleDateString() : '—');
+    const cap = (limit) => (limit < 0 ? t('unlimited') : limit);
+
+    async function render(page) {
+      page.innerHTML = '<div class="card"><div class="skeleton" style="height:160px"></div></div>';
+
+      try {
+        const [subscription, plans] = await Promise.all([api.subscription(), api.plans()]);
+
+        page.innerHTML = `
+          <div class="card">
+            <div class="card-head">
+              <h3>${escapeHtml(subscription.organization_name)}</h3>
+              <span class="badge ${subscription.status === 'TRIAL' ? 'badge-trial' : 'badge-active'}">
+                ${subscription.status}
+              </span>
+            </div>
+            <table>
+              <tbody>
+                <tr><td data-label="-"><span data-i18n="organization_code"></span></td>
+                    <td><code>${escapeHtml(subscription.organization_code)}</code></td></tr>
+                <tr><td data-label="-"><span data-i18n="current_plan"></span></td>
+                    <td>${escapeHtml(subscription.plan.name)}</td></tr>
+                <tr><td data-label="-"><span data-i18n="trial_ends"></span></td>
+                    <td>${date(subscription.trial_end)}</td></tr>
+                <tr><td data-label="-"><span data-i18n="license_key"></span></td>
+                    <td><code>${escapeHtml(subscription.license_key || '—')}</code></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <h3 data-i18n="plan_usage"></h3>
+            <div class="stat-grid" style="margin:0">
+              ${['students', 'branches', 'users'].map((key) => {
+                const used = subscription.usage[key];
+                const limit = subscription.limits[key];
+                const width = limit < 0 ? 4 : Math.min(100, Math.round((used / limit) * 100));
+                return `
+                  <div class="stat">
+                    <div class="label">${key}</div>
+                    <div class="value">${used}</div>
+                    <div class="sub">${t('used_of')} ${cap(limit)}</div>
+                    <div class="meter"><span style="width:${width}%"></span></div>
+                  </div>`;
+              }).join('')}
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 data-i18n="upgrade_plan"></h3>
+            <table>
+              <thead>
+                <tr><th>Plan</th><th>Students</th><th>Branches</th><th>Users</th><th>Monthly</th><th>Annual</th></tr>
+              </thead>
+              <tbody>
+                ${plans.map((plan) => `
+                  <tr${plan.code === subscription.plan.code ? ' style="background:var(--primary-muted)"' : ''}>
+                    <td data-label="Plan"><strong>${escapeHtml(plan.name)}</strong></td>
+                    <td data-label="Students">${cap(plan.max_students)}</td>
+                    <td data-label="Branches">${cap(plan.max_branches)}</td>
+                    <td data-label="Users">${cap(plan.max_users)}</td>
+                    <td data-label="Monthly">${plan.price_monthly ? '₹' + plan.price_monthly.toLocaleString('en-IN') : 'Custom'}</td>
+                    <td data-label="Annual">${plan.price_annual ? '₹' + plan.price_annual.toLocaleString('en-IN') : 'Custom'}</td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+            <p style="color:var(--text-muted);font-size:13px;margin-top:14px">
+              Razorpay checkout is not wired up yet — upgrading is still a manual step.
+            </p>
+          </div>`;
+
+        applyTranslations(page);
+      } catch (error) {
+        page.innerHTML = `<div class="alert alert-error">${escapeHtml(error.message)}</div>`;
+      }
+    }
+  </script>
+</body>
+</html>

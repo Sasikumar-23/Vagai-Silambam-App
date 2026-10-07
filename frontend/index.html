@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Vagai Silambam</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <div class="auth-wrap"><div class="auth-card"><div class="auth-brand">
+    <div class="mark">🥋</div>
+    <h1>Vagai Silambam</h1>
+    <p>Loading…</p>
+  </div></div></div>
+  <script type="module">
+    import { tokens } from './assets/js/api.js';
+    location.replace(tokens.access ? 'dashboard.html' : 'login.html');
+  </script>
+</body>
+</html>

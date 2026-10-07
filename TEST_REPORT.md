@@ -46,3 +46,30 @@ frontend, marketing site, legacy SQLite import, Android APK/AAB against the new 
 timestamps where PostgreSQL returns aware ones, so the trial-expiry check raised a 500
 instead of returning `TRIAL_EXPIRED`. Fixed centrally in `app/utils/time.py::as_utc`.
 Caught 8 tests; all green afterwards.
+
+## Web frontend ↔ API smoke test (2026-10-07)
+
+Live `uvicorn` on SQLite, exercising exactly the calls `frontend/assets/js/api.js` makes.
+**14/14 PASS.**
+
+| Check | Result |
+|---|---|
+| Register → 201 with tokens | PASS |
+| Login → 200 with tokens | PASS |
+| Wrong password → 401 `UNAUTHENTICATED` | PASS |
+| Subscription payload: TRIAL, Starter, licence `VS-…`, limit 50 | PASS |
+| Plans list returns 5 plans | PASS |
+| Create student → 201 | PASS |
+| Duplicate student code → 409 `STUDENT_CODE_TAKEN` | PASS |
+| List students, total correct | PASS |
+| Search by English name | PASS |
+| Search by Tamil name (அன்பரசு) | PASS |
+| Deactivate student → 204 | PASS |
+| Deactivated student leaves the ACTIVE list | PASS |
+| Request without token → 401 | PASS |
+| Invalid signup → 422 `VALIDATION_ERROR` with field list | PASS |
+
+All HTML files in `frontend/` and `marketing/` parse without errors.
+
+**NOT TESTED:** rendering in a real browser (no browser automation available here) —
+layout, the mobile drawer, and the language toggle need a visual check.

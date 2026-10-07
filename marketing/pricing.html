@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pricing · Vagai Silambam</title>
+  <meta name="description" content="Simple monthly and annual plans for Silambam academies. Start with a 14-day free trial, no card required.">
+  <link rel="stylesheet" href="assets/css/site.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="logo" href="index.html"><span class="mark">🥋</span>Vagai Silambam</a>
+      <nav class="site-nav">
+        <a href="features.html">Features</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="faq.html">FAQ</a>
+        <a class="btn btn-primary" href="../frontend/register.html">Start free trial</a>
+      </nav>
+    </div>
+  </header>
+
+  <section>
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Pricing that fits your academy</h2>
+        <p>Every plan includes the Android app, offline attendance, English and Tamil, and your own Google Drive connection. Annual billing gives you roughly two months free.</p>
+      </div>
+
+      <div class="plans" id="plans">
+        <div class="plan">
+          <h3>Starter</h3>
+          <div class="price">₹499<small> / month</small></div>
+          <div class="annual">or ₹4,999 / year</div>
+          <ul>
+            <li>50 students</li><li>1 branch</li><li>5 users</li>
+            <li>Attendance, fees, events</li><li>Reports &amp; exports</li>
+          </ul>
+          <a class="btn btn-ghost" href="../frontend/register.html">Start free trial</a>
+        </div>
+
+        <div class="plan featured">
+          <h3>Standard</h3>
+          <div class="price">₹999<small> / month</small></div>
+          <div class="annual">or ₹9,999 / year</div>
+          <ul>
+            <li>150 students</li><li>1 branch</li><li>10 users</li>
+            <li>Everything in Starter</li><li>Certificates &amp; achievements</li>
+          </ul>
+          <a class="btn btn-primary" href="../frontend/register.html">Start free trial</a>
+        </div>
+
+        <div class="plan">
+          <h3>Professional</h3>
+          <div class="price">₹1,499<small> / month</small></div>
+          <div class="annual">or ₹14,999 / year</div>
+          <ul>
+            <li>300 students</li><li>2 branches</li><li>20 users</li>
+            <li>Everything in Standard</li><li>Multi-branch reporting</li>
+          </ul>
+          <a class="btn btn-ghost" href="../frontend/register.html">Start free trial</a>
+        </div>
+
+        <div class="plan">
+          <h3>Business</h3>
+          <div class="price">₹2,499<small> / month</small></div>
+          <div class="annual">or ₹24,999 / year</div>
+          <ul>
+            <li>500 students</li><li>5 branches</li><li>50 users</li>
+            <li>Everything in Professional</li><li>Priority support</li>
+          </ul>
+          <a class="btn btn-ghost" href="../frontend/register.html">Start free trial</a>
+        </div>
+
+        <div class="plan">
+          <h3>Enterprise</h3>
+          <div class="price">Custom</div>
+          <div class="annual">Talk to us</div>
+          <ul>
+            <li>500+ students</li><li>Unlimited branches</li><li>Unlimited users</li>
+            <li>Onboarding help</li><li>Data migration</li>
+          </ul>
+          <a class="btn btn-ghost" href="contact.html">Contact sales</a>
+        </div>
+      </div>
+
+      <p style="text-align:center;color:var(--text-secondary);margin-top:32px;font-size:15px">
+        Prices in INR, exclusive of GST. Cancel any time — your data stays available to export.
+      </p>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="legal">
+        <span>© 2026 Vagai Silambam Academy.</span>
+        <span><a href="terms.html" style="display:inline">Terms</a> · <a href="privacy.html" style="display:inline">Privacy</a> · <a href="refund.html" style="display:inline">Refunds</a></span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    /* Plans are data, not markup: once the API is public this list renders from /api/v1/plans
+       so prices never drift between the site and the product. */
+    fetch((window.VAGAI_API_BASE || 'http://localhost:8000') + '/api/v1/plans')
+      .then((response) => (response.ok ? response.json() : Promise.reject()))
+      .then((plans) => { if (!plans?.length) return; document.body.dataset.plansLoaded = 'true'; })
+      .catch(() => { /* static copy above stays as-is when the API is unreachable */ });
+  </script>
+</body>
+</html>

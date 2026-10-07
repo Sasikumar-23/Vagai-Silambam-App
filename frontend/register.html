@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Start free trial · Vagai Silambam</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+  <div class="auth-wrap">
+    <form class="auth-card" id="register-form" novalidate>
+      <div class="auth-brand">
+        <div class="mark">🥋</div>
+        <h1 data-i18n="register_title"></h1>
+        <p data-i18n="register_subtitle"></p>
+      </div>
+
+      <div class="alert alert-error" id="error" hidden></div>
+
+      <div class="field">
+        <label for="organization_name" data-i18n="organization_name"></label>
+        <input id="organization_name" required>
+      </div>
+
+      <div class="field">
+        <label for="full_name_en" data-i18n="your_name"></label>
+        <input id="full_name_en" required>
+      </div>
+
+      <div class="field">
+        <label for="email" data-i18n="email"></label>
+        <input id="email" type="email" autocomplete="email" required>
+      </div>
+
+      <div class="field">
+        <label for="username" data-i18n="username"></label>
+        <input id="username" autocomplete="username" required>
+      </div>
+
+      <div class="field">
+        <label for="password" data-i18n="password"></label>
+        <input id="password" type="password" autocomplete="new-password" minlength="8" required>
+        <div class="hint">Minimum 8 characters.</div>
+      </div>
+
+      <div class="field">
+        <label for="phone" data-i18n="phone"></label>
+        <input id="phone" inputmode="tel">
+      </div>
+
+      <button class="btn btn-primary btn-block" type="submit" id="submit" data-i18n="create_account"></button>
+
+      <p style="text-align:center;margin:20px 0 0;font-size:14px;color:var(--text-secondary)">
+        <span data-i18n="have_account"></span>
+        <a href="login.html" data-i18n="sign_in"></a>
+      </p>
+
+      <div class="lang-toggle" id="lang" style="margin:18px auto 0;width:max-content"></div>
+    </form>
+  </div>
+
+  <script type="module">
+    import { api, tokens } from './assets/js/api.js';
+    import { applyTranslations, mountLanguageToggle, t } from './assets/js/i18n.js';
+    import { redirectIfSignedIn, showError } from './assets/js/auth.js';
+
+    redirectIfSignedIn();
+    mountLanguageToggle(document.getElementById('lang'));
+    applyTranslations();
+
+    const form = document.getElementById('register-form');
+    const error = document.getElementById('error');
+    const submit = document.getElementById('submit');
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      error.hidden = true;
+      submit.disabled = true;
+      submit.textContent = t('loading');
+
+      try {
+        tokens.set(await api.register({
+          organization_name: form.organization_name.value.trim(),
+          full_name_en: form.full_name_en.value.trim(),
+          email: form.email.value.trim(),
+          username: form.username.value.trim(),
+          password: form.password.value,
+          phone: form.phone.value.trim() || null,
+        }));
+        location.href = 'dashboard.html';
+      } catch (err) {
+        // Field-level validation errors come back in `fields`.
+        showError(error, err.fields?.length
+          ? { message: err.fields.map((f) => `${f.field}: ${f.error}`).join(' · ') }
+          : err);
+        submit.disabled = false;
+        submit.textContent = t('create_account');
+      }
+    });
+  </script>
+</body>
+</html>

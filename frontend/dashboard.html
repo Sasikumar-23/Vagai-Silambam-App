@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard · Vagai Silambam</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+  <script type="module">
+    import { api } from './assets/js/api.js';
+    import { applyTranslations, t } from './assets/js/i18n.js';
+    import { mountShell, requireSession } from './assets/js/auth.js';
+
+    if (requireSession()) {
+      const page = mountShell({ titleKey: 'nav_dashboard' });
+      render(page);
+    }
+
+    function meterClass(used, limit) {
+      if (limit < 0) return '';
+      const ratio = used / limit;
+      if (ratio >= 1) return 'full';
+      if (ratio >= 0.8) return 'warn';
+      return '';
+    }
+
+    function usageCard(labelKey, used, limit) {
+      const width = limit < 0 ? 4 : Math.min(100, Math.round((used / limit) * 100));
+      return `
+        <div class="stat">
+          <div class="label" data-i18n="${labelKey}"></div>
+          <div class="value">${used}</div>
+          <div class="sub">${t('used_of')} ${limit < 0 ? t('unlimited') : limit}</div>
+          <div class="meter ${meterClass(used, limit)}"><span style="width:${width}%"></span></div>
+        </div>`;
+    }
+
+    async function render(page) {
+      page.innerHTML = '<div class="stat-grid">' +
+        '<div class="stat"><div class="skeleton" style="width:60%"></div></div>'.repeat(4) + '</div>';
+
+      try {
+        const [subscription, students] = await Promise.all([
+          api.subscription(),
+          api.listStudents({ limit: 5, status: 'ACTIVE' }),
+        ]);
+
+        page.innerHTML = `
+          <div class="stat-grid">
+            ${usageCard('active_students', subscription.usage.students, subscription.limits.students)}
+            ${usageCard('branches', subscription.usage.branches, subscription.limits.branches)}
+            ${usageCard('team_members', subscription.usage.users, subscription.limits.users)}
+            <div class="stat" style="border-left-color:var(--gold)">
+              <div class="label" data-i18n="current_plan"></div>
+              <div class="value" style="font-size:22px">${subscription.plan.name}</div>
+              <div class="sub">
+                <span class="badge ${subscription.status === 'TRIAL' ? 'badge-trial' : 'badge-active'}">
+                  ${subscription.status}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <h3 data-i18n="recent_students"></h3>
+              <a class="btn btn-ghost" href="students.html" data-i18n="nav_students"></a>
+            </div>
+            ${students.items.length ? `
+              <table>
+                <thead>
+                  <tr>
+                    <th data-i18n="student_code"></th>
+                    <th data-i18n="student_name_en"></th>
+                    <th data-i18n="contact_number"></th>
+                    <th data-i18n="status"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${students.items.map((student) => `
+                    <tr>
+                      <td data-label="${t('student_code')}">${escapeHtml(student.student_code)}</td>
+                      <td data-label="${t('student_name_en')}">${escapeHtml(student.name_en)}</td>
+                      <td data-label="${t('contact_number')}">${escapeHtml(student.contact_number || '—')}</td>
+                      <td data-label="${t('status')}">
+                        <span class="badge badge-active">${student.student_status}</span>
+                      </td>
+                    </tr>`).join('')}
+                </tbody>
+              </table>` : `
+              <div class="empty">
+                <div class="mark">👥</div>
+                <h3 data-i18n="no_students"></h3>
+                <p data-i18n="no_students_hint"></p>
+                <a class="btn btn-primary" href="students.html" data-i18n="add_student"></a>
+              </div>`}
+          </div>`;
+
+        applyTranslations(page);
+      } catch (error) {
+        page.innerHTML = `<div class="alert alert-error">${escapeHtml(error.message)}</div>`;
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, (ch) => (
+        { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]
+      ));
+    }
+  </script>
+</body>
+</html>
