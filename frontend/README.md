@@ -3,7 +3,7 @@
 HTML5 + CSS3 + vanilla JavaScript (ES modules). No build step, no framework.
 
 - `website/` — the existing GitHub Pages site for Google OAuth verification. Leave it alone.
-- `marketing/` — the public site (home, pricing).
+- `Website Att/marketing/` — the public marketing site.
 - `frontend/` — **this folder**: the signed-in SaaS application.
 
 ## Run it locally

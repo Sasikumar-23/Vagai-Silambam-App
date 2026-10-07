@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FAQ · Vagai Silambam</title>
+  <meta name="description" content="Common questions about Vagai Silambam: trials, pricing, offline use, Google Drive and Sheets, data ownership and support.">
+  <link rel="stylesheet" href="assets/css/site.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="logo" href="index.html"><span class="mark">🥋</span>Vagai Silambam</a>
+      <nav class="site-nav">
+        <a href="features.html">Features</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="faq.html">FAQ</a>
+        <a href="contact.html">Contact</a>
+        <a class="btn btn-primary" href="../../frontend/register.html">Start free trial</a>
+      </nav>
+    </div>
+  </header>
+
+  <section>
+    <div class="wrap" style="max-width:820px">
+      <div class="section-head"><h2>Frequently asked questions</h2></div>
+
+      <details open>
+        <summary>Do I need a card for the free trial?</summary>
+        <p>No. The 14-day trial starts as soon as you create your academy account. We ask for payment details only when you choose a plan.</p>
+      </details>
+
+      <details>
+        <summary>What happens when the trial ends?</summary>
+        <p>Your data stays exactly where it is. The academy becomes read-only until you pick a plan, and everything returns to normal the moment payment succeeds. We never delete your records because a subscription lapsed.</p>
+      </details>
+
+      <details>
+        <summary>Does attendance work without internet?</summary>
+        <p>Yes. The Android app stores attendance on the phone and syncs when you are back on a network. Dojos rarely have good signal, so this is built in rather than bolted on.</p>
+      </details>
+
+      <details>
+        <summary>Where is our data stored?</summary>
+        <p>Student, fee, event and uniform records live in our database. Photos, certificates and documents go to <strong>your own Google Drive</strong>, and attendance is written to <strong>your own Google Sheet</strong>, through the Google account you connect. You keep those files regardless of your subscription.</p>
+      </details>
+
+      <details>
+        <summary>Do I need my own Google Cloud project?</summary>
+        <p>No. You click "Connect Google" in Settings and approve access. Everything behind that is handled for you.</p>
+      </details>
+
+      <details>
+        <summary>Can another academy see our students?</summary>
+        <p>No. Each academy is a separate tenant. Every request is checked against the signed-in user's academy on the server, and the database refuses queries that cross that boundary.</p>
+      </details>
+
+      <details>
+        <summary>Can I move my existing records in?</summary>
+        <p>Yes. If you already use the Vagai Silambam Android app, export a backup from Settings and we import it, keeping your student IDs. Spreadsheets can be imported as CSV.</p>
+      </details>
+
+      <details>
+        <summary>What if I go over my plan's student limit?</summary>
+        <p>Adding beyond the limit is blocked with a clear message, and nothing already recorded is touched. Upgrade whenever you like; the new limit applies immediately.</p>
+      </details>
+
+      <details>
+        <summary>Can I cancel?</summary>
+        <p>Any time, from Settings → Subscription. You keep access until the paid period ends and can export your data before and after.</p>
+      </details>
+
+      <details>
+        <summary>Is the interface available in Tamil?</summary>
+        <p>Yes. Every screen switches between English and தமிழ், and student names are stored in both scripts.</p>
+      </details>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <div class="legal">
+        <span>© 2026 Vagai Silambam Academy.</span>
+        <span><a href="terms.html" style="display:inline">Terms</a> · <a href="privacy.html" style="display:inline">Privacy</a> · <a href="refund.html" style="display:inline">Refunds</a></span>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
