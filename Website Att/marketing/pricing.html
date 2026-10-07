@@ -3,109 +3,215 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pricing · Vagai Silambam</title>
-  <meta name="description" content="Simple monthly and annual plans for Silambam academies. Start with a 14-day free trial, no card required.">
+  <title>Pricing Plans · Vagai Silambam</title>
+  <meta name="description" content="Simple monthly and annual plans for Silambam academies. Start with a 14-day free trial, no credit card required.">
   <link rel="stylesheet" href="assets/css/site.css">
 </head>
 <body>
+
+  <!-- Top Scroll Progress Indicator -->
+  <div class="scroll-progress-bar" id="scrollProgressBar"></div>
+
+  <!-- Sticky Navbar -->
   <header class="site-header">
     <div class="wrap">
-      <a class="logo" href="index.html"><span class="mark">🥋</span>Vagai Silambam</a>
-      <nav class="site-nav">
-        <a href="features.html">Features</a>
-        <a href="pricing.html">Pricing</a>
-        <a href="faq.html">FAQ</a>
-        <a class="btn btn-primary" href="../../frontend/register.html">Start free trial</a>
+      <a class="brand-logo" href="index.html" aria-label="Vagai Silambam Home">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M4.5 3L3 4.5 19.5 21l1.5-1.5L4.5 3zm15 0l-4.5 4.5 1.5 1.5L21 4.5 19.5 3zM3 19.5L7.5 15l-1.5-1.5L1.5 18 3 19.5z" />
+          </svg>
+        </div>
+        <span>Vagai Silambam</span>
+        <span class="brand-tag">SaaS</span>
+      </a>
+
+      <button class="mobile-toggle" id="mobileMenuToggle" aria-label="Toggle Navigation Menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+
+      <nav class="site-nav" id="siteNavMenu">
+        <ul class="nav-links">
+          <li><a href="features.html">Features</a></li>
+          <li><a href="index.html#attendance">Attendance</a></li>
+          <li><a href="index.html#mobile-app">Mobile App</a></li>
+          <li><a href="pricing.html" class="active">Pricing</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+        <div class="nav-cta-group">
+          <a class="btn btn-ghost btn-sm" href="../../frontend/login.html">Sign In</a>
+          <a class="btn btn-primary btn-sm" href="../../frontend/register.html">Start Free Trial</a>
+        </div>
       </nav>
     </div>
   </header>
 
-  <section>
+  <!-- Pricing Header -->
+  <section class="section">
     <div class="wrap">
-      <div class="section-head">
-        <h2>Pricing that fits your academy</h2>
-        <p>Every plan includes the Android app, offline attendance, English and Tamil, and your own Google Drive connection. Annual billing gives you roughly two months free.</p>
+      <div class="section-header reveal-on-scroll">
+        <span class="section-tag">Predictable Plans</span>
+        <h1 class="section-title">Pricing that fits your academy</h1>
+        <p class="section-subtitle">Every plan includes the Android app, offline attendance, English and தமிழ், and your own Google Drive connection. Annual billing gives you 2 months free.</p>
       </div>
 
-      <div class="plans" id="plans">
-        <div class="plan">
+      <!-- Monthly / Annual Switcher -->
+      <div class="pricing-toggle-wrap reveal-on-scroll">
+        <span class="pricing-toggle-label">Monthly Billing</span>
+        <label class="switch-control" for="billingToggle">
+          <input type="checkbox" id="billingToggle" aria-label="Toggle between monthly and annual billing">
+          <span class="slider-round"></span>
+        </label>
+        <span class="pricing-toggle-label">Annual Billing</span>
+        <span class="plan-savings-tag" style="opacity:0;">Save ~17% (2 Months Free)</span>
+      </div>
+
+      <!-- Pricing Plans Grid -->
+      <div class="pricing-plans-grid" id="plans">
+        <!-- Starter -->
+        <div class="pricing-card reveal-on-scroll">
           <h3>Starter</h3>
-          <div class="price">₹499<small> / month</small></div>
-          <div class="annual">or ₹4,999 / year</div>
-          <ul>
-            <li>50 students</li><li>1 branch</li><li>5 users</li>
-            <li>Attendance, fees, events</li><li>Reports &amp; exports</li>
+          <p style="font-size:13.5px;color:var(--text-muted);margin:0;">For growing single dojos</p>
+          <div class="pricing-price-box">
+            <span class="price-amount" id="price-starter">₹499</span>
+            <span class="price-period" id="period-starter"> / month</span>
+          </div>
+          <ul class="pricing-features-list">
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> 50 students</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> 1 branch</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> 5 users</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Attendance, fees &amp; events</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Reports &amp; exports</li>
           </ul>
           <a class="btn btn-ghost" href="../../frontend/register.html">Start free trial</a>
         </div>
 
-        <div class="plan featured">
+        <!-- Standard (Featured) -->
+        <div class="pricing-card featured reveal-on-scroll stagger-1">
+          <div class="featured-ribbon">Most popular</div>
           <h3>Standard</h3>
-          <div class="price">₹999<small> / month</small></div>
-          <div class="annual">or ₹9,999 / year</div>
-          <ul>
-            <li>150 students</li><li>1 branch</li><li>10 users</li>
-            <li>Everything in Starter</li><li>Certificates &amp; achievements</li>
+          <p style="font-size:13.5px;color:var(--text-muted);margin:0;">For established academies</p>
+          <div class="pricing-price-box">
+            <span class="price-amount" id="price-standard">₹999</span>
+            <span class="price-period" id="period-standard"> / month</span>
+          </div>
+          <ul class="pricing-features-list">
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> 150 students</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> 1 branch</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> 10 users</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Everything in Starter</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Certificates &amp; achievements</li>
           </ul>
           <a class="btn btn-primary" href="../../frontend/register.html">Start free trial</a>
         </div>
 
-        <div class="plan">
+        <!-- Professional -->
+        <div class="pricing-card reveal-on-scroll stagger-2">
           <h3>Professional</h3>
-          <div class="price">₹1,499<small> / month</small></div>
-          <div class="annual">or ₹14,999 / year</div>
-          <ul>
-            <li>300 students</li><li>2 branches</li><li>20 users</li>
-            <li>Everything in Standard</li><li>Multi-branch reporting</li>
+          <p style="font-size:13.5px;color:var(--text-muted);margin:0;">For multi-centre academies</p>
+          <div class="pricing-price-box">
+            <span class="price-amount" id="price-pro">₹1,499</span>
+            <span class="price-period" id="period-pro"> / month</span>
+          </div>
+          <ul class="pricing-features-list">
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> 300 students</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> 2 branches</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> 20 users</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Everything in Standard</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Multi-branch reporting</li>
           </ul>
           <a class="btn btn-ghost" href="../../frontend/register.html">Start free trial</a>
         </div>
 
-        <div class="plan">
+        <!-- Business -->
+        <div class="pricing-card reveal-on-scroll stagger-3">
           <h3>Business</h3>
-          <div class="price">₹2,499<small> / month</small></div>
-          <div class="annual">or ₹24,999 / year</div>
-          <ul>
-            <li>500 students</li><li>5 branches</li><li>50 users</li>
-            <li>Everything in Professional</li><li>Priority support</li>
+          <p style="font-size:13.5px;color:var(--text-muted);margin:0;">For large associations</p>
+          <div class="pricing-price-box">
+            <span class="price-amount" id="price-biz">₹2,499</span>
+            <span class="price-period" id="period-biz"> / month</span>
+          </div>
+          <ul class="pricing-features-list">
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> 500 students</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> 5 branches</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> 50 users</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Everything in Professional</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Priority support</li>
           </ul>
           <a class="btn btn-ghost" href="../../frontend/register.html">Start free trial</a>
         </div>
 
-        <div class="plan">
+        <!-- Enterprise -->
+        <div class="pricing-card reveal-on-scroll">
           <h3>Enterprise</h3>
-          <div class="price">Custom</div>
-          <div class="annual">Talk to us</div>
-          <ul>
-            <li>500+ students</li><li>Unlimited branches</li><li>Unlimited users</li>
-            <li>Onboarding help</li><li>Data migration</li>
+          <p style="font-size:13.5px;color:var(--text-muted);margin:0;">For state federations</p>
+          <div class="pricing-price-box">
+            <span class="price-amount">Custom</span>
+          </div>
+          <ul class="pricing-features-list">
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> 500+ students</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Unlimited branches</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Unlimited users</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Dedicated onboarding manager</li>
+            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Custom data migration</li>
           </ul>
           <a class="btn btn-ghost" href="contact.html">Contact sales</a>
         </div>
       </div>
 
-      <p style="text-align:center;color:var(--text-secondary);margin-top:32px;font-size:15px">
+      <p style="text-align:center;color:var(--text-secondary);margin-top:36px;font-size:15px">
         Prices in INR, exclusive of GST. Cancel any time — your data stays available to export.
       </p>
     </div>
   </section>
 
+  <!-- Footer -->
   <footer class="site-footer">
     <div class="wrap">
-      <div class="legal">
-        <span>© 2026 Vagai Silambam Academy.</span>
-        <span><a href="terms.html" style="display:inline">Terms</a> · <a href="privacy.html" style="display:inline">Privacy</a> · <a href="refund.html" style="display:inline">Refunds</a></span>
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <h4>
+            <span style="background:linear-gradient(135deg,#F59E0B,#2563EB);width:26px;height:26px;border-radius:8px;display:inline-grid;place-items:center;color:#fff;font-size:14px;">🥋</span>
+            Vagai Silambam
+          </h4>
+          <p>Academy management for traditional Silambam schools in Tamil Nadu and beyond.</p>
+        </div>
+        <div class="footer-col">
+          <h5>Product</h5>
+          <ul class="footer-links">
+            <li><a href="features.html">Features</a></li>
+            <li><a href="pricing.html">Pricing</a></li>
+            <li><a href="../../frontend/login.html">Sign in</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Company</h5>
+          <ul class="footer-links">
+            <li><a href="about.html">About</a></li>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="faq.html">FAQ</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Legal</h5>
+          <ul class="footer-links">
+            <li><a href="terms.html">Terms</a></li>
+            <li><a href="privacy.html">Privacy</a></li>
+            <li><a href="refund.html">Refunds</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div>© 2026 Vagai Silambam Academy.</div>
+        <div><a href="mailto:sasikumar23125@gmail.com">sasikumar23125@gmail.com</a></div>
       </div>
     </div>
   </footer>
 
-  <script>
-    /* Plans are data, not markup: once the API is public this list renders from /api/v1/plans
-       so prices never drift between the site and the product. */
-    fetch((window.VAGAI_API_BASE || 'http://localhost:8000') + '/api/v1/plans')
-      .then((response) => (response.ok ? response.json() : Promise.reject()))
-      .then((plans) => { if (!plans?.length) return; document.body.dataset.plansLoaded = 'true'; })
-      .catch(() => { /* static copy above stays as-is when the API is unreachable */ });
-  </script>
+  <script src="assets/js/main.js"></script>
 </body>
 </html>

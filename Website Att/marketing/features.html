@@ -8,109 +8,157 @@
   <link rel="stylesheet" href="assets/css/site.css">
 </head>
 <body>
+
+  <!-- Top Scroll Progress Indicator -->
+  <div class="scroll-progress-bar" id="scrollProgressBar"></div>
+
+  <!-- Sticky Navbar -->
   <header class="site-header">
     <div class="wrap">
-      <a class="logo" href="index.html"><span class="mark">🥋</span>Vagai Silambam</a>
-      <nav class="site-nav">
-        <a href="features.html">Features</a>
-        <a href="pricing.html">Pricing</a>
-        <a href="faq.html">FAQ</a>
-        <a href="contact.html">Contact</a>
-        <a class="btn btn-primary" href="../../frontend/register.html">Start free trial</a>
+      <a class="brand-logo" href="index.html" aria-label="Vagai Silambam Home">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24">
+            <path d="M4.5 3L3 4.5 19.5 21l1.5-1.5L4.5 3zm15 0l-4.5 4.5 1.5 1.5L21 4.5 19.5 3zM3 19.5L7.5 15l-1.5-1.5L1.5 18 3 19.5z" />
+          </svg>
+        </div>
+        <span>Vagai Silambam</span>
+        <span class="brand-tag">SaaS</span>
+      </a>
+
+      <button class="mobile-toggle" id="mobileMenuToggle" aria-label="Toggle Navigation Menu" aria-expanded="false">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6"></line>
+          <line x1="3" y1="12" x2="21" y2="12"></line>
+          <line x1="3" y1="18" x2="21" y2="18"></line>
+        </svg>
+      </button>
+
+      <nav class="site-nav" id="siteNavMenu">
+        <ul class="nav-links">
+          <li><a href="features.html" class="active">Features</a></li>
+          <li><a href="index.html#attendance">Attendance</a></li>
+          <li><a href="index.html#mobile-app">Mobile App</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+        <div class="nav-cta-group">
+          <a class="btn btn-ghost btn-sm" href="../../frontend/login.html">Sign In</a>
+          <a class="btn btn-primary btn-sm" href="../../frontend/register.html">Start Free Trial</a>
+        </div>
       </nav>
     </div>
   </header>
 
-  <section>
+  <!-- Page Header -->
+  <section class="section" style="padding-bottom:20px;">
     <div class="wrap">
-      <div class="section-head">
-        <h2>Built around how a Silambam academy runs</h2>
-        <p>Not a school ERP with the words swapped. No classes, no subjects, no exam marks — just training.</p>
+      <div class="section-header reveal-on-scroll">
+        <span class="section-tag">Complete SaaS Architecture</span>
+        <h1 class="section-title">Built around how a Silambam academy runs</h1>
+        <p class="section-subtitle">Not a generic school ERP with labels swapped. No classes, no subjects, no exam marks — just pure martial arts training, gradings, weapons, and tournaments.</p>
       </div>
 
-      <div class="grid">
-        <div class="feature">
-          <div class="icon">👥</div>
-          <h3>Students</h3>
-          <p>Student ID and roll number, names in English and Tamil, photo, date of birth, guardians and emergency contacts, joining date, training level, branch, instructor, medical notes and previous experience.</p>
+      <!-- Core Modules Grid -->
+      <div class="features-grid">
+        <div class="feature-card reveal-on-scroll">
+          <div class="feature-icon-box">👥</div>
+          <h3>Student Master Registry</h3>
+          <p>Student ID and roll numbers, dual English &amp; தமிழ் names, photo avatars, date of birth, emergency contacts, joining date, training rank sash, dojo branch, instructor, and medical notes.</p>
         </div>
-        <div class="feature">
-          <div class="icon">✓</div>
-          <h3>Training attendance</h3>
-          <p>Per session, not per school day. Mark all present in one tap, then change the exceptions. Present, absent, late and leave, each with remarks.</p>
+
+        <div class="feature-card reveal-on-scroll stagger-1">
+          <div class="feature-icon-box">✓</div>
+          <h3>Session Training Attendance</h3>
+          <p>Recorded per training session rather than school day. Mark 50 students present in one click, then modify exceptions: Present, Absent, Late, and Leave with custom remarks.</p>
         </div>
-        <div class="feature">
-          <div class="icon">📈</div>
-          <h3>Attendance insight</h3>
-          <p>Attendance percentage per student, daily and monthly views, absent and late lists, and a low-attendance report so nobody quietly drifts away.</p>
+
+        <div class="feature-card reveal-on-scroll stagger-2">
+          <div class="feature-icon-box">📈</div>
+          <h3>Retention &amp; Attendance Insights</h3>
+          <p>Real-time attendance percentage per student, monthly summaries, absent lists, and an automated low-attendance report so no martial artist quietly drifts away.</p>
         </div>
-        <div class="feature">
-          <div class="icon">★</div>
-          <h3>Events</h3>
-          <p>Competitions at district, state and national level, training camps, demonstrations, workshops and tournaments. Registration deadlines, participant limits, fees and results.</p>
+
+        <div class="feature-card reveal-on-scroll stagger-3">
+          <div class="feature-icon-box">★</div>
+          <h3>Tournaments &amp; Form Demonstrations</h3>
+          <p>District, state and national level championships, intensive weapon camps, and public demonstrations. Track registration deadlines, participant brackets, fees, and bout results.</p>
         </div>
-        <div class="feature">
-          <div class="icon">🏅</div>
-          <h3>Results &amp; achievements</h3>
-          <p>Winner, runner-up, third place or participated — with medals, certificates and a permanent record on each student's profile.</p>
+
+        <div class="feature-card reveal-on-scroll">
+          <div class="feature-icon-box">🏅</div>
+          <h3>Medals &amp; Belt Achievements</h3>
+          <p>Winner, Runner-up, Third Place and Participation honors — with permanent medal tallies and belt promotion dates stored against each student's profile.</p>
         </div>
-        <div class="feature">
-          <div class="icon">₹</div>
-          <h3>Fees</h3>
-          <p>Monthly training, admission, event, competition, camp, uniform and certificate fees. Paid, pending, overdue, partial and waived, with payment history and receipts.</p>
+
+        <div class="feature-card reveal-on-scroll stagger-1">
+          <div class="feature-icon-box">₹</div>
+          <h3>Fee Ledger &amp; Digital Receipts</h3>
+          <p>Monthly training, admission, event, camp, uniform and certificate fees. Track paid, pending, overdue, partial and waived dues with automated digital PDF receipts.</p>
         </div>
-        <div class="feature">
-          <div class="icon">👕</div>
-          <h3>Uniforms &amp; equipment</h3>
-          <p>Kurta and dhoti, academy t-shirts, track pants, grading sashes and bamboo staffs — by size and quantity, with payment status, condition and return dates.</p>
+
+        <div class="feature-card reveal-on-scroll stagger-2">
+          <div class="feature-icon-box">🥋</div>
+          <h3>Uniforms &amp; Weapon Inventory</h3>
+          <p>Kurta &amp; dhoti sets, dojo t-shirts, track pants, grading sashes, and bamboo staffs (Nedunkambu) — tracked by size, quantity, payment status, and condition.</p>
         </div>
-        <div class="feature">
-          <div class="icon">📜</div>
-          <h3>Certificates</h3>
-          <p>Issue grading and tournament certificates, keep them against the student, and store copies in your own Google Drive.</p>
+
+        <div class="feature-card reveal-on-scroll stagger-3">
+          <div class="feature-icon-box">📜</div>
+          <h3>Grading Certificates</h3>
+          <p>Issue belt grading and tournament achievement certificates, attach them to the student record, and automatically archive copies in your own Google Drive.</p>
         </div>
-        <div class="feature">
-          <div class="icon">📊</div>
-          <h3>Reports</h3>
-          <p>Student lists, attendance, fee collection, pending and overdue fees, event participation and results, uniform collection — exported to CSV, Excel or PDF.</p>
+
+        <div class="feature-card reveal-on-scroll">
+          <div class="feature-icon-box">📊</div>
+          <h3>Exportable Audits &amp; Reports</h3>
+          <p>Master student rosters, session registers, monthly fee collections, pending dues, tournament participation logs — exported to CSV, Excel, or PDF.</p>
         </div>
       </div>
     </div>
   </section>
 
-  <section style="background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+  <!-- How It Fits Your Day -->
+  <section class="section section-alt">
     <div class="wrap">
-      <div class="section-head">
-        <h2>How it fits your day</h2>
+      <div class="section-header reveal-on-scroll">
+        <span class="section-tag">Daily Workflow</span>
+        <h2 class="section-title">How Vagai Silambam fits your day</h2>
       </div>
-      <div class="grid">
-        <div class="feature">
-          <div class="icon">📱</div>
+
+      <div class="features-grid">
+        <div class="feature-card reveal-on-scroll">
+          <div class="feature-icon-box">📱</div>
           <h3>Phone at the dojo, browser at the desk</h3>
-          <p>Instructors take attendance on Android, including with no signal. Office staff work on a laptop. Both see the same academy.</p>
+          <p>Instructors take attendance on Android, including with zero signal. Office staff manage billing and reports on a laptop. Both sync seamlessly.</p>
         </div>
-        <div class="feature">
-          <div class="icon">☁️</div>
+
+        <div class="feature-card reveal-on-scroll stagger-1">
+          <div class="feature-icon-box">☁️</div>
           <h3>Your Google account, not ours</h3>
           <p>Connect your own Google account once. Photos and certificates go to your Drive; attendance is written to your Sheet. You keep access even if you leave.</p>
         </div>
-        <div class="feature">
-          <div class="icon">அ</div>
+
+        <div class="feature-card reveal-on-scroll stagger-2">
+          <div class="feature-icon-box">அ</div>
           <h3>English and தமிழ்</h3>
           <p>Switch language from any screen. Student names are stored in both scripts, so records read naturally either way.</p>
         </div>
-        <div class="feature">
-          <div class="icon">🏢</div>
+
+        <div class="feature-card reveal-on-scroll stagger-3">
+          <div class="feature-icon-box">🏢</div>
           <h3>Multiple branches</h3>
           <p>Run several training centres under one academy, with per-branch students and reporting on the higher plans.</p>
         </div>
-        <div class="feature">
-          <div class="icon">👤</div>
+
+        <div class="feature-card reveal-on-scroll">
+          <div class="feature-icon-box">👤</div>
           <h3>Roles that make sense</h3>
           <p>Admin, instructor and accounts staff each see what they need. Permissions are enforced on the server, not just hidden in the interface.</p>
         </div>
-        <div class="feature">
-          <div class="icon">🔒</div>
+
+        <div class="feature-card reveal-on-scroll stagger-1">
+          <div class="feature-icon-box">🔒</div>
           <h3>Separated by design</h3>
           <p>Every academy's data is isolated. One academy can never read another's students, fees or attendance.</p>
         </div>
@@ -118,23 +166,63 @@
     </div>
   </section>
 
-  <section>
-    <div class="wrap" style="text-align:center">
-      <div class="section-head">
+  <!-- Final CTA -->
+  <section class="final-cta-section">
+    <div class="wrap">
+      <div class="final-cta-box reveal-on-scroll">
         <h2>Try it with your own students</h2>
-        <p>14 days free. No card required.</p>
+        <p>14 days free. No credit card required. Set up your academy in 2 minutes.</p>
+        <div class="hero-cta-wrap" style="justify-content:center;">
+          <a class="btn btn-saffron btn-lg" href="../../frontend/register.html">Start Free Trial</a>
+          <a class="btn btn-ghost-dark btn-lg" href="pricing.html">View Pricing Plans</a>
+        </div>
       </div>
-      <a class="btn btn-primary" href="../../frontend/register.html">Start free trial</a>
     </div>
   </section>
 
+  <!-- Footer -->
   <footer class="site-footer">
     <div class="wrap">
-      <div class="legal">
-        <span>© 2026 Vagai Silambam Academy.</span>
-        <span><a href="terms.html" style="display:inline">Terms</a> · <a href="privacy.html" style="display:inline">Privacy</a> · <a href="refund.html" style="display:inline">Refunds</a></span>
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <h4>
+            <span style="background:linear-gradient(135deg,#F59E0B,#2563EB);width:26px;height:26px;border-radius:8px;display:inline-grid;place-items:center;color:#fff;font-size:14px;">🥋</span>
+            Vagai Silambam
+          </h4>
+          <p>Academy management for traditional Silambam martial arts schools in Tamil Nadu and beyond.</p>
+        </div>
+        <div class="footer-col">
+          <h5>Product</h5>
+          <ul class="footer-links">
+            <li><a href="features.html">Features</a></li>
+            <li><a href="pricing.html">Pricing</a></li>
+            <li><a href="../../frontend/login.html">Sign in</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Company</h5>
+          <ul class="footer-links">
+            <li><a href="about.html">About</a></li>
+            <li><a href="contact.html">Contact</a></li>
+            <li><a href="faq.html">FAQ</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h5>Legal</h5>
+          <ul class="footer-links">
+            <li><a href="terms.html">Terms</a></li>
+            <li><a href="privacy.html">Privacy</a></li>
+            <li><a href="refund.html">Refunds</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <div>© 2026 Vagai Silambam Academy. Tamil Nadu, India.</div>
+        <div><a href="mailto:sasikumar23125@gmail.com">sasikumar23125@gmail.com</a></div>
       </div>
     </div>
   </footer>
+
+  <script src="assets/js/main.js"></script>
 </body>
 </html>
