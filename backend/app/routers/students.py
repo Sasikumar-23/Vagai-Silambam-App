@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, Query, Request
+import csv
+import io
+from fastapi import APIRouter, Depends, File, Query, Request, UploadFile
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
@@ -6,7 +8,7 @@ from .. import errors
 from ..auth.deps import get_current_organization, get_current_user, require_active_subscription, require_role
 from ..database import get_db
 from ..models import Organization, Student, Subscription, User
-from ..schemas import PageMeta, StudentCreate, StudentOut, StudentPage, StudentUpdate
+from ..schemas import PageMeta, StudentCreate, StudentImportResult, StudentOut, StudentPage, StudentUpdate
 from ..services import audit, limits
 
 router = APIRouter(prefix="/api/v1/students", tags=["students"])
@@ -158,3 +160,105 @@ def deactivate_student(
         request=request,
     )
     db.commit()
+
+
+@router.post("/import", response_model=StudentImportResult)
+def import_students(
+    students_data: list[StudentCreate],
+    request: Request,
+    organization: Organization = Depends(get_current_organization),
+    subscription: Subscription = Depends(require_active_subscription),
+    user: User = Depends(require_role("ADMIN", "INSTRUCTOR")),
+    db: Session = Depends(get_db),
+):
+    total = len(students_data)
+    imported = 0
+    skipped = 0
+    errs = []
+
+    existing_codes = set(
+        r[0]
+        for r in db.query(Student.student_code)
+        .filter(Student.organization_id == organization.id)
+        .all()
+    )
+
+    for idx, item in enumerate(students_data, start=1):
+        if item.student_code in existing_codes:
+            skipped += 1
+            errs.append({"row": idx, "code": item.student_code, "error": "Duplicate student code"})
+            continue
+
+        try:
+            limits.enforce_limit(db, subscription, organization.id, "students")
+        except Exception as e:
+            errs.append({"row": idx, "code": item.student_code, "error": f"Plan limit reached: {str(e)}"})
+            break
+
+        st = Student(organization_id=organization.id, **item.model_dump())
+        db.add(st)
+        existing_codes.add(item.student_code)
+        imported += 1
+
+    if imported > 0:
+        audit.record(
+            db,
+            action="STUDENTS_BULK_IMPORTED",
+            organization_id=organization.id,
+            user_id=user.id,
+            entity_type="students",
+            meta={"count": imported},
+            request=request,
+        )
+        db.commit()
+
+    return StudentImportResult(
+        total_rows=total,
+        imported_count=imported,
+        skipped_count=skipped,
+        errors=errs,
+    )
+
+
+@router.post("/import-csv", response_model=StudentImportResult)
+async def import_students_csv(
+    file: UploadFile = File(...),
+    request: Request = None,
+    organization: Organization = Depends(get_current_organization),
+    subscription: Subscription = Depends(require_active_subscription),
+    user: User = Depends(require_role("ADMIN", "INSTRUCTOR")),
+    db: Session = Depends(get_db),
+):
+    content = await file.read()
+    text = content.decode("utf-8-sig", errors="replace")
+    reader = csv.DictReader(io.StringIO(text))
+
+    items: list[StudentCreate] = []
+    for r in reader:
+        code = r.get("Student Code") or r.get("student_code") or r.get("Code")
+        name = r.get("Name (EN)") or r.get("name_en") or r.get("Name")
+        if not code or not name:
+            continue
+        items.append(
+            StudentCreate(
+                student_code=code.strip(),
+                name_en=name.strip(),
+                name_ta=r.get("Name (TA)") or r.get("name_ta"),
+                roll_number=r.get("Roll Number") or r.get("roll_number"),
+                gender=r.get("Gender") or r.get("gender"),
+                date_of_birth=r.get("Date of Birth") or r.get("date_of_birth"),
+                contact_number=r.get("Contact") or r.get("contact_number"),
+                training_level=r.get("Training Level") or r.get("training_level"),
+                joining_date=r.get("Joining Date") or r.get("joining_date"),
+            )
+        )
+
+    return import_students(
+        students_data=items,
+        request=request,
+        organization=organization,
+        subscription=subscription,
+        user=user,
+        db=db,
+    )
+

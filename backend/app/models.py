@@ -249,3 +249,178 @@ class AuditLog(Base):
     meta: Mapped[str | None] = mapped_column(Text)
     ip_address: Mapped[str | None] = mapped_column(String(60))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+# ────────────────────────────── academy modules ──────────────────────────────
+
+
+class Event(Base, TimestampMixin):
+    __tablename__ = "events"
+    __table_args__ = (Index("ix_events_org", "organization_id"),)
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=lambda: new_id("evt"))
+    organization_id: Mapped[str] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+    branch_id: Mapped[str | None] = mapped_column(ForeignKey("branches.id", ondelete="SET NULL"))
+    title_en: Mapped[str] = mapped_column(String(200))
+    title_ta: Mapped[str | None] = mapped_column(String(200))
+    event_type: Mapped[str] = mapped_column(
+        String(40), default="COMPETITION"
+    )  # COMPETITION | WORKSHOP | BELT_TEST | SEMINAR
+    event_date: Mapped[str] = mapped_column(String(10))  # YYYY-MM-DD
+    venue: Mapped[str | None] = mapped_column(String(250))
+    description: Mapped[str | None] = mapped_column(Text)
+    registration_fee: Mapped[float] = mapped_column(Float, default=0.0)
+    status: Mapped[str] = mapped_column(
+        String(20), default="UPCOMING"
+    )  # UPCOMING | ONGOING | COMPLETED | CANCELLED
+
+
+class EventRegistration(Base, TimestampMixin):
+    __tablename__ = "event_registrations"
+    __table_args__ = (
+        UniqueConstraint("event_id", "student_id", name="uq_event_student_reg"),
+        Index("ix_event_regs_org", "organization_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=lambda: new_id("ereg"))
+    organization_id: Mapped[str] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+    event_id: Mapped[str] = mapped_column(
+        ForeignKey("events.id", ondelete="CASCADE"), index=True
+    )
+    student_id: Mapped[str] = mapped_column(
+        ForeignKey("students.id", ondelete="CASCADE"), index=True
+    )
+    category: Mapped[str | None] = mapped_column(String(80))
+    fee_paid: Mapped[bool] = mapped_column(Boolean, default=False)
+    status: Mapped[str] = mapped_column(
+        String(20), default="REGISTERED"
+    )  # REGISTERED | CONFIRMED | ATTENDED | CANCELLED
+
+
+class EventResult(Base, TimestampMixin):
+    __tablename__ = "event_results"
+    __table_args__ = (Index("ix_event_results_org", "organization_id"),)
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=lambda: new_id("eres"))
+    organization_id: Mapped[str] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+    event_id: Mapped[str] = mapped_column(
+        ForeignKey("events.id", ondelete="CASCADE"), index=True
+    )
+    student_id: Mapped[str] = mapped_column(
+        ForeignKey("students.id", ondelete="CASCADE"), index=True
+    )
+    position: Mapped[str | None] = mapped_column(String(40))  # 1st, 2nd, 3rd, Participant
+    medal: Mapped[str | None] = mapped_column(
+        String(20)
+    )  # GOLD | SILVER | BRONZE | PARTICIPATION
+    score: Mapped[str | None] = mapped_column(String(40))
+    remarks: Mapped[str | None] = mapped_column(Text)
+
+
+class Fee(Base, TimestampMixin):
+    __tablename__ = "fees"
+    __table_args__ = (Index("ix_fees_org_student", "organization_id", "student_id"),)
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=lambda: new_id("fee"))
+    organization_id: Mapped[str] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+    student_id: Mapped[str] = mapped_column(
+        ForeignKey("students.id", ondelete="CASCADE"), index=True
+    )
+    branch_id: Mapped[str | None] = mapped_column(ForeignKey("branches.id", ondelete="SET NULL"))
+    fee_type: Mapped[str] = mapped_column(
+        String(60), default="MONTHLY_TUITION"
+    )  # MONTHLY_TUITION | ADMISSION | EXAM | UNIFORM | EVENT
+    title_en: Mapped[str] = mapped_column(String(150))
+    title_ta: Mapped[str | None] = mapped_column(String(150))
+    amount: Mapped[float] = mapped_column(Float)
+    due_date: Mapped[str | None] = mapped_column(String(10))  # YYYY-MM-DD
+    paid_date: Mapped[str | None] = mapped_column(String(10))  # YYYY-MM-DD
+    receipt_number: Mapped[str | None] = mapped_column(String(60))
+    payment_mode: Mapped[str | None] = mapped_column(String(30))  # CASH | UPI | BANK_TRANSFER | CARD
+    status: Mapped[str] = mapped_column(
+        String(20), default="PENDING"
+    )  # PENDING | PAID | PARTIAL | OVERDUE
+    notes: Mapped[str | None] = mapped_column(Text)
+    collected_by: Mapped[str | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL")
+    )
+
+
+class Uniform(Base, TimestampMixin):
+    __tablename__ = "uniforms"
+    __table_args__ = (Index("ix_uniforms_org_student", "organization_id", "student_id"),)
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=lambda: new_id("uni"))
+    organization_id: Mapped[str] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+    student_id: Mapped[str] = mapped_column(
+        ForeignKey("students.id", ondelete="CASCADE"), index=True
+    )
+    uniform_type: Mapped[str] = mapped_column(
+        String(60), default="STANDARD_SUIT"
+    )  # STANDARD_SUIT | WEAPONS_KIT | BELT | PRACTICE_TEE
+    size: Mapped[str] = mapped_column(String(20))
+    order_date: Mapped[str | None] = mapped_column(String(10))
+    delivery_date: Mapped[str | None] = mapped_column(String(10))
+    price: Mapped[float] = mapped_column(Float, default=0.0)
+    is_paid: Mapped[bool] = mapped_column(Boolean, default=False)
+    status: Mapped[str] = mapped_column(
+        String(20), default="REQUESTED"
+    )  # REQUESTED | ORDERED | RECEIVED | DELIVERED
+    notes: Mapped[str | None] = mapped_column(Text)
+
+
+class Achievement(Base, TimestampMixin):
+    __tablename__ = "achievements"
+    __table_args__ = (Index("ix_achievements_org_student", "organization_id", "student_id"),)
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=lambda: new_id("ach"))
+    organization_id: Mapped[str] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+    student_id: Mapped[str] = mapped_column(
+        ForeignKey("students.id", ondelete="CASCADE"), index=True
+    )
+    title_en: Mapped[str] = mapped_column(String(200))
+    title_ta: Mapped[str | None] = mapped_column(String(200))
+    achievement_date: Mapped[str | None] = mapped_column(String(10))
+    level: Mapped[str | None] = mapped_column(
+        String(40)
+    )  # DISTRICT | STATE | NATIONAL | INTERNATIONAL | ACADEMY
+    medal_or_rank: Mapped[str | None] = mapped_column(String(40))
+    description: Mapped[str | None] = mapped_column(Text)
+
+
+class Certificate(Base, TimestampMixin):
+    __tablename__ = "certificates"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "certificate_number", name="uq_cert_org_num"),
+        Index("ix_certs_org_student", "organization_id", "student_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=lambda: new_id("crt"))
+    organization_id: Mapped[str] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"), index=True
+    )
+    student_id: Mapped[str] = mapped_column(
+        ForeignKey("students.id", ondelete="CASCADE"), index=True
+    )
+    certificate_number: Mapped[str] = mapped_column(String(60))
+    title_en: Mapped[str] = mapped_column(String(200))
+    title_ta: Mapped[str | None] = mapped_column(String(200))
+    issue_date: Mapped[str] = mapped_column(String(10))
+    certificate_type: Mapped[str] = mapped_column(
+        String(40), default="COURSE_COMPLETION"
+    )  # BELT_RANK | COMPETITION | APPRECIATION | COURSE_COMPLETION
+    drive_file_id: Mapped[str | None] = mapped_column(String(120))
+    verification_code: Mapped[str | None] = mapped_column(String(40))
+    notes: Mapped[str | None] = mapped_column(Text)

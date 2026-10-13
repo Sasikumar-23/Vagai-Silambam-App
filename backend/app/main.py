@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .config import get_settings
-from .routers import attendance, auth, google, students, subscription
+from .routers import admin, attendance, auth, certificates, events, fees, google, reports, students, subscription, uniforms
 
 logger = logging.getLogger("vagai")
 settings = get_settings()
@@ -60,9 +60,22 @@ async def unhandled_exception_handler(_: Request, exc: Exception):
     )
 
 
+from .database import check_database_connection
+
 @app.get("/health", tags=["system"])
 def health():
-    return {"status": "ok", "env": settings.app_env}
+    db_ok = False
+    try:
+        db_ok = (check_database_connection() == 1)
+    except Exception as e:
+        logger.warning(f"Database health check failed: {e}")
+        db_ok = False
+
+    return {
+        "status": "ok" if db_ok else "degraded",
+        "database": "connected" if db_ok else "unreachable",
+        "env": settings.app_env,
+    }
 
 
 app.include_router(auth.router)
@@ -70,3 +83,10 @@ app.include_router(students.router)
 app.include_router(subscription.router)
 app.include_router(google.router)
 app.include_router(attendance.router)
+app.include_router(events.router)
+app.include_router(fees.router)
+app.include_router(uniforms.router)
+app.include_router(certificates.router)
+app.include_router(reports.router)
+app.include_router(admin.router)
+

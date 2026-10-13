@@ -158,3 +158,207 @@ class SubscriptionOut(BaseModel):
     license_key: str | None
     usage: dict[str, int]
     limits: dict[str, int]
+
+
+# ── Academy Modules Schemas ──
+
+class StudentImportResult(BaseModel):
+    total_rows: int
+    imported_count: int
+    skipped_count: int
+    errors: list[dict[str, str | int]]
+
+
+class EventCreate(BaseModel):
+    title_en: str = Field(min_length=1, max_length=200)
+    title_ta: str | None = Field(default=None, max_length=200)
+    event_type: str = Field(default="COMPETITION", max_length=40)
+    event_date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    venue: str | None = Field(default=None, max_length=250)
+    description: str | None = None
+    registration_fee: float = Field(default=0.0, ge=0.0)
+
+
+class EventUpdate(BaseModel):
+    title_en: str | None = None
+    title_ta: str | None = None
+    event_type: str | None = None
+    event_date: str | None = None
+    venue: str | None = None
+    description: str | None = None
+    registration_fee: float | None = None
+    status: str | None = None
+
+
+class EventOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    organization_id: str
+    title_en: str
+    title_ta: str | None
+    event_type: str
+    event_date: str
+    venue: str | None
+    description: str | None
+    registration_fee: float
+    status: str
+    created_at: datetime
+
+
+class EventRegistrationCreate(BaseModel):
+    student_id: str
+    category: str | None = None
+    fee_paid: bool = False
+
+
+class EventRegistrationOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    event_id: str
+    student_id: str
+    category: str | None
+    fee_paid: bool
+    status: str
+    created_at: datetime
+
+
+class EventResultCreate(BaseModel):
+    student_id: str
+    position: str | None = None
+    medal: str | None = None
+    score: str | None = None
+    remarks: str | None = None
+
+
+class EventResultOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    event_id: str
+    student_id: str
+    position: str | None
+    medal: str | None
+    score: str | None
+    remarks: str | None
+
+
+class FeeCreate(BaseModel):
+    student_id: str
+    fee_type: str = Field(default="MONTHLY_TUITION", max_length=60)
+    title_en: str = Field(min_length=1, max_length=150)
+    title_ta: str | None = Field(default=None, max_length=150)
+    amount: float = Field(gt=0.0)
+    due_date: str | None = Field(default=None, pattern=r"^\d{4}-\d{2}-\d{2}$")
+    notes: str | None = None
+
+
+class FeePayRequest(BaseModel):
+    payment_mode: str = Field(default="UPI", pattern="^(CASH|UPI|BANK_TRANSFER|CARD)$")
+    receipt_number: str | None = None
+    paid_date: str | None = None
+    notes: str | None = None
+
+
+class FeeOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    student_id: str
+    fee_type: str
+    title_en: str
+    title_ta: str | None
+    amount: float
+    due_date: str | None
+    paid_date: str | None
+    receipt_number: str | None
+    payment_mode: str | None
+    status: str
+    notes: str | None
+    created_at: datetime
+
+
+class UniformCreate(BaseModel):
+    student_id: str
+    uniform_type: str = Field(default="STANDARD_SUIT", max_length=60)
+    size: str = Field(min_length=1, max_length=20)
+    price: float = Field(default=0.0, ge=0.0)
+    order_date: str | None = None
+    notes: str | None = None
+
+
+class UniformUpdate(BaseModel):
+    size: str | None = None
+    price: float | None = None
+    is_paid: bool | None = None
+    status: str | None = None
+    delivery_date: str | None = None
+    notes: str | None = None
+
+
+class UniformOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    student_id: str
+    uniform_type: str
+    size: str
+    price: float
+    is_paid: bool
+    status: str
+    order_date: str | None
+    delivery_date: str | None
+    notes: str | None
+    created_at: datetime
+
+
+class AchievementCreate(BaseModel):
+    student_id: str
+    title_en: str = Field(min_length=1, max_length=200)
+    title_ta: str | None = Field(default=None, max_length=200)
+    achievement_date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    level: str | None = None
+    medal_or_rank: str | None = None
+    description: str | None = None
+
+
+class AchievementOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    student_id: str
+    title_en: str
+    title_ta: str | None
+    achievement_date: str
+    level: str | None
+    medal_or_rank: str | None
+    description: str | None
+    created_at: datetime
+
+
+class CertificateCreate(BaseModel):
+    student_id: str
+    certificate_number: str = Field(min_length=1, max_length=60)
+    title_en: str = Field(min_length=1, max_length=200)
+    title_ta: str | None = Field(default=None, max_length=200)
+    issue_date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    certificate_type: str = Field(default="COURSE_COMPLETION", max_length=40)
+    verification_code: str | None = None
+    notes: str | None = None
+
+
+class CertificateOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    student_id: str
+    certificate_number: str
+    title_en: str
+    title_ta: str | None
+    issue_date: str
+    certificate_type: str
+    verification_code: str | None
+    drive_file_id: str | None
+    created_at: datetime
+

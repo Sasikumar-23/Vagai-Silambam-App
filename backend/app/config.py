@@ -4,12 +4,12 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=(".env", "backend/.env"), extra="ignore")
 
     app_env: str = "development"
     app_url: str = "http://localhost:8000"
     frontend_url: str = "http://localhost:5173"
-    cors_origins: str = "http://localhost:5173"
+    cors_origins: str = "http://localhost:5173,http://localhost:8000,http://localhost:5500,http://127.0.0.1:5500"
 
     database_url: str = "postgresql+psycopg://vagai:vagai@localhost:5432/vagai_silambam"
 
@@ -28,6 +28,13 @@ class Settings(BaseSettings):
     razorpay_webhook_secret: str = ""
 
     trial_days: int = 14
+
+    @property
+    def normalized_database_url(self) -> str:
+        url = self.database_url.strip()
+        if url.startswith("postgresql://"):
+            return "postgresql+psycopg://" + url[len("postgresql://"):]
+        return url
 
     @property
     def is_production(self) -> bool:

@@ -11,7 +11,21 @@ class Base(DeclarativeBase):
 
 
 settings = get_settings()
-engine = create_engine(settings.database_url, pool_pre_ping=True, future=True)
+
+db_url = settings.normalized_database_url
+engine_kwargs: dict = {
+    "pool_pre_ping": True,
+    "future": True,
+}
+
+if "postgresql" in db_url:
+    engine_kwargs["connect_args"] = {"connect_timeout": 10}
+    # Supabase session pooler / connection limits safety
+    engine_kwargs["pool_size"] = 10
+    engine_kwargs["max_overflow"] = 5
+    engine_kwargs["pool_recycle"] = 1800
+
+engine = create_engine(db_url, **engine_kwargs)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
 
 
@@ -21,6 +35,12 @@ def get_db() -> Generator[Session, None, None]:
         yield db
     finally:
         db.close()
+
+
+def check_database_connection() -> int:
+    """Verifies database connectivity by executing SELECT 1."""
+    with engine.connect() as connection:
+        return connection.execute(text("SELECT 1")).scalar_one()
 
 
 def set_tenant_guc(db: Session, organization_id: str) -> None:
