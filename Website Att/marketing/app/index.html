@@ -20,12 +20,10 @@
     <p>Redirecting to app…</p>
   </div>
   <script type="module">
-    // The SaaS portal lives in /frontend/ at the repository root.
-    // When deployed, point window.VAGAI_API_BASE to the production API URL.
+    // The SaaS portal lives in Website Att/app, a sibling of Website Att/marketing.
     const ACCESS_KEY = 'vagai_access_token';
     const hasSession = !!localStorage.getItem(ACCESS_KEY);
-    // Redirect relative to the repo structure
-    const base = '../../frontend/';
+    const base = '../../app/';
     location.replace(base + (hasSession ? 'dashboard.html' : 'login.html'));
   </script>
 </body>

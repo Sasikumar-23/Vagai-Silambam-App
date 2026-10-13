@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fees · Vagai Silambam</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+  <script type="module">
+    import { api } from './assets/js/api.js';
+    import { applyTranslations, t } from './assets/js/i18n.js';
+    import { mountShell, requireSession, toast } from './assets/js/auth.js';
+
+    if (requireSession()) {
+      const page = mountShell({ titleKey: 'nav_fees' });
+      render(page);
+    }
+
+    function esc(v) {
+      return String(v ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+
+    async function render(page) {
+      page.innerHTML = '<div class="card"><div class="skeleton" style="height:200px"></div></div>';
+
+      try {
+        const [feesData, studentsData] = await Promise.all([
+          api.listFees({ limit: 50 }),
+          api.listStudents({ limit: 200, status: 'ACTIVE' }),
+        ]);
+
+        const studentOpts = studentsData.items.map(s =>
+          `<option value="${esc(s.id)}">${esc(s.name_en)} (${esc(s.student_code)})</option>`
+        ).join('');
+
+        const addForm = `
+          <div class="card" style="margin-bottom:var(--space-6)">
+            <div class="card-head"><h3>Add Fee Record</h3></div>
+            <form id="addFeeForm" style="display:grid;gap:var(--space-4);grid-template-columns:1fr 1fr">
+              <div class="field" style="grid-column:1/-1">
+                <label>Student</label>
+                <select id="feeStudent" required><option value="">— Select —</option>${studentOpts}</select>
+              </div>
+              <div class="field">
+                <label>Fee Title (EN)</label>
+                <input id="feeTitle" type="text" required placeholder="October Tuition">
+              </div>
+              <div class="field">
+                <label>Amount (₹)</label>
+                <input id="feeAmount" type="number" required min="1" step="50">
+              </div>
+              <div class="field">
+                <label>Due Date</label>
+                <input id="feeDue" type="date">
+              </div>
+              <div class="field">
+                <label>Fee Type</label>
+                <select id="feeType">
+                  <option value="MONTHLY_TUITION">Monthly Tuition</option>
+                  <option value="ADMISSION">Admission</option>
+                  <option value="EXAM">Exam</option>
+                  <option value="UNIFORM">Uniform</option>
+                  <option value="EVENT">Event</option>
+                </select>
+              </div>
+              <div style="grid-column:1/-1">
+                <button type="submit" class="btn btn-primary">Add Fee</button>
+              </div>
+            </form>
+          </div>`;
+
+        const rows = feesData.map(fee => {
+          const statusCls = { PAID: 'badge-active', PENDING: 'badge-trial', OVERDUE: 'badge-suspended' }[fee.status] || '';
+          const payBtn = fee.status !== 'PAID'
+            ? `<button class="btn btn-ghost pay-btn" data-id="${esc(fee.id)}" data-amount="${fee.amount}">Mark Paid</button>`
+            : '';
+          return `<tr>
+            <td>${esc(fee.title_en)}</td>
+            <td>${esc(fee.student_id)}</td>
+            <td>₹${fee.amount.toLocaleString()}</td>
+            <td>${esc(fee.due_date || '—')}</td>
+            <td>${esc(fee.paid_date || '—')}</td>
+            <td>${esc(fee.receipt_number || '—')}</td>
+            <td><span class="badge ${statusCls}">${esc(fee.status)}</span></td>
+            <td>${payBtn}</td>
+          </tr>`;
+        }).join('');
+
+        const table = feesData.length ? `
+          <div class="card">
+            <div class="card-head">
+              <h3>Fee Records</h3>
+              <button id="exportFees" class="btn btn-ghost btn-sm">Export CSV</button>
+            </div>
+            <table>
+              <thead><tr>
+                <th>Title</th><th>Student</th><th>Amount</th><th>Due</th>
+                <th>Paid</th><th>Receipt</th><th>Status</th><th></th>
+              </tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>` : `<div class="card"><div class="empty"><div class="mark">₹</div>
+            <h3>No fee records yet</h3><p>Add fee records using the form above.</p></div></div>`;
+
+        page.innerHTML = addForm + table;
+        applyTranslations(page);
+
+        document.getElementById('addFeeForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const btn = e.target.querySelector('button[type=submit]');
+          btn.disabled = true;
+          try {
+            await api.createFee({
+              student_id: document.getElementById('feeStudent').value,
+              title_en: document.getElementById('feeTitle').value.trim(),
+              amount: parseFloat(document.getElementById('feeAmount').value),
+              fee_type: document.getElementById('feeType').value,
+              due_date: document.getElementById('feeDue').value || null,
+            });
+            toast('Fee record added!');
+            render(page);
+          } catch (err) { toast(err.message, 'error'); } finally { btn.disabled = false; }
+        });
+
+        page.querySelectorAll('.pay-btn').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const id = btn.dataset.id;
+            const mode = prompt('Payment mode? (CASH / UPI / BANK_TRANSFER / CARD)', 'UPI');
+            if (!mode) return;
+            try {
+              await api.payFee(id, { payment_mode: mode.toUpperCase() });
+              toast('Payment recorded!');
+              render(page);
+            } catch (err) { toast(err.message, 'error'); }
+          });
+        });
+
+        const expBtn = document.getElementById('exportFees');
+        if (expBtn) {
+          expBtn.addEventListener('click', async () => {
+            const res = await api.exportFeesCSV();
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = 'fees.csv'; a.click();
+            URL.revokeObjectURL(url);
+          });
+        }
+
+      } catch (err) {
+        page.innerHTML = `<div class="alert alert-error">${esc(err.message)}</div>`;
+      }
+    }
+  </script>
+</body>
+</html>

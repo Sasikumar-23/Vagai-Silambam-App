@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Uniforms · Vagai Silambam</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+  <script type="module">
+    import { api } from './assets/js/api.js';
+    import { applyTranslations } from './assets/js/i18n.js';
+    import { mountShell, requireSession, toast } from './assets/js/auth.js';
+
+    if (requireSession()) {
+      const page = mountShell({ titleKey: 'nav_uniforms' });
+      render(page);
+    }
+
+    function esc(v) {
+      return String(v ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+
+    async function render(page) {
+      page.innerHTML = '<div class="card"><div class="skeleton" style="height:160px"></div></div>';
+
+      try {
+        const [uniforms, students] = await Promise.all([
+          api.listUniforms({ limit: 50 }),
+          api.listStudents({ limit: 200, status: 'ACTIVE' }),
+        ]);
+
+        const studentOpts = students.items.map(s =>
+          `<option value="${esc(s.id)}">${esc(s.name_en)} (${esc(s.student_code)})</option>`
+        ).join('');
+
+        const addForm = `
+          <div class="card" style="margin-bottom:var(--space-6)">
+            <div class="card-head"><h3>Order Uniform</h3></div>
+            <form id="orderUniForm" style="display:grid;gap:var(--space-4);grid-template-columns:1fr 1fr">
+              <div class="field" style="grid-column:1/-1">
+                <label>Student</label>
+                <select id="uniStudent" required><option value="">— Select —</option>${studentOpts}</select>
+              </div>
+              <div class="field">
+                <label>Uniform Type</label>
+                <select id="uniType">
+                  <option value="STANDARD_SUIT">Standard Suit</option>
+                  <option value="WEAPONS_KIT">Weapons Kit</option>
+                  <option value="BELT">Belt</option>
+                  <option value="PRACTICE_TEE">Practice T-Shirt</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Size</label>
+                <input id="uniSize" type="text" required placeholder="34 / M / XL">
+              </div>
+              <div class="field">
+                <label>Price (₹)</label>
+                <input id="uniPrice" type="number" min="0" step="50" value="0">
+              </div>
+              <div style="grid-column:1/-1">
+                <button type="submit" class="btn btn-primary">Place Order</button>
+              </div>
+            </form>
+          </div>`;
+
+        const rows = uniforms.map(u => {
+          const statusCls = { DELIVERED: 'badge-active', REQUESTED: 'badge-trial' }[u.status] || '';
+          return `<tr>
+            <td>${esc(u.uniform_type)}</td>
+            <td>${esc(u.student_id)}</td>
+            <td>${esc(u.size)}</td>
+            <td>₹${u.price.toLocaleString()}</td>
+            <td>${u.is_paid ? '✓' : '✗'}</td>
+            <td><span class="badge ${statusCls}">${esc(u.status)}</span></td>
+            <td>${esc(u.order_date || '—')}</td>
+            <td>${esc(u.delivery_date || '—')}</td>
+          </tr>`;
+        }).join('');
+
+        const table = uniforms.length ? `
+          <div class="card">
+            <div class="card-head"><h3>Uniform Orders</h3></div>
+            <table>
+              <thead><tr>
+                <th>Type</th><th>Student</th><th>Size</th><th>Price</th>
+                <th>Paid</th><th>Status</th><th>Ordered</th><th>Delivered</th>
+              </tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>` : `<div class="card"><div class="empty">
+            <div class="mark">👕</div><h3>No uniform orders</h3>
+            <p>Place the first uniform order using the form above.</p>
+          </div></div>`;
+
+        page.innerHTML = addForm + table;
+        applyTranslations(page);
+
+        document.getElementById('orderUniForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const btn = e.target.querySelector('button[type=submit]');
+          btn.disabled = true;
+          try {
+            await api.orderUniform({
+              student_id: document.getElementById('uniStudent').value,
+              uniform_type: document.getElementById('uniType').value,
+              size: document.getElementById('uniSize').value.trim(),
+              price: parseFloat(document.getElementById('uniPrice').value) || 0,
+            });
+            toast('Uniform order placed!');
+            render(page);
+          } catch (err) { toast(err.message, 'error'); } finally { btn.disabled = false; }
+        });
+
+      } catch (err) {
+        page.innerHTML = `<div class="alert alert-error">${esc(err.message)}</div>`;
+      }
+    }
+  </script>
+</body>
+</html>

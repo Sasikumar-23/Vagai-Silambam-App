@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Settings · Vagai Silambam</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+  <script type="module">
+    import { api } from './assets/js/api.js';
+    import { applyTranslations, currentLang, setLang } from './assets/js/i18n.js';
+    import { mountShell, requireSession, toast } from './assets/js/auth.js';
+
+    if (requireSession()) {
+      const page = mountShell({ titleKey: 'nav_settings' });
+      render(page);
+    }
+
+    function esc(v) {
+      return String(v ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+
+    async function render(page) {
+      try {
+        const [me, googleStatus] = await Promise.all([
+          api.me(),
+          api.googleConnectStatus().catch(() => ({ connected: false })),
+        ]);
+
+        const googleSection = googleStatus.connected ? `
+          <div class="card" style="margin-bottom:var(--space-6)">
+            <div class="card-head"><h3>Google Drive & Sheets</h3></div>
+            <div style="padding:var(--space-4)">
+              <p>✅ Connected as <strong>${esc(googleStatus.google_email)}</strong></p>
+              ${googleStatus.attendance_spreadsheet_id
+                ? `<p>📊 Attendance Sheet ID: <code>${esc(googleStatus.attendance_spreadsheet_id)}</code></p>`
+                : '<p>⚠️ Attendance sheet not yet provisioned.</p>'}
+              <a href="/api/v1/google/connect" class="btn btn-ghost btn-sm" style="margin-top:var(--space-3)">Reconnect</a>
+            </div>
+          </div>` : `
+          <div class="card" style="margin-bottom:var(--space-6)">
+            <div class="card-head"><h3>Connect Google Drive & Sheets</h3></div>
+            <div style="padding:var(--space-4)">
+              <p>Connect your Google account to enable Drive photo storage and Google Sheets attendance sync.</p>
+              <a href="http://localhost:8000/api/v1/google/connect" class="btn btn-primary" style="margin-top:var(--space-3)">
+                Connect Google Account
+              </a>
+            </div>
+          </div>`;
+
+        page.innerHTML = `
+          <div class="card" style="margin-bottom:var(--space-6)">
+            <div class="card-head"><h3>Profile</h3></div>
+            <div style="padding:var(--space-4);display:grid;gap:var(--space-2)">
+              <div><strong>Name:</strong> ${esc(me.full_name_en)}</div>
+              <div><strong>Username:</strong> ${esc(me.username)}</div>
+              <div><strong>Email:</strong> ${esc(me.email)}</div>
+              <div><strong>Role:</strong> <span class="badge badge-active">${esc(me.role)}</span></div>
+            </div>
+          </div>
+
+          ${googleSection}
+
+          <div class="card">
+            <div class="card-head"><h3>Language / மொழி</h3></div>
+            <div style="padding:var(--space-4);display:flex;gap:var(--space-3)">
+              <button id="setEn" class="btn ${currentLang() === 'en' ? 'btn-primary' : 'btn-ghost'}">English</button>
+              <button id="setTa" class="btn ${currentLang() === 'ta' ? 'btn-primary' : 'btn-ghost'}">தமிழ்</button>
+            </div>
+          </div>`;
+
+        applyTranslations(page);
+
+        document.getElementById('setEn').addEventListener('click', () => { setLang('en'); location.reload(); });
+        document.getElementById('setTa').addEventListener('click', () => { setLang('ta'); location.reload(); });
+
+      } catch (err) {
+        page.innerHTML = `<div class="alert alert-error">${esc(err.message)}</div>`;
+      }
+    }
+  </script>
+</body>
+</html>

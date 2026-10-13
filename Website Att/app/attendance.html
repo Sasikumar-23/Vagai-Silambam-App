@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Attendance · Vagai Silambam</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+  <script type="module">
+    import { api } from './assets/js/api.js';
+    import { applyTranslations } from './assets/js/i18n.js';
+    import { mountShell, requireSession, toast } from './assets/js/auth.js';
+
+    if (requireSession()) {
+      const page = mountShell({ titleKey: 'nav_attendance' });
+      render(page);
+    }
+
+    function esc(v) {
+      return String(v ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+
+    async function render(page) {
+      try {
+        const [studentsData, googleStatus] = await Promise.all([
+          api.listStudents({ limit: 200, status: 'ACTIVE' }),
+          api.googleConnectStatus().catch(() => ({ connected: false })),
+        ]);
+
+        const today = new Date().toISOString().slice(0, 10);
+        const students = studentsData.items;
+
+        const googleWarning = !googleStatus.connected ? `
+          <div class="alert alert-error" style="margin-bottom:var(--space-4)">
+            ⚠️ Google Sheets is not connected. Connect it in
+            <a href="settings.html" style="color:inherit;text-decoration:underline">Settings</a> before marking attendance.
+          </div>` : '';
+
+        const rows = students.map(s => `
+          <tr>
+            <td>${esc(s.student_code)}</td>
+            <td>${esc(s.name_en)}</td>
+            <td>
+              <select class="att-status" data-student-id="${esc(s.id)}">
+                <option value="Present">Present</option>
+                <option value="Absent">Absent</option>
+                <option value="Late">Late</option>
+                <option value="Leave">Leave</option>
+              </select>
+            </td>
+            <td>
+              <input class="att-remarks" data-student-id="${esc(s.id)}"
+                type="text" placeholder="Remarks (optional)" style="max-width:180px">
+            </td>
+          </tr>`).join('');
+
+        page.innerHTML = `
+          ${googleWarning}
+          <div class="card">
+            <div class="card-head">
+              <h3>Mark Attendance</h3>
+            </div>
+            <div style="padding:var(--space-4);display:flex;gap:var(--space-4);align-items:center;flex-wrap:wrap">
+              <div class="field" style="flex:1;min-width:180px">
+                <label>Date</label>
+                <input id="attDate" type="date" value="${today}">
+              </div>
+              <div class="field" style="flex:1;min-width:220px">
+                <label>Session Name</label>
+                <input id="attSession" type="text" value="Daily Training" placeholder="Morning / Evening">
+              </div>
+            </div>
+            ${students.length ? `
+              <div style="padding:0 var(--space-4)">
+                <table>
+                  <thead><tr>
+                    <th>Code</th><th>Name</th><th>Status</th><th>Remarks</th>
+                  </tr></thead>
+                  <tbody>${rows}</tbody>
+                </table>
+              </div>
+              <div style="padding:var(--space-4)">
+                <button id="submitAtt" class="btn btn-primary">Submit Attendance</button>
+                <span id="attProgress" style="margin-left:var(--space-3);color:var(--muted)"></span>
+              </div>` : `
+              <div class="empty">
+                <div class="mark">👥</div>
+                <h3>No active students</h3>
+                <p>Add students first, then mark attendance.</p>
+              </div>`}
+          </div>`;
+
+        applyTranslations(page);
+
+        if (!students.length) return;
+
+        document.getElementById('submitAtt').addEventListener('click', async () => {
+          const btn = document.getElementById('submitAtt');
+          const prog = document.getElementById('attProgress');
+          const date = document.getElementById('attDate').value;
+          const sessionName = document.getElementById('attSession').value.trim() || 'Daily Training';
+
+          if (!date) { toast('Please select a date', 'error'); return; }
+
+          btn.disabled = true;
+          let done = 0, failed = 0;
+
+          for (const s of students) {
+            const statusEl = page.querySelector(`.att-status[data-student-id="${s.id}"]`);
+            const remarksEl = page.querySelector(`.att-remarks[data-student-id="${s.id}"]`);
+            const status = statusEl ? statusEl.value : 'Present';
+            const remarks = remarksEl ? remarksEl.value.trim() : '';
+
+            prog.textContent = `Processing ${done + failed + 1}/${students.length}…`;
+            try {
+              await api.markAttendance({
+                student_id: s.id,
+                date,
+                session_name: sessionName,
+                status,
+                remarks: remarks || null,
+              });
+              done++;
+            } catch {
+              failed++;
+            }
+          }
+
+          btn.disabled = false;
+          prog.textContent = '';
+          toast(`Attendance submitted: ${done} marked${failed ? `, ${failed} failed` : ''}`,
+            failed ? 'error' : 'success');
+        });
+
+      } catch (err) {
+        page.innerHTML = `<div class="alert alert-error">${esc(err.message)}</div>`;
+      }
+    }
+  </script>
+</body>
+</html>

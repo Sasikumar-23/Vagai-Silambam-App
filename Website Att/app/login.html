@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in · Vagai Silambam</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+  <div class="auth-wrap">
+    <form class="auth-card" id="login-form" novalidate>
+      <div class="auth-brand">
+        <div class="mark">🥋</div>
+        <h1 data-i18n="app_name"></h1>
+        <p data-i18n="login_subtitle"></p>
+      </div>
+
+      <div class="alert alert-error" id="error" hidden></div>
+
+      <div class="field">
+        <label for="username" data-i18n="username"></label>
+        <input id="username" name="username" autocomplete="username" required>
+      </div>
+
+      <div class="field">
+        <label for="password" data-i18n="password"></label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+
+      <button class="btn btn-primary btn-block" type="submit" id="submit" data-i18n="sign_in"></button>
+
+      <p style="text-align:center;margin:20px 0 0;font-size:14px;color:var(--text-secondary)">
+        <span data-i18n="no_account"></span>
+        <a href="register.html" data-i18n="start_trial"></a>
+      </p>
+
+      <div class="lang-toggle" id="lang" style="margin:18px auto 0;width:max-content"></div>
+    </form>
+  </div>
+
+  <script type="module">
+    import { api, tokens } from './assets/js/api.js';
+    import { applyTranslations, mountLanguageToggle, t } from './assets/js/i18n.js';
+    import { redirectIfSignedIn, showError } from './assets/js/auth.js';
+
+    redirectIfSignedIn();
+    mountLanguageToggle(document.getElementById('lang'));
+    applyTranslations();
+
+    const form = document.getElementById('login-form');
+    const error = document.getElementById('error');
+    const submit = document.getElementById('submit');
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      error.hidden = true;
+      submit.disabled = true;
+      submit.textContent = t('loading');
+
+      try {
+        tokens.set(await api.login({
+          username: form.username.value.trim(),
+          password: form.password.value,
+        }));
+        location.href = 'dashboard.html';
+      } catch (err) {
+        showError(error, err);
+        submit.disabled = false;
+        submit.textContent = t('sign_in');
+      }
+    });
+  </script>
+</body>
+</html>

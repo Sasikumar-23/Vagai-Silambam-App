@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reports · Vagai Silambam</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+  <script type="module">
+    import { api } from './assets/js/api.js';
+    import { applyTranslations } from './assets/js/i18n.js';
+    import { mountShell, requireSession, toast } from './assets/js/auth.js';
+
+    if (requireSession()) {
+      const page = mountShell({ titleKey: 'nav_reports' });
+      render(page);
+    }
+
+    function esc(v) {
+      return String(v ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+
+    async function downloadCSV(promise, filename) {
+      try {
+        const res = await promise;
+        if (!res.ok) { toast('Export failed', 'error'); return; }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) { toast(err.message, 'error'); }
+    }
+
+    async function render(page) {
+      page.innerHTML = '<div class="stat-grid">' + '<div class="stat"><div class="skeleton" style="width:60%"></div></div>'.repeat(5) + '</div>';
+
+      try {
+        const summary = await api.reportsSummary();
+
+        page.innerHTML = `
+          <div class="stat-grid" style="margin-bottom:var(--space-6)">
+            <div class="stat">
+              <div class="label">Active Students</div>
+              <div class="value">${summary.active_students}</div>
+            </div>
+            <div class="stat">
+              <div class="label">Fees Collected</div>
+              <div class="value">₹${summary.fees_collected.toLocaleString()}</div>
+            </div>
+            <div class="stat">
+              <div class="label">Pending Fees</div>
+              <div class="value">₹${summary.pending_fees.toLocaleString()}</div>
+              <div class="sub">Outstanding balance</div>
+            </div>
+            <div class="stat">
+              <div class="label">Upcoming Events</div>
+              <div class="value">${summary.upcoming_events}</div>
+            </div>
+            <div class="stat">
+              <div class="label">Pending Uniforms</div>
+              <div class="value">${summary.pending_uniforms}</div>
+              <div class="sub">Not yet delivered</div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h3>Export Data</h3></div>
+            <div style="display:flex;gap:var(--space-4);flex-wrap:wrap;padding:var(--space-4)">
+              <button id="expStudents" class="btn btn-primary">
+                📥 Export Students CSV
+              </button>
+              <button id="expFees" class="btn btn-primary">
+                📥 Export Fees CSV
+              </button>
+            </div>
+          </div>`;
+
+        applyTranslations(page);
+
+        document.getElementById('expStudents').addEventListener('click', () =>
+          downloadCSV(api.exportStudentsCSV(), 'students.csv')
+        );
+        document.getElementById('expFees').addEventListener('click', () =>
+          downloadCSV(api.exportFeesCSV(), 'fees.csv')
+        );
+
+      } catch (err) {
+        page.innerHTML = `<div class="alert alert-error">${esc(err.message)}</div>`;
+      }
+    }
+  </script>
+</body>
+</html>

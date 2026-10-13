@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Events · Vagai Silambam</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+  <script type="module">
+    import { api } from './assets/js/api.js';
+    import { applyTranslations, t } from './assets/js/i18n.js';
+    import { mountShell, requireSession, toast } from './assets/js/auth.js';
+
+    if (requireSession()) {
+      const page = mountShell({ titleKey: 'nav_events' });
+      render(page);
+    }
+
+    function esc(v) {
+      return String(v ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+
+    function statusBadge(status) {
+      const cls = { UPCOMING: 'badge-trial', ONGOING: 'badge-active', COMPLETED: '', CANCELLED: 'badge-suspended' }[status] || '';
+      return `<span class="badge ${cls}">${esc(status)}</span>`;
+    }
+
+    async function render(page) {
+      page.innerHTML = '<div class="card"><div class="skeleton" style="height:200px"></div></div>';
+
+      try {
+        const events = await api.listEvents();
+
+        const addForm = `
+          <div class="card" style="margin-bottom:var(--space-6)">
+            <div class="card-head"><h3 data-i18n="add_event">Add Event</h3></div>
+            <form id="addEventForm" style="display:grid;gap:var(--space-4);grid-template-columns:1fr 1fr">
+              <div class="field" style="grid-column:1/-1">
+                <label data-i18n="event_title_en">Event Title (English)</label>
+                <input id="evtTitle" type="text" required placeholder="State Championship 2026">
+              </div>
+              <div class="field">
+                <label data-i18n="event_type">Type</label>
+                <select id="evtType">
+                  <option value="COMPETITION">Competition</option>
+                  <option value="WORKSHOP">Workshop</option>
+                  <option value="BELT_TEST">Belt Test</option>
+                  <option value="SEMINAR">Seminar</option>
+                </select>
+              </div>
+              <div class="field">
+                <label data-i18n="event_date">Date</label>
+                <input id="evtDate" type="date" required>
+              </div>
+              <div class="field">
+                <label data-i18n="venue">Venue</label>
+                <input id="evtVenue" type="text" placeholder="Indoor Stadium, Chennai">
+              </div>
+              <div class="field">
+                <label data-i18n="registration_fee">Registration Fee (₹)</label>
+                <input id="evtFee" type="number" value="0" min="0" step="50">
+              </div>
+              <div style="grid-column:1/-1;display:flex;gap:var(--space-3)">
+                <button type="submit" class="btn btn-primary" data-i18n="add_event">Add Event</button>
+              </div>
+            </form>
+          </div>`;
+
+        const table = events.length ? `
+          <div class="card">
+            <div class="card-head"><h3 data-i18n="events_list">Events</h3></div>
+            <table>
+              <thead><tr>
+                <th>Title</th><th>Type</th><th>Date</th><th>Venue</th><th>Fee (₹)</th><th>Status</th>
+              </tr></thead>
+              <tbody>
+                ${events.map(ev => `
+                  <tr>
+                    <td>${esc(ev.title_en)}</td>
+                    <td>${esc(ev.event_type)}</td>
+                    <td>${esc(ev.event_date)}</td>
+                    <td>${esc(ev.venue || '—')}</td>
+                    <td>₹${ev.registration_fee.toLocaleString()}</td>
+                    <td>${statusBadge(ev.status)}</td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>` : `
+          <div class="card">
+            <div class="empty">
+              <div class="mark">★</div>
+              <h3>No events yet</h3>
+              <p>Create your first Silambam event or competition above.</p>
+            </div>
+          </div>`;
+
+        page.innerHTML = addForm + table;
+        applyTranslations(page);
+
+        document.getElementById('addEventForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const btn = e.target.querySelector('button[type=submit]');
+          btn.disabled = true;
+          try {
+            await api.createEvent({
+              title_en: document.getElementById('evtTitle').value.trim(),
+              event_type: document.getElementById('evtType').value,
+              event_date: document.getElementById('evtDate').value,
+              venue: document.getElementById('evtVenue').value.trim() || null,
+              registration_fee: parseFloat(document.getElementById('evtFee').value) || 0,
+            });
+            toast('Event created!');
+            render(page);
+          } catch (err) {
+            toast(err.message, 'error');
+          } finally {
+            btn.disabled = false;
+          }
+        });
+
+      } catch (err) {
+        page.innerHTML = `<div class="alert alert-error">${esc(err.message)}</div>`;
+      }
+    }
+  </script>
+</body>
+</html>
