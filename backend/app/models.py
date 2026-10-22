@@ -96,6 +96,8 @@ class License(Base, TimestampMixin):
     organization_id: Mapped[str] = mapped_column(
         ForeignKey("organizations.id", ondelete="RESTRICT"), index=True
     )
+    # NULL for the academy-wide subscription license; set for a per-user seat license.
+    user_id: Mapped[str | None] = mapped_column(ForeignKey("users.id", ondelete="RESTRICT"), index=True)
     license_key: Mapped[str] = mapped_column(String(40), unique=True, index=True)
     status: Mapped[str] = mapped_column(String(20), default="ACTIVE")
     issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

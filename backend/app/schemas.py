@@ -17,6 +17,27 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class UserCreate(BaseModel):
+    username: str = Field(min_length=3, max_length=80, pattern=r"^[A-Za-z0-9._-]+$")
+    full_name_en: str = Field(min_length=2, max_length=200)
+    full_name_ta: str | None = Field(default=None, max_length=200)
+    password: str = Field(min_length=8, max_length=200)
+
+
+class UserLicenseOut(BaseModel):
+    id: str
+    username: str
+    full_name_en: str
+    role: str
+    is_active: bool
+    license_status: str | None
+
+
+class UserCreatedOut(BaseModel):
+    user: UserLicenseOut
+    license_key: str  # shown once; only the admin sees it
+
+
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str

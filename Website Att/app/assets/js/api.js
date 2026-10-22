@@ -164,6 +164,10 @@ export const api = {
 
   // Subscription & Plans
   plans: () => request('/api/v1/plans', { auth: false }),
+  listUsers: () => request('/api/v1/users'),
+  createUser: (payload) => request('/api/v1/users', { method: 'POST', body: payload }),
+  revokeLicense: (id) => request(`/api/v1/users/${id}/license/revoke`, { method: 'POST' }),
+  reissueLicense: (id) => request(`/api/v1/users/${id}/license/reissue`, { method: 'POST' }),
   subscription: () => request('/api/v1/subscription'),
 
   // Admin

@@ -46,7 +46,9 @@ def register(payload: RegisterRequest, request: Request, db: Session = Depends(g
         role="ADMIN",  # the signup owner administers their own organization
     )
     db.add(user)
+    db.flush()
 
+    provisioning.issue_user_license(db, organization.id, user.id)
     provisioning.start_trial(db, organization)
     audit.record(
         db,
@@ -80,6 +82,8 @@ def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)
         raise errors.unauthorized("Invalid username or password")
     if not user.is_active:
         raise errors.forbidden("ACCOUNT_DISABLED", "This account has been disabled")
+    if user.organization_id and not provisioning.has_active_user_license(db, user.id):
+        raise errors.forbidden("LICENSE_REVOKED", "Your license is not active. Ask your academy admin.")
 
     if needs_rehash(user.password_hash):
         user.password_hash = hash_password(payload.password)

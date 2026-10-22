@@ -31,6 +31,26 @@ def default_plan(db: Session) -> Plan:
     return plan
 
 
+def issue_user_license(db: Session, organization_id: str, user_id: str) -> License:
+    license_row = License(
+        organization_id=organization_id,
+        user_id=user_id,
+        license_key=generate_license_key(),
+        status="ACTIVE",
+    )
+    db.add(license_row)
+    return license_row
+
+
+def has_active_user_license(db: Session, user_id: str) -> bool:
+    return (
+        db.query(License.id)
+        .filter(License.user_id == user_id, License.status == "ACTIVE")
+        .first()
+        is not None
+    )
+
+
 def start_trial(db: Session, organization: Organization, plan: Plan | None = None) -> Subscription:
     settings = get_settings()
     plan = plan or default_plan(db)

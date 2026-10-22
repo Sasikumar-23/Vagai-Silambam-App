@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Users & Licenses · Vagai Silambam</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+  <script type="module">
+    import { api } from './assets/js/api.js';
+    import { applyTranslations } from './assets/js/i18n.js';
+    import { mountShell, requireSession, toast } from './assets/js/auth.js';
+
+    if (requireSession()) {
+      const page = mountShell({ titleKey: 'nav_users' });
+      render(page);
+    }
+
+    function esc(v) {
+      return String(v ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+
+    function statusBadge(status) {
+      const cls = { ACTIVE: 'badge-active', REVOKED: 'badge-suspended' }[status] || 'badge-trial';
+      return `<span class="badge ${cls}">${esc(status || 'NONE')}</span>`;
+    }
+
+    function keyBanner(result) {
+      return `
+        <div class="card" id="keyBanner" style="margin-bottom:var(--space-6);border:1px solid var(--accent, #0a7)">
+          <div class="card-head"><h3>License key for ${esc(result.user.username)}</h3></div>
+          <p>Share this key with the user. <strong>It is shown only once.</strong></p>
+          <div style="display:flex;gap:var(--space-3);align-items:center;flex-wrap:wrap">
+            <code id="licenseKeyValue" style="font-size:1.1em;padding:8px 12px;background:var(--surface-2, #f3f3f3);border-radius:6px">${esc(result.license_key)}</code>
+            <button id="copyKey" class="btn btn-ghost btn-sm">Copy</button>
+            <button id="dismissKey" class="btn btn-primary btn-sm">I have saved it</button>
+          </div>
+        </div>`;
+    }
+
+    async function render(page, banner = '') {
+      page.innerHTML = '<div class="card"><div class="skeleton" style="height:200px"></div></div>';
+
+      try {
+        const users = await api.listUsers();
+
+        const addForm = `
+          <div class="card" style="margin-bottom:var(--space-6)">
+            <div class="card-head"><h3>Add User</h3></div>
+            <form id="addUserForm" style="display:grid;gap:var(--space-4);grid-template-columns:1fr 1fr">
+              <div class="field">
+                <label>Username</label>
+                <input id="uName" type="text" required minlength="3" maxlength="80"
+                       pattern="[A-Za-z0-9._-]+" placeholder="coach_ravi">
+              </div>
+              <div class="field">
+                <label>Full name (English)</label>
+                <input id="uFullEn" type="text" required minlength="2" maxlength="200">
+              </div>
+              <div class="field">
+                <label>Full name (Tamil, optional)</label>
+                <input id="uFullTa" type="text" maxlength="200">
+              </div>
+              <div class="field">
+                <label>Password (min 8 characters)</label>
+                <input id="uPass" type="password" required minlength="8" maxlength="200" autocomplete="new-password">
+              </div>
+              <div style="grid-column:1/-1">
+                <button type="submit" class="btn btn-primary">Create user &amp; license</button>
+              </div>
+            </form>
+          </div>`;
+
+        const rows = users.map(u => {
+          const isActive = u.license_status === 'ACTIVE';
+          const action = isActive
+            ? `<button class="btn btn-ghost btn-sm revoke-btn" data-id="${esc(u.id)}">Revoke license</button>`
+            : `<button class="btn btn-ghost btn-sm reissue-btn" data-id="${esc(u.id)}">Issue new license</button>`;
+          return `<tr>
+            <td>${esc(u.username)}</td>
+            <td>${esc(u.full_name_en)}</td>
+            <td>${esc(u.role)}</td>
+            <td>${statusBadge(u.license_status)}</td>
+            <td>${action}</td>
+          </tr>`;
+        }).join('');
+
+        const table = `
+          <div class="card">
+            <div class="card-head"><h3>Users &amp; Licenses</h3></div>
+            <table>
+              <thead><tr><th>Username</th><th>Name</th><th>Role</th><th>License</th><th></th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>`;
+
+        page.innerHTML = banner + addForm + table;
+        applyTranslations(page);
+        bind(page);
+      } catch (err) {
+        page.innerHTML = `<div class="card"><div class="empty"><h3>Could not load users</h3><p>${esc(err.message)}</p></div></div>`;
+      }
+    }
+
+    function bind(page) {
+      const dismiss = document.getElementById('dismissKey');
+      if (dismiss) dismiss.addEventListener('click', () => document.getElementById('keyBanner').remove());
+
+      const copy = document.getElementById('copyKey');
+      if (copy) copy.addEventListener('click', async () => {
+        await navigator.clipboard.writeText(document.getElementById('licenseKeyValue').textContent);
+        toast('License key copied');
+      });
+
+      document.getElementById('addUserForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector('button[type=submit]');
+        btn.disabled = true;
+        try {
+          const result = await api.createUser({
+            username: document.getElementById('uName').value.trim(),
+            full_name_en: document.getElementById('uFullEn').value.trim(),
+            full_name_ta: document.getElementById('uFullTa').value.trim() || null,
+            password: document.getElementById('uPass').value,
+          });
+          await render(page, keyBanner(result));
+        } catch (err) {
+          toast(err.message);
+          btn.disabled = false;
+        }
+      });
+
+      page.querySelectorAll('.revoke-btn').forEach(btn => btn.addEventListener('click', async () => {
+        if (!confirm('Revoke this license? The user will not be able to log in until you issue a new one.')) return;
+        try {
+          await api.revokeLicense(btn.dataset.id);
+          await render(page);
+        } catch (err) { toast(err.message); }
+      }));
+
+      page.querySelectorAll('.reissue-btn').forEach(btn => btn.addEventListener('click', async () => {
+        try {
+          const result = await api.reissueLicense(btn.dataset.id);
+          await render(page, keyBanner(result));
+        } catch (err) { toast(err.message); }
+      }));
+    }
+  </script>
+</body>
+</html>

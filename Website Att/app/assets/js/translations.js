@@ -12,6 +12,7 @@ export const TRANSLATIONS = {
   nav_events: { en: 'Events', ta: 'நிகழ்வுகள்' },
   nav_fees: { en: 'Fees', ta: 'கட்டணம்' },
   nav_uniforms: { en: 'Uniforms', ta: 'சீருடை' },
+  nav_users: { en: 'Users & Licenses', ta: 'பயனர்கள் & உரிமம்' },
   nav_reports: { en: 'Reports', ta: 'அறிக்கைகள்' },
   nav_subscription: { en: 'Subscription', ta: 'சந்தா' },
   nav_settings: { en: 'Settings', ta: 'அமைப்புகள்' },
