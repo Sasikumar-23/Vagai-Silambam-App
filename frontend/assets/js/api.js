@@ -2,9 +2,8 @@
    auth headers, error envelopes and session expiry are handled once. */
 
 const API_BASE = window.VAGAI_API_BASE
-  || (location.hostname === 'localhost' || location.hostname === '127.0.0.1'
-    ? 'http://localhost:8000'
-    : 'https://vagai-silambam-app.vercel.app');
+  || localStorage.getItem('vagai_api_base')
+  || 'https://vagai-silambam-app.vercel.app';
 
 const TOKEN_KEY = 'vagai_access_token';
 const REFRESH_KEY = 'vagai_refresh_token';
