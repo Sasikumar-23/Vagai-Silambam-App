@@ -1,0 +1,735 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Users &amp; Licenses · Vagai Silambam</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+  <style>
+    /* Premium UI/UX enhancements specifically tailored for Users & Licenses management */
+    .users-page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+    .users-page-title h1 {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text);
+      letter-spacing: -0.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .users-page-title p {
+      margin: 4px 0 0;
+      color: var(--text-secondary);
+      font-size: 13.5px;
+    }
+    
+    .users-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .users-stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .users-stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+    .users-stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      width: 4px;
+      background: var(--stat-accent, var(--primary));
+    }
+    .users-stat-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-size: 22px;
+      background: var(--stat-bg, var(--primary-muted));
+      color: var(--stat-color, var(--primary));
+      flex-shrink: 0;
+    }
+    .users-stat-info .label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .users-stat-info .value {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.2;
+      margin-top: 4px;
+    }
+
+    /* Modal / Form Card Styles */
+    .user-card {
+      background: var(--surface);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-sm);
+      margin-bottom: 24px;
+      overflow: hidden;
+      transition: box-shadow 0.2s ease;
+    }
+    .user-card:hover {
+      box-shadow: var(--shadow-md);
+    }
+    .user-card-head {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--border-light);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(180deg, #FFFFFF, var(--surface-subtle));
+    }
+    .user-card-head h3 {
+      font-size: 16.5px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text);
+    }
+    .user-card-body {
+      padding: 24px;
+    }
+
+    /* Modern key banner */
+    .key-alert-card {
+      background: linear-gradient(135deg, #F0FDF4 0%, #DCFCE7 100%);
+      border: 1.5px solid #86EFAC;
+      border-radius: var(--radius-lg);
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 14px rgba(16, 185, 129, 0.12);
+      animation: keyPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes keyPop {
+      0% { opacity: 0; transform: translateY(-8px); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    .key-alert-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #166534;
+      font-size: 16px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .key-alert-desc {
+      color: #15803D;
+      font-size: 13.5px;
+      margin-bottom: 14px;
+    }
+    .key-display-box {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      background: rgba(255, 255, 255, 0.85);
+      border: 1px dashed #22C55E;
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+    }
+    .key-display-box code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 16px;
+      font-weight: 700;
+      color: #166534;
+      letter-spacing: 1px;
+      user-select: all;
+    }
+
+    /* Modern Table & Badges */
+    .table-container {
+      overflow-x: auto;
+      border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+    }
+    .modern-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+    }
+    .modern-table th {
+      background: var(--surface-subtle);
+      padding: 12px 18px;
+      font-size: 11.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+    .modern-table td {
+      padding: 14px 18px;
+      vertical-align: middle;
+      border-bottom: 1px solid var(--border-light);
+      font-size: 14px;
+    }
+    .modern-table tbody tr {
+      transition: background-color 0.15s ease;
+    }
+    .modern-table tbody tr:hover {
+      background-color: #F8FAFC;
+    }
+    .modern-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .user-avatar-pill {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .user-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: #FFFFFF;
+      font-weight: 700;
+      font-size: 14px;
+      display: grid;
+      place-items: center;
+      box-shadow: 0 2px 6px rgba(26, 54, 115, 0.18);
+      flex-shrink: 0;
+    }
+    .user-info-text .username {
+      font-weight: 700;
+      color: var(--text);
+      display: block;
+    }
+    .user-info-text .subname {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .role-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 11.5px;
+      font-weight: 700;
+      background: var(--primary-muted);
+      color: var(--primary);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+    .status-pill.active {
+      background: #DCFCE7;
+      color: #15803D;
+      border: 1px solid rgba(22, 163, 74, 0.2);
+    }
+    .status-pill.active::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #16A34A;
+      box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+    }
+    .status-pill.revoked {
+      background: #FFE4E6;
+      color: #BE123C;
+      border: 1px solid rgba(225, 29, 72, 0.2);
+    }
+    .status-pill.revoked::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #E11D48;
+    }
+    .status-pill.trial {
+      background: #FEF3C7;
+      color: #B45309;
+      border: 1px solid rgba(217, 119, 6, 0.2);
+    }
+
+    /* Actions styling */
+    .action-btn-group {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-action-revoke {
+      background: #FFF1F2;
+      color: #E11D48;
+      border: 1px solid #FECDD3;
+      padding: 6px 12px;
+      font-size: 12.5px;
+      font-weight: 700;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+    .btn-action-revoke:hover {
+      background: #FFE4E6;
+      border-color: #FDA4AF;
+      color: #BE123C;
+      transform: translateY(-1px);
+    }
+    .btn-action-issue {
+      background: #F0FDF4;
+      color: #15803D;
+      border: 1px solid #BBF7D0;
+      padding: 6px 12px;
+      font-size: 12.5px;
+      font-weight: 700;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+    .btn-action-issue:hover {
+      background: #DCFCE7;
+      border-color: #86EFAC;
+      color: #166534;
+      transform: translateY(-1px);
+    }
+
+    /* Search & Filter Toolbar */
+    .table-toolbar {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      border-bottom: 1px solid var(--border-light);
+      flex-wrap: wrap;
+    }
+    .table-search-box {
+      position: relative;
+      flex: 1;
+      max-width: 320px;
+    }
+    .table-search-box input {
+      width: 100%;
+      padding: 9px 12px 9px 36px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 13.5px;
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .table-search-box input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--ring);
+    }
+    .table-search-box span.search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      pointer-events: none;
+      font-size: 14px;
+    }
+
+    /* Collapsible Add User Form */
+    .toggle-add-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+  <script type="module">
+    import { api } from './assets/js/api.js';
+    import { applyTranslations } from './assets/js/i18n.js';
+    import { mountShell, requireSession, toast } from './assets/js/auth.js';
+
+    if (requireSession()) {
+      const page = mountShell({ titleKey: 'nav_users' });
+      render(page);
+    }
+
+    function esc(v) {
+      return String(v ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+
+    function statusBadge(status) {
+      const s = (status || 'NONE').toUpperCase();
+      if (s === 'ACTIVE') {
+        return `<span class="status-pill active">Active</span>`;
+      } else if (s === 'REVOKED' || s === 'SUSPENDED') {
+        return `<span class="status-pill revoked">Revoked</span>`;
+      }
+      return `<span class="status-pill trial">${esc(s)}</span>`;
+    }
+
+    function getInitials(name) {
+      if (!name) return 'U';
+      const parts = name.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+      }
+      return name.slice(0, 2).toUpperCase();
+    }
+
+    function keyBanner(result) {
+      return `
+        <div class="key-alert-card" id="keyBanner">
+          <div class="key-alert-title">
+            <span>🔑</span>
+            <span>License Key Generated for <strong>${esc(result.user.username)}</strong></span>
+          </div>
+          <p class="key-alert-desc">Share this secure license key with the coach/admin. <strong>It will only be shown once for security purposes.</strong></p>
+          <div class="key-display-box">
+            <code id="licenseKeyValue">${esc(result.license_key)}</code>
+            <div style="display:flex;gap:8px;margin-left:auto;flex-wrap:wrap">
+              <button id="copyKey" class="btn btn-ghost btn-sm" style="background:#fff;border-color:#86EFAC;color:#166534">
+                📋 Copy Key
+              </button>
+              <button id="dismissKey" class="btn btn-primary btn-sm" style="background:#16A34A;border:none">
+                ✓ I have saved it
+              </button>
+            </div>
+          </div>
+        </div>`;
+    }
+
+    let allUsers = [];
+
+    async function render(page, banner = '') {
+      page.innerHTML = `
+        <div class="users-stats">
+          <div class="users-stat-card"><div class="skeleton" style="height:48px;width:100%"></div></div>
+          <div class="users-stat-card"><div class="skeleton" style="height:48px;width:100%"></div></div>
+          <div class="users-stat-card"><div class="skeleton" style="height:48px;width:100%"></div></div>
+        </div>
+        <div class="user-card"><div class="skeleton" style="height:260px"></div></div>`;
+
+      try {
+        allUsers = await api.listUsers();
+        renderWithData(page, banner);
+      } catch (err) {
+        page.innerHTML = `
+          <div class="user-card">
+            <div class="empty">
+              <div class="mark">⚠️</div>
+              <h3>Could not load users</h3>
+              <p>${esc(err.message)}</p>
+              <button class="btn btn-primary btn-sm" onclick="location.reload()" style="margin-top:14px">Retry</button>
+            </div>
+          </div>`;
+      }
+    }
+
+    function renderWithData(page, banner = '') {
+      const total = allUsers.length;
+      const active = allUsers.filter(u => u.license_status === 'ACTIVE').length;
+      const revoked = allUsers.filter(u => u.license_status === 'REVOKED').length;
+
+      const statsBar = `
+        <div class="users-page-header">
+          <div class="users-page-title">
+            <h1><span>🛡️</span> Users &amp; Coach Licenses</h1>
+            <p>Manage academy access credentials, user permissions, and coach license activations</p>
+          </div>
+          <button id="toggleAddBtn" class="btn btn-primary toggle-add-btn">
+            <span>+</span> <span>Add New User</span>
+          </button>
+        </div>
+
+        <div class="users-stats">
+          <div class="users-stat-card" style="--stat-accent:#1A3673;--stat-bg:#EBF2FF;--stat-color:#1A3673">
+            <div class="users-stat-icon">👥</div>
+            <div class="users-stat-info">
+              <div class="label">Total Users</div>
+              <div class="value">${total}</div>
+            </div>
+          </div>
+          <div class="users-stat-card" style="--stat-accent:#00A86B;--stat-bg:#E6F9F1;--stat-color:#00A86B">
+            <div class="users-stat-icon">✓</div>
+            <div class="users-stat-info">
+              <div class="label">Active Licenses</div>
+              <div class="value">${active}</div>
+            </div>
+          </div>
+          <div class="users-stat-card" style="--stat-accent:#E11D48;--stat-bg:#FFE4E6;--stat-color:#E11D48">
+            <div class="users-stat-icon">🚫</div>
+            <div class="users-stat-info">
+              <div class="label">Revoked / Suspended</div>
+              <div class="value">${revoked}</div>
+            </div>
+          </div>
+        </div>`;
+
+      const addForm = `
+        <div class="user-card" id="addUserCard" style="display:none;animation:keyPop 0.25s ease">
+          <div class="user-card-head">
+            <h3><span>👤</span> Create New Academy User &amp; License</h3>
+            <button id="closeAddBtn" class="btn btn-ghost btn-sm" style="border:none">✕</button>
+          </div>
+          <div class="user-card-body">
+            <form id="addUserForm" style="display:grid;gap:var(--space-4);grid-template-columns:1fr 1fr">
+              <div class="field">
+                <label>Username</label>
+                <input id="uName" type="text" required minlength="3" maxlength="80"
+                       pattern="[A-Za-z0-9._-]+" placeholder="e.g. coach_ravi">
+                <div class="hint">Letters, numbers, dots, and underscores only</div>
+              </div>
+              <div class="field">
+                <label>Full name (English)</label>
+                <input id="uFullEn" type="text" required minlength="2" maxlength="200" placeholder="e.g. Ravi Chandran">
+              </div>
+              <div class="field">
+                <label>Full name (Tamil, optional)</label>
+                <input id="uFullTa" type="text" maxlength="200" placeholder="எ.கா. ரவி சந்திரன்">
+              </div>
+              <div class="field">
+                <label>Password (min 8 characters)</label>
+                <input id="uPass" type="password" required minlength="8" maxlength="200" autocomplete="new-password" placeholder="••••••••">
+              </div>
+              <div style="grid-column:1/-1;display:flex;justify-content:flex-end;gap:10px;margin-top:6px">
+                <button type="button" id="cancelAddBtn" class="btn btn-ghost">Cancel</button>
+                <button type="submit" class="btn btn-primary">Generate License &amp; Save</button>
+              </div>
+            </form>
+          </div>
+        </div>`;
+
+      const tableCard = `
+        <div class="user-card">
+          <div class="user-card-head">
+            <h3><span>🔑</span> Academy User Directory</h3>
+            <span style="font-size:12.5px;color:var(--text-secondary);font-weight:600">${total} accounts enrolled</span>
+          </div>
+          <div class="table-toolbar">
+            <div class="table-search-box">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="userSearchInput" placeholder="Filter by username, name or role…">
+            </div>
+            <div style="font-size:12px;color:var(--text-muted)">
+              Showing matching coaches &amp; admins
+            </div>
+          </div>
+          <div class="table-container">
+            <table class="modern-table">
+              <thead>
+                <tr>
+                  <th>User Profile</th>
+                  <th>Full Name</th>
+                  <th>Role</th>
+                  <th>License Status</th>
+                  <th style="text-align:right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="userTableBody">
+                ${buildUserRows(allUsers)}
+              </tbody>
+            </table>
+          </div>
+        </div>`;
+
+      page.innerHTML = banner + statsBar + addForm + tableCard;
+      applyTranslations(page);
+      bind(page);
+    }
+
+    function buildUserRows(users) {
+      if (!users.length) {
+        return `
+          <tr>
+            <td colspan="5" style="text-align:center;padding:48px 20px">
+              <div class="empty" style="padding:0">
+                <div class="mark">🔍</div>
+                <h3>No matching users found</h3>
+                <p>Try refining your search keyword</p>
+              </div>
+            </td>
+          </tr>`;
+      }
+
+      return users.map(u => {
+        const isActive = u.license_status === 'ACTIVE';
+        const action = isActive
+          ? `<button class="btn-action-revoke revoke-btn" data-id="${esc(u.id)}">✕ Revoke License</button>`
+          : `<button class="btn-action-issue reissue-btn" data-id="${esc(u.id)}">↺ Reissue License</button>`;
+
+        const displayNameTa = u.full_name_ta ? `<span style="display:block;font-size:12px;color:var(--text-secondary)">${esc(u.full_name_ta)}</span>` : '';
+        const initials = getInitials(u.full_name_en || u.username);
+
+        return `<tr>
+          <td>
+            <div class="user-avatar-pill">
+              <div class="user-avatar">${initials}</div>
+              <div class="user-info-text">
+                <span class="username">${esc(u.username)}</span>
+                <span class="subname">ID: #${esc(String(u.id).slice(0, 8))}</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div style="font-weight:600;color:var(--text)">${esc(u.full_name_en || '—')}</div>
+            ${displayNameTa}
+          </td>
+          <td>
+            <span class="role-badge">👤 ${esc(u.role || 'COACH')}</span>
+          </td>
+          <td>${statusBadge(u.license_status)}</td>
+          <td>
+            <div class="action-btn-group">
+              ${action}
+            </div>
+          </td>
+        </tr>`;
+      }).join('');
+    }
+
+    function bind(page) {
+      const dismiss = document.getElementById('dismissKey');
+      if (dismiss) {
+        dismiss.addEventListener('click', () => {
+          const kb = document.getElementById('keyBanner');
+          if (kb) kb.remove();
+        });
+      }
+
+      const copy = document.getElementById('copyKey');
+      if (copy) {
+        copy.addEventListener('click', async () => {
+          const val = document.getElementById('licenseKeyValue').textContent;
+          await navigator.clipboard.writeText(val);
+          toast('License key copied to clipboard!', 'success');
+        });
+      }
+
+      // Add user accordion / toggle
+      const addCard = document.getElementById('addUserCard');
+      const toggleAddBtn = document.getElementById('toggleAddBtn');
+      const closeAddBtn = document.getElementById('closeAddBtn');
+      const cancelAddBtn = document.getElementById('cancelAddBtn');
+
+      function toggleForm(show) {
+        if (!addCard) return;
+        const willShow = show !== undefined ? show : addCard.style.display === 'none';
+        addCard.style.display = willShow ? 'block' : 'none';
+        if (willShow) {
+          const input = document.getElementById('uName');
+          if (input) input.focus();
+        }
+      }
+
+      if (toggleAddBtn) toggleAddBtn.addEventListener('click', () => toggleForm());
+      if (closeAddBtn) closeAddBtn.addEventListener('click', () => toggleForm(false));
+      if (cancelAddBtn) cancelAddBtn.addEventListener('click', () => toggleForm(false));
+
+      // Client-side search / filter
+      const searchInput = document.getElementById('userSearchInput');
+      const tableBody = document.getElementById('userTableBody');
+      if (searchInput && tableBody) {
+        searchInput.addEventListener('input', (e) => {
+          const q = e.target.value.toLowerCase().trim();
+          const filtered = allUsers.filter(u => 
+            (u.username && u.username.toLowerCase().includes(q)) ||
+            (u.full_name_en && u.full_name_en.toLowerCase().includes(q)) ||
+            (u.full_name_ta && u.full_name_ta.toLowerCase().includes(q)) ||
+            (u.role && u.role.toLowerCase().includes(q)) ||
+            (u.license_status && u.license_status.toLowerCase().includes(q))
+          );
+          tableBody.innerHTML = buildUserRows(filtered);
+          rebindRowActions(page);
+        });
+      }
+
+      // Add User Form Submit
+      const form = document.getElementById('addUserForm');
+      if (form) {
+        form.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const btn = e.target.querySelector('button[type=submit]');
+          btn.disabled = true;
+          btn.textContent = 'Creating user...';
+          try {
+            const result = await api.createUser({
+              username: document.getElementById('uName').value.trim(),
+              full_name_en: document.getElementById('uFullEn').value.trim(),
+              full_name_ta: document.getElementById('uFullTa').value.trim() || null,
+              password: document.getElementById('uPass').value,
+            });
+            await render(page, keyBanner(result));
+            toast('User created & license issued successfully!', 'success');
+          } catch (err) {
+            toast(err.message, 'error');
+            btn.disabled = false;
+            btn.textContent = 'Generate License & Save';
+          }
+        });
+      }
+
+      rebindRowActions(page);
+    }
+
+    function rebindRowActions(page) {
+      page.querySelectorAll('.revoke-btn').forEach(btn => {
+        btn.onclick = async () => {
+          if (!confirm('Revoke this coach license? The user will immediately be logged out and cannot log in until reissued.')) return;
+          try {
+            await api.revokeLicense(btn.dataset.id);
+            toast('License revoked successfully', 'info');
+            await render(page);
+          } catch (err) { toast(err.message, 'error'); }
+        };
+      });
+
+      page.querySelectorAll('.reissue-btn').forEach(btn => {
+        btn.onclick = async () => {
+          try {
+            const result = await api.reissueLicense(btn.dataset.id);
+            toast('New license issued', 'success');
+            await render(page, keyBanner(result));
+          } catch (err) { toast(err.message, 'error'); }
+        };
+      });
+    }
+  </script>
+</body>
+</html>
