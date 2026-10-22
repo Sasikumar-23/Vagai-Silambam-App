@@ -1,7 +1,10 @@
 /* Single place where the browser talks to FastAPI. Every call goes through here so
    auth headers, error envelopes and session expiry are handled once. */
 
-const API_BASE = window.VAGAI_API_BASE || 'http://localhost:8000';
+const API_BASE = window.VAGAI_API_BASE
+  || (location.hostname === 'localhost' || location.hostname === '127.0.0.1'
+    ? 'http://localhost:8000'
+    : 'https://vagai-silambam-app.vercel.app');
 
 const TOKEN_KEY = 'vagai_access_token';
 const REFRESH_KEY = 'vagai_refresh_token';
