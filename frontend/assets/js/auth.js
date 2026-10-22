@@ -28,6 +28,7 @@ const NAV = [
   { href: 'events.html', key: 'nav_events', icon: '★' },
   { href: 'fees.html', key: 'nav_fees', icon: '₹' },
   { href: 'uniforms.html', key: 'nav_uniforms', icon: '👕' },
+  { href: 'users.html', key: 'nav_users', icon: '🔑' },
   { href: 'reports.html', key: 'nav_reports', icon: '📊' },
   { href: 'subscription.html', key: 'nav_subscription', icon: '◆' },
   { href: 'settings.html', key: 'nav_settings', icon: '⚙' },

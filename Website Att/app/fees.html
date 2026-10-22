@@ -6,6 +6,14 @@
   <title>Fees · Vagai Silambam</title>
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/responsive.css">
+  <style>
+    .fees-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+  </style>
 </head>
 <body>
   <script type="module">
@@ -23,7 +31,7 @@
     }
 
     async function render(page) {
-      page.innerHTML = '<div class="card"><div class="skeleton" style="height:200px"></div></div>';
+      page.innerHTML = '<div class="card"><div class="skeleton" style="height:220px"></div></div>';
 
       try {
         const [feesData, studentsData] = await Promise.all([
@@ -35,38 +43,68 @@
           `<option value="${esc(s.id)}">${esc(s.name_en)} (${esc(s.student_code)})</option>`
         ).join('');
 
+        const studentMap = {};
+        studentsData.items.forEach(s => { studentMap[s.id] = s.name_en; });
+
+        const totalFees = feesData.reduce((acc, f) => acc + (f.amount || 0), 0);
+        const paidFees = feesData.filter(f => f.status === 'PAID').reduce((acc, f) => acc + (f.amount || 0), 0);
+        const pendingFees = totalFees - paidFees;
+
+        const statsBar = `
+          <div class="fees-stats">
+            <div class="stat" style="border-left-color:var(--primary)">
+              <div class="label">Total Invoiced</div>
+              <div class="value">₹${totalFees.toLocaleString()}</div>
+              <div class="sub">${feesData.length} total fee records</div>
+            </div>
+            <div class="stat" style="border-left-color:var(--accent)">
+              <div class="label">Collected Fees</div>
+              <div class="value" style="color:#059669">₹${paidFees.toLocaleString()}</div>
+              <div class="sub">Paid successfully</div>
+            </div>
+            <div class="stat" style="border-left-color:var(--crimson)">
+              <div class="label">Pending &amp; Overdue</div>
+              <div class="value" style="color:#BE123C">₹${pendingFees.toLocaleString()}</div>
+              <div class="sub">Outstanding dues</div>
+            </div>
+          </div>`;
+
         const addForm = `
-          <div class="card" style="margin-bottom:var(--space-6)">
-            <div class="card-head"><h3>Add Fee Record</h3></div>
+          <div class="card" id="feeFormCard" style="display:none;animation:fadeIn 0.2s ease">
+            <div class="card-head">
+              <h3><span>₹</span> Add Fee Invoice</h3>
+              <button type="button" class="btn btn-ghost btn-sm" id="closeFeeForm">✕</button>
+            </div>
             <form id="addFeeForm" style="display:grid;gap:var(--space-4);grid-template-columns:1fr 1fr">
               <div class="field" style="grid-column:1/-1">
                 <label>Student</label>
-                <select id="feeStudent" required><option value="">— Select —</option>${studentOpts}</select>
+                <select id="feeStudent" required><option value="">— Select Student —</option>${studentOpts}</select>
               </div>
               <div class="field">
-                <label>Fee Title (EN)</label>
-                <input id="feeTitle" type="text" required placeholder="October Tuition">
+                <label>Fee Title</label>
+                <input id="feeTitle" type="text" required placeholder="e.g. October Monthly Tuition">
               </div>
               <div class="field">
                 <label>Amount (₹)</label>
-                <input id="feeAmount" type="number" required min="1" step="50">
+                <input id="feeAmount" type="number" required min="1" step="50" placeholder="500">
               </div>
               <div class="field">
                 <label>Due Date</label>
                 <input id="feeDue" type="date">
               </div>
               <div class="field">
-                <label>Fee Type</label>
+                <label>Fee Category</label>
                 <select id="feeType">
                   <option value="MONTHLY_TUITION">Monthly Tuition</option>
-                  <option value="ADMISSION">Admission</option>
-                  <option value="EXAM">Exam</option>
-                  <option value="UNIFORM">Uniform</option>
-                  <option value="EVENT">Event</option>
+                  <option value="ADMISSION">Admission Fee</option>
+                  <option value="EXAM">Belt Exam Fee</option>
+                  <option value="UNIFORM">Uniform &amp; Kit</option>
+                  <option value="EVENT">Tournament &amp; Event</option>
                 </select>
               </div>
-              <div style="grid-column:1/-1">
-                <button type="submit" class="btn btn-primary">Add Fee</button>
+              <div style="grid-column:1/-1;display:flex;justify-content:flex-end;gap:10px;margin-top:6px">
+                <button type="button" class="btn btn-ghost" id="cancelFeeBtn">Cancel</button>
+                <button type="submit" class="btn btn-primary">Create Fee Invoice</button>
               </div>
             </form>
           </div>`;
@@ -74,38 +112,67 @@
         const rows = feesData.map(fee => {
           const statusCls = { PAID: 'badge-active', PENDING: 'badge-trial', OVERDUE: 'badge-suspended' }[fee.status] || '';
           const payBtn = fee.status !== 'PAID'
-            ? `<button class="btn btn-ghost pay-btn" data-id="${esc(fee.id)}" data-amount="${fee.amount}">Mark Paid</button>`
-            : '';
+            ? `<button class="btn btn-ghost btn-sm pay-btn" style="color:#059669;border-color:#A7F3D0;background:#ECFDF5;font-weight:700" data-id="${esc(fee.id)}" data-amount="${fee.amount}">✓ Mark Paid</button>`
+            : `<span style="font-size:12px;color:var(--text-muted)">Receipt: #${esc(fee.receipt_number || 'OK')}</span>`;
+
+          const studentName = studentMap[fee.student_id] || fee.student_id;
+
           return `<tr>
-            <td>${esc(fee.title_en)}</td>
-            <td>${esc(fee.student_id)}</td>
-            <td>₹${fee.amount.toLocaleString()}</td>
+            <td style="font-weight:700">${esc(fee.title_en)}</td>
+            <td>${esc(studentName)}</td>
+            <td style="font-weight:800;color:var(--text)">₹${fee.amount.toLocaleString()}</td>
             <td>${esc(fee.due_date || '—')}</td>
             <td>${esc(fee.paid_date || '—')}</td>
-            <td>${esc(fee.receipt_number || '—')}</td>
             <td><span class="badge ${statusCls}">${esc(fee.status)}</span></td>
-            <td>${payBtn}</td>
+            <td style="text-align:right">${payBtn}</td>
           </tr>`;
         }).join('');
 
         const table = feesData.length ? `
-          <div class="card">
-            <div class="card-head">
-              <h3>Fee Records</h3>
-              <button id="exportFees" class="btn btn-ghost btn-sm">Export CSV</button>
+          <div class="card" style="padding:0;overflow:hidden">
+            <div class="card-head" style="padding:22px 24px 14px;margin-bottom:0">
+              <h3><span>📋</span> Fee Records</h3>
+              <div style="display:flex;gap:10px;align-items:center">
+                <button id="toggleFeeFormBtn" class="btn btn-primary btn-sm">+ Add New Fee</button>
+                <button id="exportFees" class="btn btn-ghost btn-sm">📥 Export CSV</button>
+              </div>
             </div>
-            <table>
-              <thead><tr>
-                <th>Title</th><th>Student</th><th>Amount</th><th>Due</th>
-                <th>Paid</th><th>Receipt</th><th>Status</th><th></th>
-              </tr></thead>
-              <tbody>${rows}</tbody>
-            </table>
-          </div>` : `<div class="card"><div class="empty"><div class="mark">₹</div>
-            <h3>No fee records yet</h3><p>Add fee records using the form above.</p></div></div>`;
+            <div style="overflow-x:auto">
+              <table>
+                <thead><tr>
+                  <th>Title</th><th>Student</th><th>Amount</th><th>Due Date</th>
+                  <th>Paid Date</th><th>Status</th><th style="text-align:right">Action</th>
+                </tr></thead>
+                <tbody>${rows}</tbody>
+              </table>
+            </div>
+          </div>` : `
+          <div class="card">
+            <div class="empty">
+              <div class="mark">₹</div>
+              <h3>No fee records yet</h3>
+              <p>Add invoices and fee tracking for academy students.</p>
+              <button id="toggleFeeFormBtnEmpty" class="btn btn-primary btn-sm" style="margin-top:12px">+ Add First Fee</button>
+            </div>
+          </div>`;
 
-        page.innerHTML = addForm + table;
+        page.innerHTML = statsBar + addForm + table;
         applyTranslations(page);
+
+        // Toggle form logic
+        const formCard = document.getElementById('feeFormCard');
+        const showForm = () => { formCard.style.display = 'block'; };
+        const hideForm = () => { formCard.style.display = 'none'; };
+
+        const btn1 = document.getElementById('toggleFeeFormBtn');
+        const btn2 = document.getElementById('toggleFeeFormBtnEmpty');
+        const closeBtn = document.getElementById('closeFeeForm');
+        const cancelBtn = document.getElementById('cancelFeeBtn');
+
+        if (btn1) btn1.addEventListener('click', showForm);
+        if (btn2) btn2.addEventListener('click', showForm);
+        if (closeBtn) closeBtn.addEventListener('click', hideForm);
+        if (cancelBtn) cancelBtn.addEventListener('click', hideForm);
 
         document.getElementById('addFeeForm').addEventListener('submit', async (e) => {
           e.preventDefault();
@@ -119,7 +186,7 @@
               fee_type: document.getElementById('feeType').value,
               due_date: document.getElementById('feeDue').value || null,
             });
-            toast('Fee record added!');
+            toast('Fee invoice created successfully!', 'success');
             render(page);
           } catch (err) { toast(err.message, 'error'); } finally { btn.disabled = false; }
         });
@@ -131,7 +198,7 @@
             if (!mode) return;
             try {
               await api.payFee(id, { payment_mode: mode.toUpperCase() });
-              toast('Payment recorded!');
+              toast('Payment successfully recorded!', 'success');
               render(page);
             } catch (err) { toast(err.message, 'error'); }
           });
@@ -140,11 +207,16 @@
         const expBtn = document.getElementById('exportFees');
         if (expBtn) {
           expBtn.addEventListener('click', async () => {
-            const res = await api.exportFeesCSV();
-            const blob = await res.blob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = 'fees.csv'; a.click();
-            URL.revokeObjectURL(url);
+            try {
+              const res = await api.exportFeesCSV();
+              const blob = await res.blob();
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a'); a.href = url; a.download = 'fees.csv'; a.click();
+              URL.revokeObjectURL(url);
+              toast('CSV file downloaded', 'success');
+            } catch (e) {
+              toast('Export failed', 'error');
+            }
           });
         }
 

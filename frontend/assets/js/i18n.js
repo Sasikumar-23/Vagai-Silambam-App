@@ -7,6 +7,8 @@ const LANG_KEY = 'vagai_language';
 export function currentLanguage() {
   return localStorage.getItem(LANG_KEY) === 'ta' ? 'ta' : 'en';
 }
+// short aliases used by newer pages
+export const currentLang = currentLanguage;
 
 export function t(key) {
   const entry = TRANSLATIONS[key];
@@ -31,6 +33,8 @@ export function setLanguage(lang) {
     button.classList.toggle('active', button.dataset.lang === currentLanguage());
   });
 }
+// short alias used by newer pages
+export const setLang = setLanguage;
 
 export function mountLanguageToggle(container) {
   if (!container) return;

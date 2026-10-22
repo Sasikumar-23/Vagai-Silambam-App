@@ -12,6 +12,7 @@ export const TRANSLATIONS = {
   nav_events: { en: 'Events', ta: 'நிகழ்வுகள்' },
   nav_fees: { en: 'Fees', ta: 'கட்டணம்' },
   nav_uniforms: { en: 'Uniforms', ta: 'சீருடை' },
+  nav_users: { en: 'Users & Licenses', ta: 'பயனர்கள் & உரிமம்' },
   nav_reports: { en: 'Reports', ta: 'அறிக்கைகள்' },
   nav_subscription: { en: 'Subscription', ta: 'சந்தா' },
   nav_settings: { en: 'Settings', ta: 'அமைப்புகள்' },
@@ -74,10 +75,73 @@ export const TRANSLATIONS = {
   used_of: { en: 'used of', ta: 'பயன்படுத்தியது' },
   unlimited: { en: 'Unlimited', ta: 'வரம்பில்லா' },
 
+  // events
+  add_event: { en: 'Add event', ta: 'நிகழ்வு சேர்' },
+  events_list: { en: 'Events', ta: 'நிகழ்வுகள்' },
+  event_title_en: { en: 'Event title', ta: 'நிகழ்வு தலைப்பு' },
+  event_type: { en: 'Type', ta: 'வகை' },
+  event_date: { en: 'Date', ta: 'தேதி' },
+  venue: { en: 'Venue', ta: 'இடம்' },
+  registration_fee: { en: 'Registration fee (₹)', ta: 'பதிவு கட்டணம் (₹)' },
+
+  // fees
+  add_fee: { en: 'Add fee', ta: 'கட்டணம் சேர்' },
+  fee_type: { en: 'Fee type', ta: 'கட்டண வகை' },
+  amount: { en: 'Amount (₹)', ta: 'தொகை (₹)' },
+  due_date: { en: 'Due date', ta: 'செலுத்த வேண்டிய தேதி' },
+  paid: { en: 'Paid', ta: 'செலுத்தப்பட்டது' },
+  pending: { en: 'Pending', ta: 'நிலுவையில்' },
+  overdue: { en: 'Overdue', ta: 'தாமதம்' },
+  mark_paid: { en: 'Mark paid', ta: 'செலுத்தியதாக குறி' },
+  receipt: { en: 'Receipt', ta: 'ரசீது' },
+  export_csv: { en: 'Export CSV', ta: 'CSV ஏற்றுமதி' },
+
+  // uniforms
+  uniform_type: { en: 'Uniform type', ta: 'சீருடை வகை' },
+  size: { en: 'Size', ta: 'அளவு' },
+  price: { en: 'Price (₹)', ta: 'விலை (₹)' },
+  order_date: { en: 'Order date', ta: 'ஆர்டர் தேதி' },
+  delivery_date: { en: 'Delivery date', ta: 'வழங்கும் தேதி' },
+  order_uniform: { en: 'Order uniform', ta: 'சீருடை ஆர்டர்' },
+  delivered: { en: 'Delivered', ta: 'வழங்கப்பட்டது' },
+
+  // attendance
+  mark_attendance: { en: 'Mark attendance', ta: 'வருகை குறி' },
+  session_name: { en: 'Session', ta: 'அமர்வு' },
+  present: { en: 'Present', ta: 'வந்தனர்' },
+  absent: { en: 'Absent', ta: 'வரவில்லை' },
+  late: { en: 'Late', ta: 'தாமதம்' },
+  leave: { en: 'Leave', ta: 'விடுப்பு' },
+
+  // reports
+  fees_collected: { en: 'Fees collected', ta: 'வசூலிக்கப்பட்ட கட்டணம்' },
+  pending_fees: { en: 'Pending fees', ta: 'நிலுவை கட்டணம்' },
+  upcoming_events: { en: 'Upcoming events', ta: 'வரவிருக்கும் நிகழ்வுகள்' },
+  pending_uniforms: { en: 'Pending uniforms', ta: 'நிலுவை சீருடைகள்' },
+
+  // settings
+  profile: { en: 'Profile', ta: 'சுயவிவரம்' },
+  language: { en: 'Language', ta: 'மொழி' },
+  connect_google: { en: 'Connect Google', ta: 'கூகிளை இணை' },
+  connected: { en: 'Connected', ta: 'இணைக்கப்பட்டது' },
+
+  // certificates / achievements
+  issue_certificate: { en: 'Issue certificate', ta: 'சான்றிதழ் வழங்கு' },
+  add_achievement: { en: 'Add achievement', ta: 'சாதனை சேர்' },
+  certificate_type: { en: 'Certificate type', ta: 'சான்றிதழ் வகை' },
+
   // common
   save: { en: 'Save', ta: 'சேமி' },
   cancel: { en: 'Cancel', ta: 'ரத்து' },
   loading: { en: 'Loading…', ta: 'ஏற்றுகிறது…' },
   required_field: { en: 'This field is required', ta: 'இந்தப் புலம் தேவை' },
   saved: { en: 'Saved', ta: 'சேமிக்கப்பட்டது' },
+
+  // common extras
+  search: { en: 'Search', ta: 'தேடு' },
+  remarks: { en: 'Remarks', ta: 'குறிப்புகள்' },
+  student: { en: 'Student', ta: 'மாணவர்' },
+  name: { en: 'Name', ta: 'பெயர்' },
 };
+
+

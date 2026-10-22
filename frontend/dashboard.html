@@ -6,6 +6,75 @@
   <title>Dashboard · Vagai Silambam</title>
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/responsive.css">
+  <style>
+    .welcome-banner {
+      background: linear-gradient(135deg, #1A3673 0%, #2A4E9E 50%, #0E214D 100%);
+      border-radius: var(--radius-xl);
+      padding: 28px 32px;
+      color: #FFF;
+      margin-bottom: 26px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 20px;
+      box-shadow: 0 10px 25px rgba(26, 54, 115, 0.25);
+      position: relative;
+      overflow: hidden;
+    }
+    .welcome-banner::after {
+      content: '🥋';
+      position: absolute;
+      right: 24px;
+      font-size: 88px;
+      opacity: 0.12;
+      pointer-events: none;
+      transform: rotate(15deg);
+    }
+    .welcome-text h1 {
+      color: #FFF;
+      font-size: 24px;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+    .welcome-text p {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 14px;
+      max-width: 600px;
+    }
+    .quick-action-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 18px;
+      background: var(--surface);
+      border: 1.5px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      font-weight: 700;
+      font-size: 14.5px;
+      color: var(--text);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      text-decoration: none;
+      box-shadow: var(--shadow-xs);
+    }
+    .quick-action-card:hover {
+      background: var(--surface-subtle);
+      border-color: var(--primary-glow);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-sm);
+      color: var(--primary);
+    }
+    .quick-action-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+  </style>
 </head>
 <body>
   <script type="module">
@@ -26,11 +95,14 @@
       return '';
     }
 
-    function usageCard(labelKey, used, limit) {
+    function usageCard(labelKey, used, limit, icon, color) {
       const width = limit < 0 ? 4 : Math.min(100, Math.round((used / limit) * 100));
       return `
-        <div class="stat">
-          <div class="label" data-i18n="${labelKey}"></div>
+        <div class="stat" style="border-left-color:${color}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div class="label" data-i18n="${labelKey}"></div>
+            <span style="font-size:18px">${icon}</span>
+          </div>
           <div class="value">${used}</div>
           <div class="sub">${t('used_of')} ${limit < 0 ? t('unlimited') : limit}</div>
           <div class="meter ${meterClass(used, limit)}"><span style="width:${width}%"></span></div>
@@ -44,17 +116,30 @@
       try {
         const [subscription, students] = await Promise.all([
           api.subscription(),
-          api.listStudents({ limit: 5, status: 'ACTIVE' }),
+          api.listStudents({ limit: 6, status: 'ACTIVE' }),
         ]);
 
         page.innerHTML = `
+          <div class="welcome-banner">
+            <div class="welcome-text">
+              <h1>Welcome to Vagai Silambam SaaS</h1>
+              <p>Academy control center for students, daily training sessions, fees, uniforms, and coach credentials.</p>
+            </div>
+            <a href="attendance.html" class="btn btn-primary" style="background:#FFF;color:var(--primary);box-shadow:0 4px 14px rgba(0,0,0,0.2)">
+              ✓ Take Today's Attendance
+            </a>
+          </div>
+
           <div class="stat-grid">
-            ${usageCard('active_students', subscription.usage.students, subscription.limits.students)}
-            ${usageCard('branches', subscription.usage.branches, subscription.limits.branches)}
-            ${usageCard('team_members', subscription.usage.users, subscription.limits.users)}
+            ${usageCard('active_students', subscription.usage.students, subscription.limits.students, '👥', 'var(--primary)')}
+            ${usageCard('branches', subscription.usage.branches, subscription.limits.branches, '🏛️', 'var(--accent)')}
+            ${usageCard('team_members', subscription.usage.users, subscription.limits.users, '🔑', 'var(--purple)')}
             <div class="stat" style="border-left-color:var(--gold)">
-              <div class="label" data-i18n="current_plan"></div>
-              <div class="value" style="font-size:22px">${subscription.plan.name}</div>
+              <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <div class="label" data-i18n="current_plan"></div>
+                <span style="font-size:18px">⭐</span>
+              </div>
+              <div class="value" style="font-size:24px">${subscription.plan.name}</div>
               <div class="sub">
                 <span class="badge ${subscription.status === 'TRIAL' ? 'badge-trial' : 'badge-active'}">
                   ${subscription.status}
@@ -66,36 +151,56 @@
           <div class="card">
             <div class="card-head">
               <h3 data-i18n="recent_students"></h3>
-              <a class="btn btn-ghost" href="students.html" data-i18n="nav_students"></a>
+              <a class="btn btn-ghost btn-sm" href="students.html" data-i18n="nav_students"></a>
             </div>
             ${students.items.length ? `
-              <table>
-                <thead>
-                  <tr>
-                    <th data-i18n="student_code"></th>
-                    <th data-i18n="student_name_en"></th>
-                    <th data-i18n="contact_number"></th>
-                    <th data-i18n="status"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${students.items.map((student) => `
+              <div style="overflow-x:auto">
+                <table>
+                  <thead>
                     <tr>
-                      <td data-label="${t('student_code')}">${escapeHtml(student.student_code)}</td>
-                      <td data-label="${t('student_name_en')}">${escapeHtml(student.name_en)}</td>
-                      <td data-label="${t('contact_number')}">${escapeHtml(student.contact_number || '—')}</td>
-                      <td data-label="${t('status')}">
-                        <span class="badge badge-active">${student.student_status}</span>
-                      </td>
-                    </tr>`).join('')}
-                </tbody>
-              </table>` : `
+                      <th data-i18n="student_code"></th>
+                      <th data-i18n="student_name_en"></th>
+                      <th data-i18n="contact_number"></th>
+                      <th data-i18n="status"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${students.items.map((student) => `
+                      <tr>
+                        <td data-label="${t('student_code')}"><code>${escapeHtml(student.student_code)}</code></td>
+                        <td data-label="${t('student_name_en')}" style="font-weight:700">${escapeHtml(student.name_en)}</td>
+                        <td data-label="${t('contact_number')}">${escapeHtml(student.contact_number || '—')}</td>
+                        <td data-label="${t('status')}">
+                          <span class="badge badge-active">${student.student_status}</span>
+                        </td>
+                      </tr>`).join('')}
+                  </tbody>
+                </table>
+              </div>` : `
               <div class="empty">
                 <div class="mark">👥</div>
                 <h3 data-i18n="no_students"></h3>
                 <p data-i18n="no_students_hint"></p>
                 <a class="btn btn-primary" href="students.html" data-i18n="add_student"></a>
               </div>`}
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h3>Quick Academy Operations</h3></div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;padding:4px 0">
+              ${[
+                { href:'attendance.html', icon:'✓', label:'Mark Attendance', color:'#059669', bg:'#ECFDF5' },
+                { href:'events.html', icon:'★', label:'Academy Events', color:'#D97706', bg:'#FEF3C7' },
+                { href:'fees.html', icon:'₹', label:'Collect Fees', color:'#1A3673', bg:'#EFF6FF' },
+                { href:'uniforms.html', icon:'👕', label:'Uniform Orders', color:'#7C3AED', bg:'#F3E8FF' },
+                { href:'users.html', icon:'🔑', label:'Coach Licenses', color:'#0284C7', bg:'#E0F2FE' },
+                { href:'reports.html', icon:'📊', label:'Download Reports', color:'#E11D48', bg:'#FFE4E6' },
+              ].map(q => `
+                <a href="${q.href}" class="quick-action-card">
+                  <span class="quick-action-icon" style="background:${q.bg};color:${q.color}">${q.icon}</span>
+                  <span>${q.label}</span>
+                </a>`).join('')}
+            </div>
           </div>`;
 
         applyTranslations(page);

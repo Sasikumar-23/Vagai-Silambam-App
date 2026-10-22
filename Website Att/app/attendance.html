@@ -6,6 +6,55 @@
   <title>Attendance · Vagai Silambam</title>
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/responsive.css">
+  <style>
+    .att-header-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 22px 26px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      gap: 20px;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+    .att-select {
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      border: 1.5px solid var(--border);
+      font-weight: 700;
+      font-size: 13.5px;
+      background: var(--surface);
+      cursor: pointer;
+      outline: none;
+      transition: all 0.15s ease;
+    }
+    .att-select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--ring);
+    }
+    .att-select[data-val="Present"] { color: #15803D; background: #DCFCE7; border-color: #86EFAC; }
+    .att-select[data-val="Absent"] { color: #BE123C; background: #FFE4E6; border-color: #FDA4AF; }
+    .att-select[data-val="Late"] { color: #B45309; background: #FEF3C7; border-color: #FCD34D; }
+    .att-select[data-val="Leave"] { color: #4338CA; background: #E0E7FF; border-color: #A5B4FC; }
+    
+    .quick-mark-btn {
+      padding: 6px 14px;
+      font-size: 12.5px;
+      font-weight: 700;
+      border-radius: var(--radius-pill);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .quick-mark-btn:hover {
+      background: var(--primary-muted);
+      border-color: var(--primary-light);
+      color: var(--primary);
+    }
+  </style>
 </head>
 <body>
   <script type="module">
@@ -23,6 +72,7 @@
     }
 
     async function render(page) {
+      page.innerHTML = '<div class="card"><div class="skeleton" style="height:260px"></div></div>';
       try {
         const [studentsData, googleStatus] = await Promise.all([
           api.listStudents({ limit: 200, status: 'ACTIVE' }),
@@ -33,62 +83,84 @@
         const students = studentsData.items;
 
         const googleWarning = !googleStatus.connected ? `
-          <div class="alert alert-error" style="margin-bottom:var(--space-4)">
-            ⚠️ Google Sheets is not connected. Connect it in
-            <a href="settings.html" style="color:inherit;text-decoration:underline">Settings</a> before marking attendance.
-          </div>` : '';
+          <div class="alert alert-error" style="margin-bottom:20px">
+            <span>⚠️</span>
+            <div>
+              <strong>Google Sheets is not connected.</strong> Connect it in
+              <a href="settings.html" style="color:inherit;font-weight:700;text-decoration:underline">Settings</a> before syncing attendance sheets.
+            </div>
+          </div>` : `
+          <div class="alert alert-info" style="margin-bottom:20px;background:#ECFDF5;color:#065F46;border-color:#A7F3D0">
+            <span>✓</span>
+            <div>Google Sheets connected: Attendance records will sync in real time.</div>
+          </div>`;
 
         const rows = students.map(s => `
           <tr>
-            <td>${esc(s.student_code)}</td>
-            <td>${esc(s.name_en)}</td>
             <td>
-              <select class="att-status" data-student-id="${esc(s.id)}">
-                <option value="Present">Present</option>
-                <option value="Absent">Absent</option>
-                <option value="Late">Late</option>
-                <option value="Leave">Leave</option>
+              <code style="font-weight:700;background:var(--surface-subtle);padding:4px 8px;border-radius:6px">${esc(s.student_code)}</code>
+            </td>
+            <td>
+              <div style="font-weight:700">${esc(s.name_en)}</div>
+              ${s.name_ta ? `<div style="font-size:12px;color:var(--text-muted)">${esc(s.name_ta)}</div>` : ''}
+            </td>
+            <td>
+              <select class="att-status att-select" data-val="Present" data-student-id="${esc(s.id)}">
+                <option value="Present" selected>✓ Present</option>
+                <option value="Absent">✕ Absent</option>
+                <option value="Late">⏱ Late</option>
+                <option value="Leave">✉ Leave</option>
               </select>
             </td>
             <td>
-              <input class="att-remarks" data-student-id="${esc(s.id)}"
-                type="text" placeholder="Remarks (optional)" style="max-width:180px">
+              <input class="att-remarks field-input" data-student-id="${esc(s.id)}"
+                type="text" placeholder="Remarks (optional)" style="padding:8px 12px;border:1.5px solid var(--border);border-radius:var(--radius-md);width:100%;max-width:240px">
             </td>
           </tr>`).join('');
 
         page.innerHTML = `
           ${googleWarning}
-          <div class="card">
-            <div class="card-head">
-              <h3>Mark Attendance</h3>
+
+          <div class="att-header-box">
+            <div class="field" style="flex:1;min-width:180px;margin-bottom:0">
+              <label>Attendance Date</label>
+              <input id="attDate" type="date" value="${today}" style="padding:10px 14px">
             </div>
-            <div style="padding:var(--space-4);display:flex;gap:var(--space-4);align-items:center;flex-wrap:wrap">
-              <div class="field" style="flex:1;min-width:180px">
-                <label>Date</label>
-                <input id="attDate" type="date" value="${today}">
-              </div>
-              <div class="field" style="flex:1;min-width:220px">
-                <label>Session Name</label>
-                <input id="attSession" type="text" value="Daily Training" placeholder="Morning / Evening">
-              </div>
+            <div class="field" style="flex:1.5;min-width:220px;margin-bottom:0">
+              <label>Session / Class Name</label>
+              <input id="attSession" type="text" value="Daily Training" placeholder="Morning / Evening / Special Practice" style="padding:10px 14px">
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <span style="font-size:12px;font-weight:700;color:var(--text-secondary)">Quick Set:</span>
+              <button type="button" class="quick-mark-btn" id="markAllPresent">All Present</button>
+              <button type="button" class="quick-mark-btn" id="markAllAbsent">All Absent</button>
+            </div>
+          </div>
+
+          <div class="card" style="padding:0;overflow:hidden">
+            <div class="card-head" style="padding:20px 24px 14px;margin-bottom:0">
+              <h3><span>📋</span> Student Attendance Roll (${students.length} Active Students)</h3>
             </div>
             ${students.length ? `
-              <div style="padding:0 var(--space-4)">
+              <div style="overflow-x:auto">
                 <table>
                   <thead><tr>
-                    <th>Code</th><th>Name</th><th>Status</th><th>Remarks</th>
+                    <th>Student ID</th><th>Name</th><th>Attendance Status</th><th>Remarks</th>
                   </tr></thead>
                   <tbody>${rows}</tbody>
                 </table>
               </div>
-              <div style="padding:var(--space-4)">
-                <button id="submitAtt" class="btn btn-primary">Submit Attendance</button>
-                <span id="attProgress" style="margin-left:var(--space-3);color:var(--muted)"></span>
+              <div style="padding:20px 24px;background:var(--surface-subtle);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+                <button id="submitAtt" class="btn btn-primary" style="padding:12px 28px;font-size:15px">
+                  ✓ Submit &amp; Save Attendance
+                </button>
+                <span id="attProgress" style="font-weight:600;font-size:13.5px;color:var(--text-secondary)"></span>
               </div>` : `
               <div class="empty">
                 <div class="mark">👥</div>
-                <h3>No active students</h3>
-                <p>Add students first, then mark attendance.</p>
+                <h3>No active students found</h3>
+                <p>Register students first, then mark daily training attendance.</p>
+                <a href="students.html" class="btn btn-primary btn-sm" style="margin-top:12px">+ Add Student</a>
               </div>`}
           </div>`;
 
@@ -96,42 +168,62 @@
 
         if (!students.length) return;
 
+        // Visual color change for selects
+        const selects = page.querySelectorAll('.att-status');
+        selects.forEach(sel => {
+          sel.addEventListener('change', () => {
+            sel.setAttribute('data-val', sel.value);
+          });
+        });
+
+        // Quick set all
+        const markAllPresent = document.getElementById('markAllPresent');
+        const markAllAbsent = document.getElementById('markAllAbsent');
+        if (markAllPresent) {
+          markAllPresent.addEventListener('click', () => {
+            selects.forEach(s => { s.value = 'Present'; s.setAttribute('data-val', 'Present'); });
+            toast('Marked all as Present');
+          });
+        }
+        if (markAllAbsent) {
+          markAllAbsent.addEventListener('click', () => {
+            selects.forEach(s => { s.value = 'Absent'; s.setAttribute('data-val', 'Absent'); });
+            toast('Marked all as Absent');
+          });
+        }
+
         document.getElementById('submitAtt').addEventListener('click', async () => {
           const btn = document.getElementById('submitAtt');
-          const prog = document.getElementById('attProgress');
+          const progress = document.getElementById('attProgress');
           const date = document.getElementById('attDate').value;
-          const sessionName = document.getElementById('attSession').value.trim() || 'Daily Training';
+          const session = document.getElementById('attSession').value.trim() || 'Daily Training';
 
-          if (!date) { toast('Please select a date', 'error'); return; }
+          if (!date) { toast('Please select an attendance date', 'error'); return; }
+
+          const remarksMap = {};
+          page.querySelectorAll('.att-remarks').forEach(inp => {
+            if (inp.value.trim()) remarksMap[inp.dataset.studentId] = inp.value.trim();
+          });
+
+          const entries = Array.from(selects).map(sel => ({
+            student_id: sel.dataset.studentId,
+            status: sel.value,
+            remarks: remarksMap[sel.dataset.studentId] || null,
+          }));
 
           btn.disabled = true;
-          let done = 0, failed = 0;
+          progress.textContent = 'Saving attendance records…';
 
-          for (const s of students) {
-            const statusEl = page.querySelector(`.att-status[data-student-id="${s.id}"]`);
-            const remarksEl = page.querySelector(`.att-remarks[data-student-id="${s.id}"]`);
-            const status = statusEl ? statusEl.value : 'Present';
-            const remarks = remarksEl ? remarksEl.value.trim() : '';
-
-            prog.textContent = `Processing ${done + failed + 1}/${students.length}…`;
-            try {
-              await api.markAttendance({
-                student_id: s.id,
-                date,
-                session_name: sessionName,
-                status,
-                remarks: remarks || null,
-              });
-              done++;
-            } catch {
-              failed++;
-            }
+          try {
+            await api.submitAttendance({ date, session_name: session, entries });
+            progress.textContent = '✓ Saved successfully!';
+            toast('Attendance recorded successfully', 'success');
+            setTimeout(() => { progress.textContent = ''; btn.disabled = false; }, 2500);
+          } catch (err) {
+            toast(err.message, 'error');
+            progress.textContent = 'Error: ' + err.message;
+            btn.disabled = false;
           }
-
-          btn.disabled = false;
-          prog.textContent = '';
-          toast(`Attendance submitted: ${done} marked${failed ? `, ${failed} failed` : ''}`,
-            failed ? 'error' : 'success');
         });
 
       } catch (err) {
