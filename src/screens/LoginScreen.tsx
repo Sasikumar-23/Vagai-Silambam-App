@@ -22,7 +22,7 @@ const SIGNUP_ROLES: Array<{ role: UserRole; labelEn: string; labelTa: string; ic
 
 export default function LoginScreen({ navigation }: any) {
   const { t, language } = useI18n();
-  const { login, register, loginWithGoogle, currentUser } = useAuth();
+  const { login, register, currentUser } = useAuth();
 
   // Auth mode: 'LOGIN' | 'REGISTER'
   const [authMode, setAuthMode] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
@@ -40,33 +40,12 @@ export default function LoginScreen({ navigation }: any) {
 
   // Loading states
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
 
   useEffect(() => {
     UserRepository.countUsers()
       .then(count => setIsFirstAccount(count === 0))
       .catch(() => setIsFirstAccount(false));
   }, []);
-
-  // ─────────────────────────────────────────────────────────────────
-  // Google Sign In
-  // ─────────────────────────────────────────────────────────────────
-  const handleGoogleSignIn = async () => {
-    setGoogleLoading(true);
-    try {
-      const result = await loginWithGoogle();
-      if (!result.success) {
-        Alert.alert(
-          'Sign In Note',
-          result.error || 'Google Sign-in was not completed.'
-        );
-      }
-    } catch (e: any) {
-      Alert.alert('Sign In Error', e.message || 'Error completing Google Sign-In.');
-    } finally {
-      setGoogleLoading(false);
-    }
-  };
 
   // ─────────────────────────────────────────────────────────────────
   // Username / Password Login
@@ -101,13 +80,13 @@ export default function LoginScreen({ navigation }: any) {
 
     setLoading(true);
     const result = await register({
-      fullNameEn: fullNameEn.trim(),
-      fullNameTa: fullNameTa.trim() || undefined,
+      organization_name: 'Vagai Silambam Academy',
+      full_name_en: fullNameEn.trim(),
+      full_name_ta: fullNameTa.trim() || undefined,
       username: username.trim(),
       password: password.trim(),
       email: email.trim() || undefined,
       phone: phone.trim() || undefined,
-      role: signupRole,
     });
     setLoading(false);
 
@@ -305,37 +284,6 @@ export default function LoginScreen({ navigation }: any) {
               </View>
             )}
 
-            {/* Divider: OR */}
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>OR</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            {/* Down: Continue with Google Button */}
-            <TouchableOpacity
-              style={[styles.googleSignInBtn, googleLoading && { opacity: 0.7 }]}
-              onPress={handleGoogleSignIn}
-              disabled={googleLoading}
-              activeOpacity={0.85}
-            >
-              {googleLoading ? (
-                <ActivityIndicator size="small" color="#1E293B" style={{ marginRight: 10 }} />
-              ) : (
-                <View style={styles.googleIconBadge}>
-                  <Text style={styles.googleGText}>G</Text>
-                </View>
-              )}
-              <View style={styles.googleBtnTextGroup}>
-                <Text style={styles.googleBtnTitle}>
-                  {googleLoading ? 'Signing in with Google...' : 'Continue with Google'}
-                </Text>
-                <Text style={styles.googleBtnSubtitle}>
-                  1-Tap Fast & Secure Sign-In
-                </Text>
-              </View>
-              <ArrowRight size={18} color={theme.colors.primary} />
-            </TouchableOpacity>
           </View>
         )}
 
@@ -343,7 +291,7 @@ export default function LoginScreen({ navigation }: any) {
         <View style={styles.footer}>
           <View style={styles.secureRow}>
             <ShieldCheck size={16} color={theme.colors.accent} />
-            <Text style={styles.secureText}>SQLite Offline-First Local Storage</Text>
+            <Text style={styles.secureText}>FastAPI & Supabase SaaS • SQLite Offline-First</Text>
           </View>
           <Text style={styles.copyright}>© 2026 Vagai Silambam Academy. Tamil Nadu, India.</Text>
         </View>
@@ -525,67 +473,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 14,
     fontWeight: '800',
-  },
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: theme.spacing.lg,
-    gap: 10,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: theme.colors.border,
-  },
-  dividerText: {
-    fontSize: 11,
-    fontWeight: '900',
-    color: theme.colors.textMuted,
-    letterSpacing: 1,
-  },
-  googleSignInBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: theme.borderRadius.lg,
-    borderWidth: 1.5,
-    borderColor: '#CBD5E1',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  googleIconBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#F1F5F9',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  googleGText: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: '#4285F4',
-  },
-  googleBtnTextGroup: {
-    flex: 1,
-  },
-  googleBtnTitle: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: '#1E293B',
-  },
-  googleBtnSubtitle: {
-    fontSize: 11,
-    color: theme.colors.textSecondary,
-    marginTop: 1,
   },
   // Step 2 Styles
   step2Header: {
