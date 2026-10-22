@@ -42,7 +42,18 @@ class Settings(BaseSettings):
 
     @property
     def cors_origin_list(self) -> list[str]:
-        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        defaults = [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:5500",
+            "http://127.0.0.1:5500",
+            "https://silambam.dodoxtechs.in",
+            "https://vagai-silambam-app.vercel.app",
+        ]
+        from_env = [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        return list(set(defaults + from_env))
 
 
 @lru_cache
