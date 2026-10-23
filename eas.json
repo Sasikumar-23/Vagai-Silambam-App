@@ -8,7 +8,7 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "EXPO_PUBLIC_API_URL": "http://10.0.2.2:8000/api/v1"
+        "EXPO_PUBLIC_API_URL": "http://10.0.2.2:8000"
       }
     },
     "preview": {
@@ -17,7 +17,7 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.vagaisilambam.com/api/v1"
+        "EXPO_PUBLIC_API_URL": "https://vagai-silambam-app.vercel.app"
       }
     },
     "production": {
@@ -26,7 +26,7 @@
         "buildType": "app-bundle"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://api.vagaisilambam.com/api/v1"
+        "EXPO_PUBLIC_API_URL": "https://vagai-silambam-app.vercel.app"
       }
     }
   },
