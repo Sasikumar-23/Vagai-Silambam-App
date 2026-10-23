@@ -127,7 +127,7 @@ export default function LoginScreen({ navigation }: any) {
               >
                 <UserPlus size={15} color={authMode === 'REGISTER' ? '#FFFFFF' : theme.colors.textSecondary} />
                 <Text style={[styles.authToggleText, authMode === 'REGISTER' && styles.authToggleTextActive]}>
-                  Create User
+                  Free Trial
                 </Text>
               </TouchableOpacity>
             </View>
@@ -232,8 +232,8 @@ export default function LoginScreen({ navigation }: any) {
 
                 <View style={styles.firstAccountNote}>
                   <Text style={styles.firstAccountNoteText}>
-                    This creates a new academy with you as its Admin. Instructors and staff are
-                    added by the academy Admin, so ask your Admin for their login.
+                    Start a 14-day free trial for your academy. You become its Admin. Instructors
+                    and staff are added by the Admin, so ask your Admin for their login.
                   </Text>
                 </View>
 
@@ -247,7 +247,7 @@ export default function LoginScreen({ navigation }: any) {
                     <ActivityIndicator size="small" color="#FFFFFF" />
                   ) : (
                     <>
-                      <Text style={styles.primaryBtnText}>Create Account & Next</Text>
+                      <Text style={styles.primaryBtnText}>Start 14-Day Free Trial</Text>
                       <ArrowRight size={18} color="#FFFFFF" />
                     </>
                   )}
