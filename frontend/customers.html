@@ -50,22 +50,22 @@
       border-bottom:1px solid var(--border-light); vertical-align:middle;
     }
     tbody tr:last-child td { border-bottom:none; }
-    tbody tr:hover td { background:#F8FAFF; }
+    tbody tr:hover td { background:rgba(255, 255, 255, 0.03); }
 
     .badge {
       display:inline-flex; align-items:center; gap:4px; padding:3px 9px;
       border-radius:6px; font-size:11.5px; font-weight:700;
     }
-    .badge-green  { background:#ECFDF5; color:#065F46; }
-    .badge-red    { background:#FEF2F2; color:#991B1B; }
-    .badge-amber  { background:#FFFBEB; color:#92400E; }
-    .badge-blue   { background:#EFF6FF; color:#1E40AF; }
-    .badge-gray   { background:#F1F5F9; color:#475569; }
-    .badge-violet { background:#F5F3FF; color:#5B21B6; }
+    .badge-green  { background:rgba(27, 107, 122, 0.25); color:#6EE7B7; border:1px solid rgba(52, 211, 153, 0.3); }
+    .badge-red    { background:rgba(248, 113, 113, 0.15); color:#FCA5A5; border:1px solid rgba(248, 113, 113, 0.3); }
+    .badge-amber  { background:rgba(217, 160, 102, 0.16); color:#D9A066; border:1px solid rgba(217, 160, 102, 0.3); }
+    .badge-blue   { background:rgba(232, 145, 58, 0.16); color:#E8913A; border:1px solid rgba(232, 145, 58, 0.3); }
+    .badge-gray   { background:rgba(242, 232, 213, 0.08); color:#F2E8D5; }
+    .badge-violet { background:rgba(139, 92, 246, 0.14); color:#C4B5FD; }
 
     .avatar {
       width:34px; height:34px; border-radius:10px;
-      background:linear-gradient(135deg,#2563EB,#1E3A8A);
+      background:linear-gradient(135deg,#39C3EF,#1E3A8A);
       display:grid; place-items:center; font-size:14px; font-weight:800;
       color:#fff; flex-shrink:0;
     }
@@ -97,7 +97,7 @@
     }
     .actions-menu button:hover { background:var(--surface-subtle); }
     .actions-menu button.danger { color:#EF4444; }
-    .actions-menu button.danger:hover { background:#FEF2F2; }
+    .actions-menu button.danger:hover { background:rgba(248, 113, 113, 0.12); }
     .actions-menu hr { margin:4px 0; border:none; border-top:1px solid var(--border-light); }
 
     /* Modal */
@@ -108,7 +108,7 @@
     }
     .modal-backdrop[hidden] { display:none; }
     .modal-card {
-      width:100%; max-width:500px; background:#fff; border-radius:var(--radius-xl);
+      width:100%; max-width:500px; background:var(--surface); border-radius:var(--radius-xl);
       border:1px solid var(--border); box-shadow:0 24px 60px rgba(10,19,36,0.25);
       overflow:hidden; animation:slideUp 0.3s cubic-bezier(0.16,1,0.3,1);
     }
@@ -129,13 +129,13 @@
     .field input, .field select {
       width:100%; padding:10px 14px; border:1.5px solid var(--border);
       border-radius:var(--radius-md); font-family:inherit; font-size:14px;
-      color:var(--text); background:#FAFBFF; outline:none; transition:border-color 0.2s;
+      color:var(--text); background:rgba(255, 255, 255, 0.04); outline:none; transition:border-color 0.2s;
     }
     .field input:focus, .field select:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,0.1); }
     .field-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
 
     .alert-err {
-      background:#FEF2F2; border:1px solid #FECACA; color:#991B1B;
+      background:rgba(248, 113, 113, 0.12); border:1px solid rgba(248, 113, 113, 0.35); color:#FCA5A5;
       padding:10px 14px; border-radius:10px; font-size:13px; margin-bottom:14px;
     }
   </style>
@@ -408,11 +408,7 @@
     if (p1.length < 8) { err.textContent = 'Password must be at least 8 characters.'; err.hidden = false; return; }
     if (p1 !== p2) { err.textContent = 'Passwords do not match.'; err.hidden = false; return; }
     try {
-      // API call for password reset — adjust endpoint as needed
-      await fetch('/api/v1/admin/reset-password', { method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('vagai_access_token')}`},
-        body: JSON.stringify({ organization_id: selectedOrgId, new_password: p1 })
-      });
+      await api.resetAcademyAdminPassword(selectedOrgId, p1);
       toast('Password reset successfully', 'success');
       document.getElementById('reset-modal').hidden = true;
     } catch(e) { err.textContent = e.message; err.hidden = false; }
