@@ -20,8 +20,8 @@ from ..services import provisioning
 from ..utils.time import as_utc
 from .security import decode_token
 
-# Statuses that may still read and write. SUSPENDED/EXPIRED keep their data but
-# the API becomes read-only (see `require_write_access`).
+# Statuses that may still use the API. Routes using require_active_subscription
+# currently refuse reads as well as writes once a subscription is no longer active.
 ACTIVE_SUBSCRIPTION_STATUSES = {"TRIAL", "ACTIVE", "PAST_DUE", "GRACE_PERIOD"}
 READ_ONLY_STATUSES = {"SUSPENDED", "CANCELLED", "EXPIRED"}
 
@@ -95,6 +95,11 @@ def require_active_subscription(subscription: Subscription = Depends(get_subscri
         raise errors.subscription_inactive(
             "SUBSCRIPTION_INACTIVE",
             "Your subscription is not active. Your data is safe — renew to continue.",
+        )
+    if subscription.expires_at and as_utc(subscription.expires_at) < datetime.now(timezone.utc):
+        raise errors.subscription_inactive(
+            "SUBSCRIPTION_EXPIRED",
+            "Your subscription has expired. Your data is safe — renew to continue.",
         )
     return subscription
 

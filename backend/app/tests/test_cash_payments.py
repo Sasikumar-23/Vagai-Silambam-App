@@ -102,3 +102,25 @@ def test_legacy_admin_reset_route_is_gone(client, make_org, db_session):
     headers = _super_admin_headers(client, db_session)
     response = client.post("/api/v1/admin/reset-password", headers=headers, json={"new_password": "XxxxxxxxX1"})
     assert response.status_code in (404, 405)
+
+
+def test_expired_paid_subscription_blocks_writes(client, make_org, db_session):
+    from datetime import datetime, timedelta, timezone
+
+    admin = make_org("Academy A", "admin_a")
+    org_id = _org_id(db_session, "admin_a")
+    headers = _super_admin_headers(client, db_session)
+    assert _record(client, headers, org_id).status_code == 200
+
+    subscription = db_session.query(Subscription).filter(Subscription.organization_id == org_id).one()
+    subscription.expires_at = datetime.now(timezone.utc) - timedelta(days=1)
+    db_session.commit()
+
+    write = client.post(
+        "/api/v1/students",
+        headers=admin["headers"],
+        json={"student_code": "VS-EXP-1", "name_en": "Expired Test", "training_level": "BEGINNER"},
+    )
+    assert write.status_code == 402
+    assert write.json()["code"] == "SUBSCRIPTION_EXPIRED"
+
