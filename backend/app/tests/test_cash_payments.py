@@ -124,3 +124,20 @@ def test_expired_paid_subscription_blocks_writes(client, make_org, db_session):
     assert write.status_code == 402
     assert write.json()["code"] == "SUBSCRIPTION_EXPIRED"
 
+
+
+def test_cash_payment_uses_the_academy_license_not_a_member_seat(client, make_org, db_session):
+    make_org("Academy A", "admin_a")
+    org_id = _org_id(db_session, "admin_a")
+    headers = _super_admin_headers(client, db_session)
+    academy = db_session.query(License).filter(
+        License.organization_id == org_id, License.user_id.is_(None), License.status == "ACTIVE"
+    ).one()
+
+    body = _record(client, headers, org_id, receipt_number="RCPT-SEAT-1").json()
+
+    assert body["license_key"] == academy.license_key
+    db_session.expire_all()
+    sub = db_session.query(Subscription).filter(Subscription.organization_id == org_id).one()
+    refreshed = db_session.query(License).filter(License.license_key == academy.license_key).one()
+    assert refreshed.expires_at == sub.expires_at

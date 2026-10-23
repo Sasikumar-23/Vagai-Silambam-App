@@ -276,7 +276,11 @@ def record_offline_payment(
     db.add(payment)
 
     # 3. Ensure ACTIVE academy license key exists
-    lic = db.query(License).filter(License.organization_id == org.id, License.status == "ACTIVE").first()
+    lic = (
+        db.query(License)
+        .filter(License.organization_id == org.id, License.user_id.is_(None), License.status == "ACTIVE")
+        .first()
+    )
     if not lic:
         lic = License(
             organization_id=org.id,
