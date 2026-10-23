@@ -252,7 +252,7 @@
   const superAdmin = isSuperAdmin();
   const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
   const shortKey = k => k.length > 28 ? k.slice(0, 14) + '…' + k.slice(-8) : k;
-  const ROLE_LABELS = { INSTRUCTOR: 'Instructor', STAFF: 'Staff', STAFF_ACCOUNTANT: 'Accountant' };
+  const ROLE_LABELS = { ADMIN: 'Admin', SUPER_ADMIN: 'Super Admin', INSTRUCTOR: 'Instructor', STAFF: 'Staff', STAFF_ACCOUNTANT: 'Accountant' };
 
   let rows = [];
   let orgData = [];
@@ -276,6 +276,7 @@
     document.getElementById('g-exp-field').hidden = true;
     document.getElementById('gen-submit-btn').hidden = true;
     document.getElementById('lic-org').hidden = true;
+    document.getElementById('add-member-btn').hidden = false;
     document.getElementById('add-member-btn').addEventListener('click', () => openMemberModal('add'));
   }
 
@@ -297,21 +298,19 @@
       }));
     } else {
       const users = await api.listUsers();
-      rows = users
-        .filter(u => u.role !== 'ADMIN' && u.role !== 'SUPER_ADMIN')
-        .map(u => ({
-          id: u.id,
-          key: null,
-          status: u.license_status || 'NONE',
-          scope: 'SEAT',
-          orgId: null,
-          orgName: 'Your academy',
-          person: u.full_name_en || '',
-          username: u.username || '',
-          role: u.role,
-          issuedAt: null,
-          expiresAt: null,
-        }));
+      rows = (users || []).map(u => ({
+        id: u.id,
+        key: null,
+        status: u.license_status || (u.role === 'ADMIN' ? 'ACTIVE' : 'NONE'),
+        scope: 'SEAT',
+        orgId: null,
+        orgName: 'Your academy',
+        person: u.full_name_en || '',
+        username: u.username || '',
+        role: u.role,
+        issuedAt: null,
+        expiresAt: null,
+      }));
     }
   }
 
@@ -377,7 +376,7 @@
         } else if (r.scope === 'ACADEMY') {
           menu.push(`<button onclick="reactivateLic('${esc(r.id)}')">Reactivate</button>`);
         }
-      } else {
+      } else if (r.role !== 'ADMIN' && r.role !== 'SUPER_ADMIN') {
         menu.push(`<button onclick="openRoleModal('${esc(r.id)}')">Change Role</button>`);
         menu.push(`<button onclick="reactivateLic('${esc(r.id)}')">Reissue License</button>`);
         if (r.status === 'ACTIVE') {
