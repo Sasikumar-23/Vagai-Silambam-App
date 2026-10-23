@@ -42,6 +42,14 @@ def issue_user_license(db: Session, organization_id: str, user_id: str) -> Licen
     return license_row
 
 
+ADMIN_ROLES = {"ADMIN", "SUPER_ADMIN"}
+
+
+def requires_seat_license(user) -> bool:
+    """Academy admins run the subscription; only seat users need their own license."""
+    return bool(user.organization_id) and user.role not in ADMIN_ROLES
+
+
 def has_active_user_license(db: Session, user_id: str) -> bool:
     return (
         db.query(License.id)

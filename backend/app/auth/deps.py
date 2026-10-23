@@ -51,7 +51,7 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
         raise errors.unauthorized("Session no longer valid")
 
     if user.organization_id:
-        if not provisioning.has_active_user_license(db, user.id):
+        if provisioning.requires_seat_license(user) and not provisioning.has_active_user_license(db, user.id):
             raise errors.forbidden("LICENSE_REVOKED", "Your license is no longer active. Ask your academy admin.")
         set_tenant_guc(db, user.organization_id)
     return user

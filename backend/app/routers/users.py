@@ -7,8 +7,9 @@ from ..auth.deps import get_current_organization, require_active_subscription, r
 from ..auth.security import hash_password
 from ..database import get_db
 from ..models import License, Organization, Subscription, User
-from ..schemas import UserCreate, UserCreatedOut, UserLicenseOut
+from ..schemas import ResetPasswordRequest, UserCreate, UserCreatedOut, UserLicenseOut
 from ..services import audit, limits, provisioning
+from ..services.provisioning import ADMIN_ROLES
 
 router = APIRouter(prefix="/api/v1/users", tags=["users"])
 
@@ -123,6 +124,8 @@ def revoke_license(
         raise errors.bad_request("CANNOT_REVOKE_OWN_LICENSE", "You cannot revoke your own license")
 
     target = _member_in_org(db, organization.id, user_id)
+    if target.role in ADMIN_ROLES:
+        raise errors.bad_request("ADMIN_ACCOUNT_NOT_LICENSED", "Academy admin accounts do not use seat licenses")
     db.query(License).filter(License.user_id == target.id, License.status == "ACTIVE").update(
         {"status": "REVOKED"}, synchronize_session=False
     )
@@ -150,6 +153,8 @@ def reissue_license(
     db: Session = Depends(get_db),
 ):
     target = _member_in_org(db, organization.id, user_id)
+    if target.role in ADMIN_ROLES:
+        raise errors.bad_request("ADMIN_ACCOUNT_NOT_LICENSED", "Academy admin accounts do not use seat licenses")
     db.query(License).filter(License.user_id == target.id, License.status == "ACTIVE").update(
         {"status": "REVOKED"}, synchronize_session=False
     )
@@ -166,3 +171,27 @@ def reissue_license(
     )
     db.commit()
     return UserCreatedOut(user=_to_out(db, target), license_key=license_row.license_key)
+
+
+@router.post("/{user_id}/reset-password", status_code=204)
+def reset_member_password(
+    user_id: str,
+    payload: ResetPasswordRequest,
+    request: Request,
+    organization: Organization = Depends(get_current_organization),
+    admin: User = Depends(require_role("ADMIN")),
+    db: Session = Depends(get_db),
+):
+    target = _member_in_org(db, organization.id, user_id)
+    target.password_hash = hash_password(payload.new_password)
+    audit.record(
+        db,
+        action="PASSWORD_RESET_BY_ADMIN",
+        organization_id=organization.id,
+        user_id=admin.id,
+        entity_type="users",
+        entity_id=target.id,
+        meta={"username": target.username},
+        request=request,
+    )
+    db.commit()

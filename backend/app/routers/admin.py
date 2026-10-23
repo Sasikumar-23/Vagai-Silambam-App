@@ -9,6 +9,7 @@ from ..auth.deps import require_role
 from ..auth.security import hash_password
 from ..database import get_db
 from ..models import AuditLog, License, Organization, Payment, Plan, Student, Subscription, User
+from ..schemas import ResetPasswordRequest
 from ..services import audit
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
@@ -202,6 +203,13 @@ def record_offline_payment(
       3. Provisions or ensures an ACTIVE License key.
       4. Writes an Audit Log entry.
     """
+    if payload.amount <= 0:
+        raise errors.bad_request("INVALID_AMOUNT", "Amount must be greater than zero")
+    if payload.duration_months not in (1, 3, 6, 12):
+        raise errors.bad_request("INVALID_DURATION", "Duration must be 1, 3, 6 or 12 months")
+    if payload.payment_mode not in ("CASH", "UPI", "DIRECT_TRANSFER"):
+        raise errors.bad_request("INVALID_PAYMENT_MODE", "Payment mode must be CASH, UPI or DIRECT_TRANSFER")
+
     org = db.query(Organization).filter(Organization.id == payload.organization_id).one_or_none()
     if not org:
         raise errors.not_found("Academy / Organization not found")
@@ -364,3 +372,61 @@ def reset_user_password(
     db.commit()
     return {"success": True, "message": f"Password reset for user @{target_user.username}"}
 
+
+
+@router.post("/users/{user_id}/reset-password", status_code=204)
+def super_admin_reset_password(
+    user_id: str,
+    payload: ResetPasswordRequest,
+    request: Request,
+    admin: User = Depends(require_role("SUPER_ADMIN")),
+    db: Session = Depends(get_db),
+):
+    target = db.get(User, user_id)
+    if target is None:
+        raise errors.not_found("User not found")
+    target.password_hash = hash_password(payload.new_password)
+    audit.record(
+        db,
+        action="PASSWORD_RESET_BY_SUPER_ADMIN",
+        organization_id=target.organization_id,
+        user_id=admin.id,
+        entity_type="users",
+        entity_id=target.id,
+        meta={"username": target.username},
+        request=request,
+    )
+    db.commit()
+
+
+@router.post("/organizations/{org_id}/reset-admin-password", status_code=204)
+def super_admin_reset_academy_admin_password(
+    org_id: str,
+    payload: ResetPasswordRequest,
+    request: Request,
+    admin: User = Depends(require_role("SUPER_ADMIN")),
+    db: Session = Depends(get_db),
+):
+    organization = db.get(Organization, org_id)
+    if organization is None:
+        raise errors.not_found("Academy not found")
+    target = (
+        db.query(User)
+        .filter(User.organization_id == org_id, User.role == "ADMIN")
+        .order_by(User.created_at)
+        .first()
+    )
+    if target is None:
+        raise errors.not_found("This academy has no admin account")
+    target.password_hash = hash_password(payload.new_password)
+    audit.record(
+        db,
+        action="PASSWORD_RESET_BY_SUPER_ADMIN",
+        organization_id=org_id,
+        user_id=admin.id,
+        entity_type="users",
+        entity_id=target.id,
+        meta={"username": target.username},
+        request=request,
+    )
+    db.commit()

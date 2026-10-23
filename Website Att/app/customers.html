@@ -408,11 +408,7 @@
     if (p1.length < 8) { err.textContent = 'Password must be at least 8 characters.'; err.hidden = false; return; }
     if (p1 !== p2) { err.textContent = 'Passwords do not match.'; err.hidden = false; return; }
     try {
-      // API call for password reset — adjust endpoint as needed
-      await fetch('/api/v1/admin/reset-password', { method:'POST',
-        headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('vagai_access_token')}`},
-        body: JSON.stringify({ organization_id: selectedOrgId, new_password: p1 })
-      });
+      await api.resetAcademyAdminPassword(selectedOrgId, p1);
       toast('Password reset successfully', 'success');
       document.getElementById('reset-modal').hidden = true;
     } catch(e) { err.textContent = e.message; err.hidden = false; }

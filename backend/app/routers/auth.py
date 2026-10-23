@@ -85,9 +85,7 @@ def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)
         raise errors.forbidden("ACCOUNT_DISABLED", "This account has been disabled")
     # License gate: only enforce for non-admin tenant users (INSTRUCTOR etc.)
     # SUPER_ADMIN has no organization_id → skipped automatically.
-    # ADMIN role users are portal admins; they should still be able to log in
-    # even if their per-user seat license is revoked (admin access is separate).
-    if user.organization_id and user.role not in ("ADMIN", "SUPER_ADMIN") and not provisioning.has_active_user_license(db, user.id):
+    if provisioning.requires_seat_license(user) and not provisioning.has_active_user_license(db, user.id):
         raise errors.forbidden("LICENSE_REVOKED", "Your license is not active. Ask your academy admin.")
 
     if needs_rehash(user.password_hash):
@@ -139,36 +137,5 @@ def logout(request: Request, user: User = Depends(get_current_user), db: Session
     db.commit()
 
 
-class PublicResetPasswordRequest(BaseModel):
-    username: str
-    new_password: str
 
-
-@router.post("/reset-password")
-def public_reset_password(payload: PublicResetPasswordRequest, request: Request, db: Session = Depends(get_db)):
-    identifier = payload.username.strip().lower()
-    if len(payload.new_password) < 8:
-        raise errors.bad_request("WEAK_PASSWORD", "Password must be at least 8 characters")
-
-    user = (
-        db.query(User)
-        .filter((func.lower(User.username) == identifier) | (func.lower(User.email) == identifier))
-        .first()
-    )
-    if not user:
-        raise errors.not_found("No account found with this username or email")
-
-    user.password_hash = hash_password(payload.new_password)
-    audit.record(
-        db,
-        action="PASSWORD_RESET",
-        organization_id=user.organization_id,
-        user_id=user.id,
-        entity_type="users",
-        entity_id=user.id,
-        meta={"username": user.username},
-        request=request,
-    )
-    db.commit()
-    return {"success": True, "message": f"Password reset successfully for @{user.username}. You can now sign in."}
 

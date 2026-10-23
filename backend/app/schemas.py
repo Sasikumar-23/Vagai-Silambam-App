@@ -24,6 +24,10 @@ class UserCreate(BaseModel):
     password: str = Field(min_length=8, max_length=200)
 
 
+class ResetPasswordRequest(BaseModel):
+    new_password: str = Field(min_length=8, max_length=200)
+
+
 class UserLicenseOut(BaseModel):
     id: str
     username: str
