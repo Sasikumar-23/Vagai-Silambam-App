@@ -7,6 +7,8 @@
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/responsive.css">
   <style>
+    [hidden] { display:none !important; }
+
     .page-header-row {
       display:flex; align-items:flex-start; justify-content:space-between;
       gap:16px; margin-bottom:24px; flex-wrap:wrap;
@@ -86,7 +88,7 @@
       position:absolute; right:0; top:calc(100%+4px); z-index:50;
       background:var(--surface); border:1px solid var(--border);
       border-radius:var(--radius-md); box-shadow:var(--shadow-lg);
-      min-width:190px; overflow:hidden;
+      min-width:200px; overflow:hidden;
     }
     .actions-menu[hidden] { display:none; }
     .actions-menu button {
@@ -112,6 +114,7 @@
       border:1px solid var(--border); box-shadow:0 24px 60px rgba(10,19,36,0.25);
       overflow:hidden; animation:slideUp 0.3s cubic-bezier(0.16,1,0.3,1);
     }
+    .modal-card.wide { max-width:640px; }
     @keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
     .modal-head {
       padding:18px 24px; background:var(--surface-subtle);
@@ -121,7 +124,7 @@
     .modal-head h3 { font-size:16px; font-weight:800; }
     .modal-close { border:none; background:none; cursor:pointer; color:var(--text-muted); padding:4px; border-radius:8px; }
     .modal-close:hover { background:var(--border); }
-    .modal-body { padding:24px; }
+    .modal-body { padding:24px; max-height:72vh; overflow-y:auto; }
     .modal-footer { padding:16px 24px; border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
 
     .field { margin-bottom:16px; }
@@ -138,6 +141,33 @@
       background:rgba(248, 113, 113, 0.12); border:1px solid rgba(248, 113, 113, 0.35); color:#FCA5A5;
       padding:10px 14px; border-radius:10px; font-size:13px; margin-bottom:14px;
     }
+
+    /* Users list inside manage-users modal */
+    .user-row {
+      display:flex; align-items:center; gap:12px; padding:11px 0;
+      border-bottom:1px solid var(--border-light);
+    }
+    .user-row:last-child { border-bottom:none; }
+    .user-av {
+      width:32px; height:32px; border-radius:9px; flex-shrink:0;
+      background:linear-gradient(135deg,#1B6B7A,#E8913A);
+      display:grid; place-items:center; font-size:13px; font-weight:800; color:#0B1215;
+    }
+    .user-info { flex:1; min-width:0; }
+    .user-info .uname { font-weight:700; font-size:13.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .user-info .urole { font-size:11.5px; color:var(--text-muted); }
+    .user-role-sel {
+      padding:6px 10px; border:1.5px solid var(--border); border-radius:8px;
+      font-family:inherit; font-size:12.5px; color:var(--text);
+      background:var(--surface); outline:none; cursor:pointer; flex-shrink:0;
+    }
+    .save-role-btn {
+      padding:6px 12px; border-radius:8px; border:none; font-family:inherit;
+      font-size:12.5px; font-weight:700; cursor:pointer;
+      background:rgba(232,135,58,0.18); color:#E8873A; transition:background 0.15s;
+    }
+    .save-role-btn:hover { background:rgba(232,135,58,0.32); }
+    .no-users-msg { text-align:center; color:var(--text-muted); font-size:13.5px; padding:28px 0; }
   </style>
 </head>
 <body>
@@ -153,7 +183,7 @@
   pg.innerHTML = `
     <div class="page-header-row">
       <div class="page-title">
-        <h1>Customers & Users</h1>
+        <h1>Customers &amp; Users</h1>
         <p>Manage registered academies, users and access roles</p>
       </div>
       <button class="btn btn-primary" id="add-org-btn">
@@ -237,7 +267,7 @@
     <div class="modal-backdrop" id="reset-modal" hidden>
       <div class="modal-card">
         <div class="modal-head">
-          <h3>Reset Password</h3>
+          <h3>Reset Admin Password</h3>
           <button class="modal-close" id="reset-close-btn">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
@@ -253,11 +283,60 @@
         </div>
       </div>
     </div>
+
+    <!-- Change Plan Modal -->
+    <div class="modal-backdrop" id="plan-modal" hidden>
+      <div class="modal-card">
+        <div class="modal-head">
+          <h3>Change Plan</h3>
+          <button class="modal-close" id="plan-close-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="alert-err" id="plan-err" hidden></div>
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px" id="plan-modal-sub"></p>
+          <div class="field"><label>Select New Plan *</label>
+            <select id="plan-sel">
+              <option value="">Select plan…</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" id="plan-cancel-btn">Cancel</button>
+          <button class="btn btn-primary" id="plan-submit-btn">Update Plan</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Manage Users Modal -->
+    <div class="modal-backdrop" id="users-modal" hidden>
+      <div class="modal-card wide">
+        <div class="modal-head">
+          <h3 id="users-modal-title">Manage Users</h3>
+          <button class="modal-close" id="users-close-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div id="users-list"><p class="no-users-msg">Loading users…</p></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" id="users-done-btn">Done</button>
+        </div>
+      </div>
+    </div>
   `;
+
+  const ROLE_LABELS = {
+    ADMIN: 'Admin', SUPER_ADMIN: 'Super Admin',
+    INSTRUCTOR: 'Instructor', STAFF: 'Staff', STAFF_ACCOUNTANT: 'Accountant'
+  };
 
   let orgData = [];
   let planData = [];
   let selectedOrgId = null;
+  const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
   // Load plans
   try {
@@ -265,9 +344,11 @@
     planData = plans || [];
     const planSel = document.getElementById('plan-filter');
     const mPlan = document.getElementById('m-plan');
+    const planModal = document.getElementById('plan-sel');
     planData.forEach(p => {
       planSel.insertAdjacentHTML('beforeend', `<option value="${p.code}">${p.name}</option>`);
-      mPlan.insertAdjacentHTML('beforeend', `<option value="${p.id}">${p.name} — ₹${p.price_monthly}/mo</option>`);
+      mPlan.insertAdjacentHTML('beforeend', `<option value="${p.id}">${p.name} — &#8377;${p.price_monthly}/mo</option>`);
+      planModal.insertAdjacentHTML('beforeend', `<option value="${p.code}">${p.name}</option>`);
     });
   } catch(e) { /* plans optional */ }
 
@@ -289,9 +370,8 @@
 
     let rows = orgData.filter(o => {
       if (statusF && o.status !== statusF) return false;
-      // backend returns flat field: plan_code
       if (planF && o.plan_code !== planF) return false;
-      const text = `${o.name} ${o.email||''} ${o.organization_code||''}`.toLowerCase();
+      const text = `${o.name} ${o.email||''} ${o.phone||''} ${o.organization_code||''}`.toLowerCase();
       return !q || text.includes(q);
     });
 
@@ -305,43 +385,48 @@
       const status = o.status === 'ACTIVE'
         ? `<span class="badge badge-green">Active</span>`
         : `<span class="badge badge-red">Suspended</span>`;
-      // Backend returns flat fields: plan_code, subscription_status (not nested subscription obj)
       const subStatus = o.subscription_status || 'NONE';
       let subBadge = `<span class="badge badge-gray">No Plan</span>`;
       if (subStatus && subStatus !== 'NONE') {
         const cls = subStatus==='ACTIVE'?'badge-green':subStatus==='TRIAL'?'badge-blue':subStatus==='EXPIRED'?'badge-red':'badge-amber';
         subBadge = `<span class="badge ${cls}">${subStatus}</span>`;
       }
-      const plan = (o.plan_code && o.plan_code !== 'NONE') ? o.plan_code : '—';
+      const plan = (o.plan_code && o.plan_code !== 'NONE') ? o.plan_code : '&#8212;';
       const letter = (o.name||'A').charAt(0).toUpperCase();
-      const students = o.active_students ?? '—';
+      const students = o.active_students ?? '&#8212;';
+      const emailLine = o.email ? esc(o.email) : '&#8212;';
+      const phoneLine = o.phone ? `<br><small style="color:var(--text-muted)">${esc(o.phone)}</small>` : '';
 
       return `<tr>
         <td>
           <div class="org-cell">
             <div class="avatar">${letter}</div>
             <div class="org-info">
-              <div class="name">${o.name}</div>
-              <div class="sub">${o.organization_code}</div>
+              <div class="name">${esc(o.name)}</div>
+              <div class="sub">${esc(o.organization_code)}</div>
             </div>
           </div>
         </td>
-        <td>${o.email||'—'}<br><small style="color:var(--text-muted)">${o.phone||''}</small></td>
-        <td><span class="badge badge-blue">${plan}</span></td>
+        <td>${emailLine}${phoneLine}</td>
+        <td><span class="badge badge-blue">${esc(o.plan_code && o.plan_code !== 'NONE' ? o.plan_code : '—')}</span></td>
         <td>${status}</td>
         <td>${subBadge}</td>
-        <td><span class="badge badge-gray">${students}</span></td>
+        <td><span class="badge badge-gray">${o.active_students ?? '—'}</span></td>
         <td>
           <div class="actions-wrap">
             <button class="actions-btn" onclick="toggleMenu('${o.id}',this)">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
             </button>
             <div class="actions-menu" id="menu-${o.id}" hidden>
+              <button onclick="openManageUsers('${o.id}','${esc(o.name).replace(/'/g,'\\&apos;')}')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Manage Users
+              </button>
               <button onclick="openResetPwd('${o.id}')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-                Reset Password
+                Reset Admin Password
               </button>
-              <button onclick="changePlan('${o.id}')">
+              <button onclick="openChangePlan('${o.id}','${esc(o.plan_code||'')}')">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                 Change Plan
               </button>
@@ -359,13 +444,11 @@
 
   await loadOrgs();
 
-  // Search & filter listeners
   ['search','status-filter','plan-filter'].forEach(id => {
     document.getElementById(id).addEventListener('input', renderTable);
     document.getElementById(id).addEventListener('change', renderTable);
   });
 
-  // Global menu toggle
   window.toggleMenu = function(id, btn) {
     document.querySelectorAll('.actions-menu').forEach(m => {
       if (m.id !== `menu-${id}`) m.hidden = true;
@@ -390,16 +473,17 @@
     } catch(e) { toast(e.message, 'error'); }
   };
 
-  // Reset Password modal
+  // Reset Password
   window.openResetPwd = function(id) {
     selectedOrgId = id;
     document.querySelectorAll('.actions-menu').forEach(m => m.hidden = true);
+    document.getElementById('r-pass').value = '';
+    document.getElementById('r-pass2').value = '';
+    document.getElementById('reset-err').hidden = true;
     document.getElementById('reset-modal').hidden = false;
   };
   ['reset-close-btn','reset-cancel-btn'].forEach(id => {
-    document.getElementById(id).addEventListener('click', () => {
-      document.getElementById('reset-modal').hidden = true;
-    });
+    document.getElementById(id).addEventListener('click', () => document.getElementById('reset-modal').hidden = true);
   });
   document.getElementById('reset-submit-btn').addEventListener('click', async () => {
     const p1 = document.getElementById('r-pass').value;
@@ -414,26 +498,102 @@
     } catch(e) { err.textContent = e.message; err.hidden = false; }
   });
 
-  // Change plan
-  window.changePlan = async function(id) {
+  // Change Plan modal
+  let changePlanOrgId = null;
+  window.openChangePlan = function(id, currentPlanCode) {
+    changePlanOrgId = id;
     document.querySelectorAll('.actions-menu').forEach(m => m.hidden = true);
-    const planCode = prompt('Enter new plan code (e.g. starter, professional, enterprise):');
-    if (!planCode) return;
+    const org = orgData.find(o => o.id === id);
+    document.getElementById('plan-modal-sub').textContent = `Academy: ${org?.name || ''}`;
+    document.getElementById('plan-sel').value = currentPlanCode || '';
+    document.getElementById('plan-err').hidden = true;
+    document.getElementById('plan-modal').hidden = false;
+  };
+  ['plan-close-btn','plan-cancel-btn'].forEach(id => {
+    document.getElementById(id).addEventListener('click', () => document.getElementById('plan-modal').hidden = true);
+  });
+  document.getElementById('plan-submit-btn').addEventListener('click', async () => {
+    const planCode = document.getElementById('plan-sel').value;
+    const err = document.getElementById('plan-err');
+    const btn = document.getElementById('plan-submit-btn');
+    if (!planCode) { err.textContent = 'Please select a plan.'; err.hidden = false; return; }
+    btn.disabled = true; btn.textContent = 'Saving…';
     try {
-      await api.updateOrgPlan(id, { plan_code: planCode });
+      await api.updateOrgPlan(changePlanOrgId, { plan_code: planCode });
       toast('Plan updated successfully', 'success');
+      document.getElementById('plan-modal').hidden = true;
       await loadOrgs();
+    } catch(e) { err.textContent = e.message; err.hidden = false; }
+    finally { btn.disabled = false; btn.textContent = 'Update Plan'; }
+  });
+
+  // Manage Users modal — lists all members of the selected academy with role editing
+  window.openManageUsers = async function(orgId, orgName) {
+    document.querySelectorAll('.actions-menu').forEach(m => m.hidden = true);
+    document.getElementById('users-modal-title').textContent = `Users — ${orgName}`;
+    document.getElementById('users-list').innerHTML = '<p class="no-users-msg">Loading users…</p>';
+    document.getElementById('users-modal').hidden = false;
+
+    try {
+      const all = await api.listAppActivations();
+      const org = orgData.find(o => o.id === orgId);
+      const orgUsers = all.filter(u => u.organization_name === org?.name);
+
+      if (!orgUsers.length) {
+        document.getElementById('users-list').innerHTML = '<p class="no-users-msg">No users found for this academy.</p>';
+        return;
+      }
+
+      document.getElementById('users-list').innerHTML = orgUsers.map(u => {
+        const isLocked = u.role === 'ADMIN' || u.role === 'SUPER_ADMIN';
+        const letter = (u.full_name_en || u.username || '?').charAt(0).toUpperCase();
+        const roleOptions = ['ADMIN','INSTRUCTOR','STAFF','STAFF_ACCOUNTANT'].map(r =>
+          `<option value="${r}" ${u.role === r ? 'selected' : ''}>${ROLE_LABELS[r] || r}</option>`
+        ).join('');
+        return `<div class="user-row" id="urow-${esc(u.user_id)}">
+          <div class="user-av">${letter}</div>
+          <div class="user-info">
+            <div class="uname">${esc(u.full_name_en || u.username)}</div>
+            <div class="urole" id="urole-${esc(u.user_id)}">@${esc(u.username)} &middot; ${esc(ROLE_LABELS[u.role] || u.role)}</div>
+          </div>
+          ${isLocked
+            ? `<span class="badge badge-violet" style="flex-shrink:0">Admin (Locked)</span>`
+            : `<select class="user-role-sel" id="rsel-${esc(u.user_id)}">${roleOptions}</select>
+               <button class="save-role-btn" onclick="saveUserRole('${esc(u.user_id)}')">Save</button>`
+          }
+        </div>`;
+      }).join('');
+    } catch(e) {
+      document.getElementById('users-list').innerHTML = `<p class="no-users-msg" style="color:#FCA5A5">Failed to load: ${esc(e.message)}</p>`;
+    }
+  };
+
+  window.saveUserRole = async function(userId) {
+    const sel = document.getElementById(`rsel-${userId}`);
+    if (!sel) return;
+    const newRole = sel.value;
+    try {
+      await api.changeMemberRole(userId, newRole);
+      toast('Role updated successfully', 'success');
+      const roleLabel = document.getElementById(`urole-${userId}`);
+      if (roleLabel) {
+        const atPart = roleLabel.textContent.split('\u00b7')[0].trim();
+        roleLabel.textContent = `${atPart} \u00b7 ${ROLE_LABELS[newRole] || newRole}`;
+      }
     } catch(e) { toast(e.message, 'error'); }
   };
 
+  ['users-close-btn','users-done-btn'].forEach(id => {
+    document.getElementById(id).addEventListener('click', () => document.getElementById('users-modal').hidden = true);
+  });
+
   // Add Customer Modal
   document.getElementById('add-org-btn').addEventListener('click', () => {
+    document.getElementById('modal-err').hidden = true;
     document.getElementById('add-modal').hidden = false;
   });
   ['modal-close-btn','modal-cancel-btn'].forEach(id => {
-    document.getElementById(id).addEventListener('click', () => {
-      document.getElementById('add-modal').hidden = true;
-    });
+    document.getElementById(id).addEventListener('click', () => document.getElementById('add-modal').hidden = true);
   });
   document.getElementById('modal-submit-btn').addEventListener('click', async () => {
     const err = document.getElementById('modal-err');
@@ -444,14 +604,12 @@
     const name = document.getElementById('m-name').value.trim();
     const email= document.getElementById('m-email').value.trim();
     const phone= document.getElementById('m-phone').value.trim();
-    const plan = document.getElementById('m-plan').value;
 
     if (!org||!uname||!pass||!name||!email) { err.textContent='All required fields must be filled.'; err.hidden=false; return; }
     if (pass.length < 8) { err.textContent='Password must be at least 8 characters.'; err.hidden=false; return; }
 
     btn.disabled = true; btn.textContent = 'Creating…';
     try {
-      // Backend RegisterRequest: organization_name, full_name_en, email, username, password, phone
       await api.register({
         organization_name: org,
         username: uname,
@@ -459,10 +617,11 @@
         full_name_en: name,
         email,
         phone: phone || undefined,
-        // plan_id not supported by public register endpoint; use admin API after creation
       });
       toast(`Academy "${org}" created successfully!`, 'success');
       document.getElementById('add-modal').hidden = true;
+      ['m-org','m-uname','m-pass','m-name','m-email','m-phone'].forEach(id => document.getElementById(id).value = '');
+      err.hidden = true;
       await loadOrgs();
     } catch(e) {
       err.textContent = e.message;

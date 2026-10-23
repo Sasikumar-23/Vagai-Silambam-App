@@ -1,0 +1,2 @@
+[   41190ms] [ERROR] Access to fetch at 'https://vagai-silambam-app.vercel.app/api/v1/auth/login' from origin 'http://localhost:8765' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:8765/login.html:0
+[   41192ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://vagai-silambam-app.vercel.app/api/v1/auth/login:0

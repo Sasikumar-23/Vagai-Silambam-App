@@ -92,6 +92,7 @@ def list_organizations(
             "organization_code": org.organization_code,
             "name": org.name,
             "email": org.email,
+            "phone": org.phone,
             "status": org.status,
             "created_at": org.created_at,
             "plan_code": sub.plan.code if sub and sub.plan else "NONE",
