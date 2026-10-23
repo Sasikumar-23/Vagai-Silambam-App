@@ -8,9 +8,10 @@ from .. import errors
 from ..auth.deps import require_role
 from ..auth.security import hash_password
 from ..database import get_db
-from ..models import AuditLog, License, Organization, Payment, Plan, Student, Subscription, User
+from ..models import AuditLog, EmailLog, License, Organization, Payment, Plan, Student, Subscription, User
 from ..schemas import ResetPasswordRequest
 from ..services import audit
+from ..services import email as email_service
 from ..services.provisioning import generate_license_key
 from ..utils.time import as_utc
 
@@ -296,6 +297,17 @@ def record_offline_payment(
 
     db.commit()
 
+    email_service.send_cash_receipt(
+        db,
+        organization=org,
+        payment=payment,
+        plan=plan,
+        license_key=lic.license_key,
+        duration_months=payload.duration_months,
+        expires_at=sub.expires_at,
+    )
+    db.commit()
+
     return {
         "success": True,
         "message": f"Cash payment of ₹{payload.amount} recorded. Subscription activated until {sub.expires_at.strftime('%Y-%m-%d')}.",
@@ -493,3 +505,50 @@ def list_payments(
         }
         for p, org in rows
     ]
+
+
+@router.get("/email-logs")
+def list_email_logs(
+    user: User = Depends(require_role("SUPER_ADMIN")),
+    db: Session = Depends(get_db),
+):
+    rows = (
+        db.query(EmailLog, Organization)
+        .outerjoin(Organization, Organization.id == EmailLog.organization_id)
+        .order_by(EmailLog.created_at.desc())
+        .limit(200)
+        .all()
+    )
+    return [
+        {
+            "id": log.id,
+            "organization_name": org.name if org else None,
+            "recipient": log.recipient,
+            "kind": log.kind,
+            "subject": log.subject,
+            "reference": log.reference,
+            "status": log.status,
+            "attempts": log.attempts,
+            "last_error": log.last_error,
+            "sent_at": log.sent_at,
+            "created_at": log.created_at,
+        }
+        for log, org in rows
+    ]
+
+
+@router.post("/email-logs/retry")
+def retry_pending_emails(
+    user: User = Depends(require_role("SUPER_ADMIN")),
+    db: Session = Depends(get_db),
+):
+    """Resends PENDING and FAILED mail only. Payments and licenses are never touched."""
+    logs = db.query(EmailLog).filter(EmailLog.status.in_(["PENDING", "FAILED"])).all()
+    for log in logs:
+        email_service.attempt(db, log)
+    db.commit()
+    return {
+        "attempted": len(logs),
+        "sent": sum(1 for log in logs if log.status == "SENT"),
+        "still_pending": sum(1 for log in logs if log.status != "SENT"),
+    }

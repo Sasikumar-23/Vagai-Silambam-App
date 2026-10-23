@@ -111,6 +111,7 @@
       <button class="tab-btn active" onclick="switchTab('plans',this)">Plans</button>
       <button class="tab-btn" onclick="switchTab('subscriptions',this)">Subscriptions</button>
       <button class="tab-btn" onclick="switchTab('payments',this)">Payments</button>
+      <button class="tab-btn" onclick="switchTab('emails',this)">Email Logs</button>
     </div>
 
     <!-- Plans Tab -->
@@ -166,7 +167,20 @@
     </div>
 
     <!-- Cash Payment Modal -->
-    <div class="modal-backdrop" id="cash-modal" hidden>
+      <div class="tab-content" id="tab-emails">
+      <div class="card" style="margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <span style="color:var(--text-muted);font-size:13px">Receipts are sent to the academy's email. Failed or pending mail can be retried; payments are never recorded twice.</span>
+        <button class="btn btn-ghost btn-sm" id="retry-email-btn">Retry pending &amp; failed</button>
+      </div>
+      <div class="card" style="padding:0">
+        <table>
+          <thead><tr><th>To</th><th>Subject</th><th>Reference</th><th>Status</th><th>Attempts</th><th>Last error</th><th>Created</th></tr></thead>
+          <tbody id="email-tbody"><tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  <div class="modal-backdrop" id="cash-modal" hidden>
       <div class="modal-card">
         <div class="modal-head">
           <h3>💵 Record Cash Payment</h3>
@@ -334,6 +348,35 @@
       </tr>`;
     }).join('') || `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">No payment records</td></tr>`;
   }
+
+  // Email logs
+  let emailData = [];
+  async function loadEmails() {
+    emailData = await api.listEmailLogs().catch(() => []);
+    const tbody = document.getElementById('email-tbody');
+    tbody.innerHTML = emailData.map(e => {
+      const cls = e.status==='SENT'?'badge-green':e.status==='PENDING'?'badge-amber':'badge-red';
+      return `<tr>
+        <td>${e.recipient || '—'}</td>
+        <td>${e.subject}</td>
+        <td style="font-family:monospace;font-size:12px">${e.reference || '—'}</td>
+        <td><span class="badge ${cls}">${e.status}</span></td>
+        <td>${e.attempts}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${e.last_error || '—'}</td>
+        <td>${e.created_at ? new Date(e.created_at).toLocaleString('en-IN') : '—'}</td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">No emails yet</td></tr>`;
+  }
+  document.getElementById('retry-email-btn').addEventListener('click', async (e) => {
+    e.target.disabled = true;
+    try {
+      const r = await api.retryEmails();
+      toast(`Sent ${r.sent} of ${r.attempted} email(s)`, 'success');
+      await loadEmails();
+    } catch (err) { toast(err.message, 'error'); }
+    finally { e.target.disabled = false; }
+  });
+  loadEmails();
 
   // Event listeners for filters
   ['sub-search','sub-status'].forEach(id => document.getElementById(id).addEventListener('input', renderSubs));

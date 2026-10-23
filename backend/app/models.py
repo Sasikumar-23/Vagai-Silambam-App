@@ -426,3 +426,24 @@ class Certificate(Base, TimestampMixin):
     drive_file_id: Mapped[str | None] = mapped_column(String(120))
     verification_code: Mapped[str | None] = mapped_column(String(40))
     notes: Mapped[str | None] = mapped_column(Text)
+
+
+class EmailLog(Base, TimestampMixin):
+    """Outgoing billing mail. A failed send is retried here without touching payments or licenses."""
+
+    __tablename__ = "email_logs"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=lambda: new_id("eml"))
+    organization_id: Mapped[str | None] = mapped_column(
+        ForeignKey("organizations.id", ondelete="RESTRICT"), index=True
+    )
+    recipient: Mapped[str] = mapped_column(String(200), default="")
+    kind: Mapped[str] = mapped_column(String(40))
+    subject: Mapped[str] = mapped_column(String(300))
+    body: Mapped[str] = mapped_column(Text)
+    reference: Mapped[str | None] = mapped_column(String(120))
+    status: Mapped[str] = mapped_column(String(20), default="PENDING")  # PENDING|SENT|FAILED
+    attempts: Mapped[int] = mapped_column(Integer, default=0)
+    last_error: Mapped[str | None] = mapped_column(Text)
+    provider_message_id: Mapped[str | None] = mapped_column(String(120))
+    sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

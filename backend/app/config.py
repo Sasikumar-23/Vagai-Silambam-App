@@ -29,6 +29,9 @@ class Settings(BaseSettings):
 
     trial_days: int = 14
 
+    resend_api_key: str = ""
+    email_from: str = "Vagai Silambam <billing@dodoxtechs.in>"
+
     @property
     def normalized_database_url(self) -> str:
         url = self.database_url.strip()
