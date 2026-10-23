@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Platform } from 'react-native';
+import { Platform, TurboModuleRegistry } from 'react-native';
 import { SettingsRepository } from '../repositories/SettingsRepository';
 
 export interface GoogleUserProfile {
@@ -37,11 +37,17 @@ function googleSdk(clientId = DEFAULT_WEB_CLIENT_ID): GoogleSigninModule | null 
   if (Platform.OS === 'web') return null;
 
   if (googleModule === undefined) {
-    try {
-      googleModule = require('@react-native-google-signin/google-signin');
-    } catch (e) {
-      console.warn('Google Sign-In is not available in this build:', e);
+    // Check for the native module before requiring the library. Requiring it without the native
+    // module is caught, but React Native still reports the failure as an error in dev.
+    if (TurboModuleRegistry.get('RNGoogleSignin') == null) {
       googleModule = null;
+    } else {
+      try {
+        googleModule = require('@react-native-google-signin/google-signin');
+      } catch (e) {
+        console.warn('Google Sign-In failed to load:', e);
+        googleModule = null;
+      }
     }
   }
 
