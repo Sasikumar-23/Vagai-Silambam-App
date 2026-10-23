@@ -116,6 +116,17 @@
 
     <!-- Plans Tab -->
     <div class="tab-content active" id="tab-plans">
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-head" style="display:flex;justify-content:space-between;align-items:center">
+          <h3>Manage plans</h3>
+          <button class="btn btn-primary btn-sm" id="new-plan-btn">+ New plan</button>
+        </div>
+        <table>
+          <thead><tr><th>Code</th><th>Name</th><th>Students</th><th>Branches</th><th>Users</th><th>Monthly ₹</th><th>Annual ₹</th><th>Status</th><th></th></tr></thead>
+          <tbody id="admin-plan-tbody"><tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted)">Loading…</td></tr></tbody>
+        </table>
+        <p style="color:var(--text-muted);font-size:12px;margin-top:8px">-1 means unlimited. Changes to a plan's limits or prices apply to every academy on that plan straight away.</p>
+      </div>
       <div class="plan-grid" id="plan-grid">
         ${[0,1,2].map(()=>`<div class="plan-card"><div class="skeleton" style="height:200px"></div></div>`).join('')}
       </div>
@@ -151,9 +162,11 @@
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           <input id="pay-search" placeholder="Search academy or reference…">
         </div>
+        <input type="date" class="filter-sel" id="pay-from" title="Paid from">
+        <input type="date" class="filter-sel" id="pay-to" title="Paid to">
         <select class="filter-sel" id="pay-status">
           <option value="">All Statuses</option>
-          <option value="VERIFIED">Verified</option>
+          <option value="COMPLETED">Verified</option>
           <option value="PENDING">Pending</option>
           <option value="FAILED">Failed</option>
         </select>
@@ -180,7 +193,31 @@
       </div>
     </div>
 
-  <div class="modal-backdrop" id="cash-modal" hidden>
+  <div class="modal-backdrop" id="plan-modal" hidden>
+      <div class="modal-card">
+        <div class="modal-head"><h3 id="plan-modal-title">New plan</h3></div>
+        <div class="modal-body">
+          <div class="alert-err" id="plan-err" hidden></div>
+          <div class="field"><label>Code (letters only) *</label><input id="p-code" placeholder="COACHING"></div>
+          <div class="field"><label>Name *</label><input id="p-name"></div>
+          <div class="field"><label>Max students (-1 = unlimited) *</label><input id="p-students" type="number" value="50"></div>
+          <div class="field"><label>Max branches *</label><input id="p-branches" type="number" value="1"></div>
+          <div class="field"><label>Max users *</label><input id="p-users" type="number" value="5"></div>
+          <div class="field"><label>Monthly price (₹) *</label><input id="p-monthly" type="number" min="0" value="499"></div>
+          <div class="field"><label>Annual price (₹) *</label><input id="p-annual" type="number" min="0" value="4999"></div>
+          <div class="field"><label>Sort order</label><input id="p-sort" type="number" value="0"></div>
+          <div class="field"><label>Status</label>
+            <select id="p-active"><option value="true">Active</option><option value="false">Inactive</option></select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" id="plan-cancel-btn">Cancel</button>
+          <button class="btn btn-primary" id="plan-save-btn">Save plan</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-backdrop" id="cash-modal" hidden>
       <div class="modal-card">
         <div class="modal-head">
           <h3>💵 Record Cash Payment</h3>
@@ -327,8 +364,13 @@
   function renderPayments() {
     const q = document.getElementById('pay-search').value.toLowerCase();
     const pf = document.getElementById('pay-status').value;
+    const from = document.getElementById('pay-from').value;
+    const to = document.getElementById('pay-to').value;
     const rows = payData.filter(p => {
       if (pf && p.status !== pf) return false;
+      const day = p.paid_at ? p.paid_at.slice(0, 10) : '';
+      if (from && (!day || day < from)) return false;
+      if (to && (!day || day > to)) return false;
       const txt = `${p.organization_name||''} ${p.payment_reference||''}`.toLowerCase();
       return !q || txt.includes(q);
     });
@@ -378,11 +420,73 @@
   });
   loadEmails();
 
+  // Plan management (Super Admin)
+  let adminPlans = [];
+  let editingPlanId = null;
+  async function loadAdminPlans() {
+    adminPlans = await api.adminPlans().catch(() => []);
+    document.getElementById('admin-plan-tbody').innerHTML = adminPlans.map(p => `<tr>
+      <td style="font-family:monospace">${p.code}</td>
+      <td>${p.name}</td>
+      <td>${p.max_students}</td><td>${p.max_branches}</td><td>${p.max_users}</td>
+      <td>${p.price_monthly}</td><td>${p.price_annual}</td>
+      <td><span class="badge ${p.is_active ? 'badge-green' : 'badge-gray'}">${p.is_active ? 'Active' : 'Inactive'}</span></td>
+      <td><button class="btn btn-ghost btn-sm" onclick="editPlan('${p.id}')">Edit</button></td>
+    </tr>`).join('') || `<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text-muted)">No plans</td></tr>`;
+  }
+  function openPlanModal(plan) {
+    editingPlanId = plan ? plan.id : null;
+    document.getElementById('plan-err').hidden = true;
+    document.getElementById('plan-modal-title').textContent = plan ? `Edit ${plan.code}` : 'New plan';
+    const codeField = document.getElementById('p-code');
+    codeField.value = plan ? plan.code : '';
+    codeField.disabled = !!plan;
+    document.getElementById('p-name').value = plan ? plan.name : '';
+    document.getElementById('p-students').value = plan ? plan.max_students : 50;
+    document.getElementById('p-branches').value = plan ? plan.max_branches : 1;
+    document.getElementById('p-users').value = plan ? plan.max_users : 5;
+    document.getElementById('p-monthly').value = plan ? plan.price_monthly : 499;
+    document.getElementById('p-annual').value = plan ? plan.price_annual : 4999;
+    document.getElementById('p-sort').value = plan ? plan.sort_order : 0;
+    document.getElementById('p-active').value = plan && !plan.is_active ? 'false' : 'true';
+    document.getElementById('plan-modal').hidden = false;
+  }
+  window.editPlan = (id) => openPlanModal(adminPlans.find(p => p.id === id));
+  document.getElementById('new-plan-btn').addEventListener('click', () => openPlanModal(null));
+  document.getElementById('plan-cancel-btn').addEventListener('click', () => document.getElementById('plan-modal').hidden = true);
+  document.getElementById('plan-save-btn').addEventListener('click', async () => {
+    const err = document.getElementById('plan-err');
+    const body = {
+      name: document.getElementById('p-name').value.trim(),
+      max_students: parseInt(document.getElementById('p-students').value),
+      max_branches: parseInt(document.getElementById('p-branches').value),
+      max_users: parseInt(document.getElementById('p-users').value),
+      price_monthly: parseFloat(document.getElementById('p-monthly').value),
+      price_annual: parseFloat(document.getElementById('p-annual').value),
+      sort_order: parseInt(document.getElementById('p-sort').value) || 0,
+      is_active: document.getElementById('p-active').value === 'true',
+    };
+    try {
+      if (editingPlanId) {
+        await api.updatePlan(editingPlanId, body);
+      } else {
+        await api.createPlan({ ...body, code: document.getElementById('p-code').value.trim() });
+      }
+      document.getElementById('plan-modal').hidden = true;
+      toast('Plan saved', 'success');
+      await loadAdminPlans();
+    } catch (e) {
+      err.textContent = e.message;
+      err.hidden = false;
+    }
+  });
+  loadAdminPlans();
+
   // Event listeners for filters
   ['sub-search','sub-status'].forEach(id => document.getElementById(id).addEventListener('input', renderSubs));
   ['sub-search','sub-status'].forEach(id => document.getElementById(id).addEventListener('change', renderSubs));
-  ['pay-search','pay-status'].forEach(id => document.getElementById(id).addEventListener('input', renderPayments));
-  ['pay-search','pay-status'].forEach(id => document.getElementById(id).addEventListener('change', renderPayments));
+  ['pay-search','pay-status','pay-from','pay-to'].forEach(id => document.getElementById(id).addEventListener('input', renderPayments));
+  ['pay-search','pay-status','pay-from','pay-to'].forEach(id => document.getElementById(id).addEventListener('change', renderPayments));
 
   // Global actions
   window.toggleSubMenu = function(id, btn) {

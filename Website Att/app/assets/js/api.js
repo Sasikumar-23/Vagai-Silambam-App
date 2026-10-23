@@ -176,6 +176,12 @@ export const api = {
   listPayments: (orgId) => request(`/api/v1/admin/payments${orgId ? `?organization_id=${encodeURIComponent(orgId)}` : ''}`),
   listAcademyLicenses: () => request('/api/v1/admin/licenses'),
   listEmailLogs: () => request('/api/v1/admin/email-logs'),
+  adminPlans: () => request('/api/v1/admin/plans'),
+  createPlan: (payload) => request('/api/v1/admin/plans', { method: 'POST', body: payload }),
+  updatePlan: (id, payload) => request(`/api/v1/admin/plans/${id}`, { method: 'PUT', body: payload }),
+  listAppActivations: () => request('/api/v1/admin/app-activations'),
+  listApiLogs: (pathContains = '') =>
+    request(`/api/v1/admin/api-logs${pathContains ? `?path_contains=${encodeURIComponent(pathContains)}` : ''}`),
   retryEmails: () => request('/api/v1/admin/email-logs/retry', { method: 'POST' }),
   generateAcademyLicense: (orgId, expiresAt = null) =>
     request(`/api/v1/admin/organizations/${orgId}/generate-license`, { method: 'POST', body: { expires_at: expiresAt } }),
