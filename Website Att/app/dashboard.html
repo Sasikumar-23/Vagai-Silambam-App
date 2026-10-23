@@ -263,13 +263,16 @@
       api.listOrganizations().catch(()=>({organizations:[]}))
     ]);
 
-    const ov = overview || {};
-    const totalCustomers  = ov.total_organizations ?? orgs?.organizations?.length ?? 0;
-    const activeSubs      = ov.active_subscriptions ?? 0;
-    const pendingPayments = ov.pending_payments ?? 0;
-    const activeLicenses  = ov.active_licenses ?? 0;
-    const expiringLics    = ov.expiring_licenses ?? 0;
-    const monthlyRevenue  = ov.monthly_revenue ?? 0;
+    // Map backend field names → display values
+    // adminOverview returns: { total_academies, active_academies, suspended_academies, total_students, completed_payments }
+    const ov           = overview || {};
+    const orgList      = orgs?.organizations || [];
+    const totalCustomers  = ov.total_academies  ?? orgList.length;
+    const activeSubs      = ov.active_academies ?? orgList.filter(o=>o.subscription_status==='ACTIVE').length;
+    const pendingPayments = ov.suspended_academies ?? orgList.filter(o=>o.status==='SUSPENDED').length;
+    const activeLicenses  = orgList.filter(o=>o.subscription_status==='ACTIVE').length;
+    const expiringLics    = 0; // computed below
+    const monthlyRevenue  = ov.completed_payments ?? 0;
 
     document.getElementById('metrics').innerHTML = `
       <div class="metric-card mc-blue">
@@ -322,13 +325,12 @@
       </div>
     `;
 
-    // Orgs table
-    const orgList = orgs?.organizations || [];
+    // Orgs table — backend uses flat fields: plan_code, subscription_status
     const orgRows = orgList.slice(0,8).map(o => {
       const statusBadge = o.status === 'ACTIVE'
         ? `<span class="badge badge-green">Active</span>`
         : `<span class="badge badge-red">Suspended</span>`;
-      const plan = o.subscription?.plan?.name || '—';
+      const plan = o.plan_code && o.plan_code !== 'NONE' ? o.plan_code : '—';
       return `<tr>
         <td><strong>${o.name}</strong><br><small style="color:var(--text-muted)">${o.email||''}</small></td>
         <td>${statusBadge}</td>

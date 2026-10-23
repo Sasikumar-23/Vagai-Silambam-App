@@ -289,8 +289,9 @@
 
     let rows = orgData.filter(o => {
       if (statusF && o.status !== statusF) return false;
-      if (planF && o.subscription?.plan?.code !== planF) return false;
-      const text = `${o.name} ${o.email||''} ${o.organization_code}`.toLowerCase();
+      // backend returns flat field: plan_code
+      if (planF && o.plan_code !== planF) return false;
+      const text = `${o.name} ${o.email||''} ${o.organization_code||''}`.toLowerCase();
       return !q || text.includes(q);
     });
 
@@ -304,18 +305,16 @@
       const status = o.status === 'ACTIVE'
         ? `<span class="badge badge-green">Active</span>`
         : `<span class="badge badge-red">Suspended</span>`;
-      const sub = o.subscription;
+      // Backend returns flat fields: plan_code, subscription_status (not nested subscription obj)
+      const subStatus = o.subscription_status || 'NONE';
       let subBadge = `<span class="badge badge-gray">No Plan</span>`;
-      if (sub) {
-        const cls = sub.status==='ACTIVE'?'badge-green':sub.status==='TRIAL'?'badge-blue':sub.status==='EXPIRED'?'badge-red':'badge-amber';
-        subBadge = `<span class="badge ${cls}">${sub.status}</span>`;
-        if (sub.expires_at) {
-          const d = new Date(sub.expires_at).toLocaleDateString('en-IN');
-          subBadge += `<br><small style="color:var(--text-muted);font-size:11px">Exp: ${d}</small>`;
-        }
+      if (subStatus && subStatus !== 'NONE') {
+        const cls = subStatus==='ACTIVE'?'badge-green':subStatus==='TRIAL'?'badge-blue':subStatus==='EXPIRED'?'badge-red':'badge-amber';
+        subBadge = `<span class="badge ${cls}">${subStatus}</span>`;
       }
-      const plan = sub?.plan?.name || '—';
+      const plan = (o.plan_code && o.plan_code !== 'NONE') ? o.plan_code : '—';
       const letter = (o.name||'A').charAt(0).toUpperCase();
+      const students = o.active_students ?? '—';
 
       return `<tr>
         <td>
@@ -331,7 +330,7 @@
         <td><span class="badge badge-blue">${plan}</span></td>
         <td>${status}</td>
         <td>${subBadge}</td>
-        <td><span class="badge badge-gray">${o.user_count ?? '—'}</span></td>
+        <td><span class="badge badge-gray">${students}</span></td>
         <td>
           <div class="actions-wrap">
             <button class="actions-btn" onclick="toggleMenu('${o.id}',this)">
@@ -456,14 +455,15 @@
 
     btn.disabled = true; btn.textContent = 'Creating…';
     try {
+      // Backend RegisterRequest: organization_name, full_name_en, email, username, password, phone
       await api.register({
-        academy_name: org,
+        organization_name: org,
         username: uname,
         password: pass,
-        full_name: name,
+        full_name_en: name,
         email,
         phone: phone || undefined,
-        plan_id: plan || undefined,
+        // plan_id not supported by public register endpoint; use admin API after creation
       });
       toast(`Academy "${org}" created successfully!`, 'success');
       document.getElementById('add-modal').hidden = true;

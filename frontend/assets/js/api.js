@@ -171,10 +171,16 @@ export const api = {
 
   // Admin
   adminOverview: () => request('/api/v1/admin/overview'),
-  listOrganizations: () => request('/api/v1/admin/organizations'),
+  // backend returns a flat array; wrap so callers can do res.organizations
+  listOrganizations: async () => {
+    const list = await request('/api/v1/admin/organizations');
+    return { organizations: Array.isArray(list) ? list : [] };
+  },
   suspendOrg: (id) => request(`/api/v1/admin/organizations/${id}/suspend`, { method: 'POST' }),
   activateOrg: (id) => request(`/api/v1/admin/organizations/${id}/activate`, { method: 'POST' }),
+  // payload must contain { plan_code: string }
   updateOrgPlan: (id, payload) => request(`/api/v1/admin/organizations/${id}/subscription`, { method: 'PUT', body: payload }),
+  // payload: { organization_id, plan_code, amount, duration_months, payment_mode, receipt_number, notes }
   recordOfflinePayment: (payload) => request('/api/v1/admin/subscriptions/record-offline-payment', { method: 'POST', body: payload }),
   listAuditLogs: () => request('/api/v1/admin/audit-logs'),
 };

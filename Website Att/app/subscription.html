@@ -179,6 +179,9 @@
           <div class="field"><label>Academy *</label>
             <select id="c-org"><option value="">Select academy…</option></select>
           </div>
+          <div class="field"><label>Plan *</label>
+            <select id="c-plan"><option value="">Select plan…</option></select>
+          </div>
           <div class="field"><label>Amount (₹) *</label><input id="c-amt" type="number" placeholder="e.g. 2999"></div>
           <div class="field"><label>Months to Extend *</label>
             <select id="c-months">
@@ -240,9 +243,16 @@
 
     // Populate org dropdown for cash modal
     const orgSel = document.getElementById('c-org');
+    const planSel = document.getElementById('c-plan');
     orgData.forEach(o => {
       orgSel.insertAdjacentHTML('beforeend', `<option value="${o.id}">${o.name}</option>`);
     });
+    // Populate plan dropdown in cash modal using loaded planData
+    if (planData.length) {
+      planData.forEach(p => {
+        planSel.insertAdjacentHTML('beforeend', `<option value="${p.code}">${p.name} (${p.code})</option>`);
+      });
+    }
 
     // Build subscriptions data from orgs
     subData = orgData.filter(o => o.subscription);
@@ -260,23 +270,22 @@
     const q = document.getElementById('sub-search').value.toLowerCase();
     const sf = document.getElementById('sub-status').value;
     const rows = subData.filter(o => {
-      const s = o.subscription;
-      if (sf && s?.status !== sf) return false;
+      // backend returns flat fields: subscription_status
+      if (sf && o.subscription_status !== sf) return false;
       return !q || o.name.toLowerCase().includes(q);
     });
     const tbody = document.getElementById('sub-tbody');
     tbody.innerHTML = rows.map(o => {
-      const s = o.subscription;
-      const cls = s.status==='ACTIVE'?'badge-green':s.status==='TRIAL'?'badge-blue':s.status==='EXPIRED'?'badge-red':'badge-amber';
-      const exp = s.expires_at ? new Date(s.expires_at).toLocaleDateString('en-IN') : '—';
-      const start = s.subscription_start ? new Date(s.subscription_start).toLocaleDateString('en-IN') : '—';
+      const subSt  = o.subscription_status || 'NONE';
+      const cls = subSt==='ACTIVE'?'badge-green':subSt==='TRIAL'?'badge-blue':subSt==='EXPIRED'?'badge-red':'badge-amber';
+      const plan = (o.plan_code && o.plan_code !== 'NONE') ? o.plan_code : '—';
       return `<tr>
         <td><strong>${o.name}</strong></td>
-        <td><span class="badge badge-blue">${s.plan?.name||'—'}</span></td>
-        <td><span class="badge ${cls}">${s.status}</span></td>
-        <td>${s.billing_cycle||'MONTHLY'}</td>
-        <td>${start}</td>
-        <td>${exp}</td>
+        <td><span class="badge badge-blue">${plan}</span></td>
+        <td><span class="badge ${cls}">${subSt}</span></td>
+        <td>MONTHLY</td>
+        <td>—</td>
+        <td>—</td>
         <td>
           <div class="actions-wrap">
             <button class="actions-btn" onclick="toggleSubMenu('${o.id}',this)">
@@ -393,7 +402,17 @@
 
     btn.disabled=true; btn.textContent='Processing…';
     try {
-      await api.recordOfflinePayment({ organization_id:orgId, amount, months_to_extend:months, payment_reference:ref||`CASH-${Date.now()}`, notes, gateway:'cash' });
+      // Backend expects: organization_id, plan_code, amount, duration_months, payment_mode, receipt_number, notes
+      const planCode = document.getElementById('c-plan')?.value || 'starter';
+      await api.recordOfflinePayment({
+        organization_id: orgId,
+        plan_code: planCode,
+        amount,
+        duration_months: months,
+        payment_mode: 'CASH',
+        receipt_number: ref || undefined,
+        notes: notes || undefined,
+      });
       toast('Payment recorded & subscription activated!', 'success');
       document.getElementById('cash-modal').hidden = true;
       const res = await api.listOrganizations();
