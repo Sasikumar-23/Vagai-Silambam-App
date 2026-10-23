@@ -44,12 +44,12 @@ const SVG = {
   star: `<svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>`
 };
 
-const NAV = [
-  { href: 'dashboard.html',     label: 'Dashboard',             icon: SVG.dashboard },
-  { href: 'customers.html',     label: 'Customers & Users',     icon: SVG.customers },
-  { href: 'subscription.html',  label: 'Subscriptions',         icon: SVG.subscription },
-  { href: 'licenses.html',      label: 'Users & Licenses',      icon: SVG.licenses },
-  { href: 'activity.html',      label: 'Activity & API Logs',   icon: SVG.customers },
+const NAV_ALL = [
+  { href: 'dashboard.html',     label: 'Dashboard',             icon: SVG.dashboard,      superAdminOnly: false },
+  { href: 'customers.html',     label: 'Customers & Users',     icon: SVG.customers,      superAdminOnly: true  },
+  { href: 'subscription.html',  label: 'Subscriptions',         icon: SVG.subscription,   superAdminOnly: true  },
+  { href: 'licenses.html',      label: 'Users & Licenses',      icon: SVG.licenses,       superAdminOnly: false },
+  { href: 'activity.html',      label: 'Activity & API Logs',   icon: SVG.customers,      superAdminOnly: true  },
 ];
 
 export function mountShell({ titleKey, title }) {
@@ -58,6 +58,16 @@ export function mountShell({ titleKey, title }) {
   const role = user.role || '';
   const isSA = role === 'SUPER_ADMIN';
   const displayName = user.full_name_en || user.username || 'Admin';
+
+  // Filter nav items by role
+  const NAV = NAV_ALL.filter(item => !item.superAdminOnly || isSA);
+
+  // Redirect non-super-admins away from super-admin-only pages
+  const currentItem = NAV_ALL.find(item => item.href === page);
+  if (currentItem && currentItem.superAdminOnly && !isSA) {
+    location.href = 'dashboard.html';
+    return;
+  }
 
   document.body.insertAdjacentHTML('afterbegin', `
     <div class="app">
