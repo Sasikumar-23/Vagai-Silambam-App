@@ -175,6 +175,7 @@ export const api = {
   adminOverview: () => request('/api/v1/admin/overview'),
   listPayments: (orgId) => request(`/api/v1/admin/payments${orgId ? `?organization_id=${encodeURIComponent(orgId)}` : ''}`),
   listAcademyLicenses: () => request('/api/v1/admin/licenses'),
+  revokeAcademyLicense: (licenseId) => request(`/api/v1/admin/licenses/${licenseId}/revoke`, { method: 'POST' }),
   listEmailLogs: () => request('/api/v1/admin/email-logs'),
   adminPlans: () => request('/api/v1/admin/plans'),
   createPlan: (payload) => request('/api/v1/admin/plans', { method: 'POST', body: payload }),

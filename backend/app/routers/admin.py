@@ -453,29 +453,61 @@ def generate_academy_license(
 
 
 @router.get("/licenses")
-def list_academy_licenses(
+def list_licenses(
     user: User = Depends(require_role("SUPER_ADMIN")),
     db: Session = Depends(get_db),
 ):
+    """Academy-wide subscription licenses and per-member seat licenses, newest first."""
     rows = (
-        db.query(License, Organization)
+        db.query(License, Organization, User)
         .join(Organization, Organization.id == License.organization_id)
-        .filter(License.user_id.is_(None))
+        .outerjoin(User, User.id == License.user_id)
         .order_by(License.issued_at.desc())
         .all()
     )
     return [
         {
+            "license_id": lic.id,
             "license_key": lic.license_key,
+            "scope": "SEAT" if member else "ACADEMY",
             "status": lic.status,
             "issued_at": lic.issued_at,
             "expires_at": lic.expires_at,
             "organization_id": org.id,
             "organization_name": org.name,
             "organization_code": org.organization_code,
+            "user_id": member.id if member else None,
+            "username": member.username if member else None,
+            "full_name_en": member.full_name_en if member else None,
         }
-        for lic, org in rows
+        for lic, org, member in rows
     ]
+
+
+@router.post("/licenses/{license_id}/revoke")
+def revoke_license(
+    license_id: str,
+    request: Request,
+    user: User = Depends(require_role("SUPER_ADMIN")),
+    db: Session = Depends(get_db),
+):
+    lic = db.get(License, license_id)
+    if lic is None:
+        raise errors.not_found("License not found")
+    if lic.status != "REVOKED":
+        lic.status = "REVOKED"
+        audit.record(
+            db,
+            action="LICENSE_REVOKED",
+            organization_id=lic.organization_id,
+            user_id=user.id,
+            entity_type="licenses",
+            entity_id=lic.id,
+            meta={"scope": "SEAT" if lic.user_id else "ACADEMY"},
+            request=request,
+        )
+        db.commit()
+    return {"license_id": lic.id, "status": lic.status}
 
 
 @router.get("/payments")
