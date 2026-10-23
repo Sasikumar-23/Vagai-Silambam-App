@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, Image, TouchableOpacity,
   KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator
@@ -11,14 +11,6 @@ import {
 import { theme } from '../theme';
 import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
-import { UserRepository } from '../repositories/UserRepository';
-import { UserRole } from '../models/types';
-
-// Admin is deliberately absent: it is granted to the first account only, never chosen.
-const SIGNUP_ROLES: Array<{ role: UserRole; labelEn: string; labelTa: string; icon: string }> = [
-  { role: 'INSTRUCTOR', labelEn: 'Instructor', labelTa: 'மாஸ்டர்', icon: '🥋' },
-  { role: 'STAFF', labelEn: 'Staff', labelTa: 'பணியாளர்', icon: '📋' },
-];
 
 export default function LoginScreen({ navigation }: any) {
   const { t, language } = useI18n();
@@ -35,17 +27,8 @@ export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
 
-  const [signupRole, setSignupRole] = useState<UserRole>('INSTRUCTOR');
-  const [isFirstAccount, setIsFirstAccount] = useState(false);
-
   // Loading states
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    UserRepository.countUsers()
-      .then(count => setIsFirstAccount(count === 0))
-      .catch(() => setIsFirstAccount(false));
-  }, []);
 
   // ─────────────────────────────────────────────────────────────────
   // Username / Password Login
@@ -77,6 +60,10 @@ export default function LoginScreen({ navigation }: any) {
       Alert.alert('Required', 'Please enter a Username and Password.');
       return;
     }
+    if (!email.trim()) {
+      Alert.alert('Required', 'Please enter your Email.');
+      return;
+    }
 
     setLoading(true);
     const result = await register({
@@ -85,7 +72,7 @@ export default function LoginScreen({ navigation }: any) {
       full_name_ta: fullNameTa.trim() || undefined,
       username: username.trim(),
       password: password.trim(),
-      email: email.trim() || undefined,
+      email: email.trim(),
       phone: phone.trim() || undefined,
     });
     setLoading(false);
@@ -209,6 +196,18 @@ export default function LoginScreen({ navigation }: any) {
                   outlineStyle={styles.outline}
                 />
 
+                <Text style={styles.inputLabel}>EMAIL *</Text>
+                <TextInput
+                  placeholder="you@example.com"
+                  value={email}
+                  onChangeText={setEmail}
+                  mode="outlined"
+                  style={styles.input}
+                  outlineStyle={styles.outline}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
+                />
+
                 <Text style={styles.inputLabel}>USERNAME *</Text>
                 <TextInput
                   placeholder="Choose a username"
@@ -231,40 +230,12 @@ export default function LoginScreen({ navigation }: any) {
                   secureTextEntry
                 />
 
-                <Text style={styles.inputLabel}>YOUR ROLE *</Text>
-                {isFirstAccount ? (
-                  <View style={styles.firstAccountNote}>
-                    <Text style={styles.firstAccountNoteText}>
-                      This is the first account on this device, so it becomes the academy
-                      Admin with full access.
-                    </Text>
-                  </View>
-                ) : (
-                  <View style={styles.roleRow}>
-                    {SIGNUP_ROLES.map(option => {
-                      const isSelected = signupRole === option.role;
-                      return (
-                        <TouchableOpacity
-                          key={option.role}
-                          style={[styles.roleCard, isSelected && styles.roleCardActive]}
-                          onPress={() => setSignupRole(option.role)}
-                          activeOpacity={0.85}
-                        >
-                          <Text style={styles.roleCardIcon}>{option.icon}</Text>
-                          <Text style={[styles.roleCardLabel, isSelected && styles.roleCardLabelActive]}>
-                            {option.labelEn}
-                          </Text>
-                          <Text style={styles.roleCardTa}>{option.labelTa}</Text>
-                          {isSelected && (
-                            <View style={styles.roleCheck}>
-                              <Check size={11} color="#FFFFFF" />
-                            </View>
-                          )}
-                        </TouchableOpacity>
-                      );
-                    })}
-                  </View>
-                )}
+                <View style={styles.firstAccountNote}>
+                  <Text style={styles.firstAccountNoteText}>
+                    This creates a new academy with you as its Admin. Instructors and staff are
+                    added by the academy Admin, so ask your Admin for their login.
+                  </Text>
+                </View>
 
                 <TouchableOpacity
                   style={[styles.primaryBtn, { backgroundColor: '#059669' }, loading && { opacity: 0.7 }]}
