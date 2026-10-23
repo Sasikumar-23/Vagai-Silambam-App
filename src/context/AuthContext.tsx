@@ -29,6 +29,27 @@ import { User, UserRole } from '../models/types';
 import { GoogleOAuthService } from '../services/GoogleOAuthService';
 
 const AUTH_USER_KEY = '@vagai_auth_user_v3';
+const LAST_VERIFIED_KEY = '@vagai_last_online_verified_v1';
+export const OFFLINE_GRACE_DAYS = 3;
+const OFFLINE_GRACE_MS = OFFLINE_GRACE_DAYS * 24 * 60 * 60 * 1000;
+
+async function markOnlineVerified(): Promise<void> {
+  await AsyncStorage.setItem(LAST_VERIFIED_KEY, String(Date.now()));
+}
+
+// Offline sign-in is allowed only shortly after a successful online check.
+// A timestamp in the future (clock moved back) is treated as invalid.
+async function offlineGraceValid(): Promise<boolean> {
+  const raw = await AsyncStorage.getItem(LAST_VERIFIED_KEY);
+  const last = Number(raw);
+  if (!raw || !Number.isFinite(last)) return false;
+  const now = Date.now();
+  return last <= now && now - last <= OFFLINE_GRACE_MS;
+}
+
+async function forgetOfflineAccess(): Promise<void> {
+  await AsyncStorage.removeItem(LAST_VERIFIED_KEY);
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Context types
@@ -118,16 +139,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setCurrentUser(localUser);
           setConnectionMode('online');
           await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify({ id: localUser.id }));
+          await markOnlineVerified();
         } catch (e) {
-          // API unreachable — try local fallback
+          if (e instanceof ApiError && !e.isNetworkError) {
+            // The server answered and refused: revoked, disabled or session ended.
+            await forgetOfflineAccess();
+            await TokenStore.clear();
+            await AsyncStorage.removeItem(AUTH_USER_KEY);
+            setCurrentUser(null);
+            return;
+          }
+          // Server unreachable: allow the local session only within the grace window.
           const stored = await AsyncStorage.getItem(AUTH_USER_KEY);
-          if (stored) {
+          if (stored && (await offlineGraceValid())) {
             const localUser = await UserRepository.findById(JSON.parse(stored).id);
             if (localUser) {
               setCurrentUser(localUser);
               setConnectionMode('offline');
-            } else {
-              await TokenStore.clear();
             }
           }
         }
@@ -167,12 +195,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCurrentUser(localUser);
       setConnectionMode('online');
       await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify({ id: localUser.id }));
+      await markOnlineVerified();
       return { success: true, user: localUser };
     } catch (err) {
       if (err instanceof ApiError && err.isNetworkError) {
         // 2. API unreachable — fall back to local SQLite credentials
         try {
           const localUser = await UserRepository.verifyCredentials(username, password);
+          if (localUser && !(await offlineGraceValid())) {
+            return {
+              success: false,
+              error: `Connect to the internet to sign in. Offline sign-in works for ${OFFLINE_GRACE_DAYS} days after your last online check.`,
+            };
+          }
           if (localUser) {
             setCurrentUser(localUser);
             setConnectionMode('offline');
@@ -185,6 +220,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
       // API returned a real error (wrong password, suspended, etc.)
+      if (err instanceof ApiError && (err.code === 'LICENSE_REVOKED' || err.code === 'ACCOUNT_DISABLED')) {
+        await forgetOfflineAccess();
+      }
       return { success: false, error: (err as ApiError).message || 'Login failed.' };
     }
   };
