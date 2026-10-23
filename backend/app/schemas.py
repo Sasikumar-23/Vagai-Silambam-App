@@ -24,6 +24,29 @@ class UserCreate(BaseModel):
     password: str = Field(min_length=8, max_length=200)
 
 
+class PlanCreate(BaseModel):
+    code: str = Field(min_length=3, max_length=40, pattern=r"^[A-Za-z_]+$")
+    name: str = Field(min_length=1, max_length=120)
+    max_students: int = Field(ge=-1)  # -1 = unlimited
+    max_branches: int = Field(ge=-1)
+    max_users: int = Field(ge=-1)
+    price_monthly: float = Field(ge=0)
+    price_annual: float = Field(ge=0)
+    sort_order: int = 0
+    is_active: bool = True
+
+
+class PlanUpdate(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    max_students: int = Field(ge=-1)
+    max_branches: int = Field(ge=-1)
+    max_users: int = Field(ge=-1)
+    price_monthly: float = Field(ge=0)
+    price_annual: float = Field(ge=0)
+    sort_order: int = 0
+    is_active: bool = True
+
+
 class ResetPasswordRequest(BaseModel):
     new_password: str = Field(min_length=8, max_length=200)
 

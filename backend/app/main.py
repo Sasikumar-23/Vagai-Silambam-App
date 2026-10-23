@@ -1,12 +1,13 @@
 import logging
 
-from fastapi import FastAPI, Request
+from fastapi import Depends, FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .config import get_settings
+from .services.request_log import log_api_request
 from .routers import admin, attendance, auth, certificates, events, fees, google, reports, students, subscription, uniforms, users
 
 logger = logging.getLogger("vagai")
@@ -16,6 +17,7 @@ app = FastAPI(
     title="Vagai Silambam SaaS API",
     version="1.0.0",
     description="Multi-tenant API for Silambam academy management.",
+    dependencies=[Depends(log_api_request)],
 )
 
 app.add_middleware(

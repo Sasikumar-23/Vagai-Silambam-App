@@ -447,3 +447,16 @@ class EmailLog(Base, TimestampMixin):
     last_error: Mapped[str | None] = mapped_column(Text)
     provider_message_id: Mapped[str | None] = mapped_column(String(120))
     sent_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class ApiRequestLog(Base):
+    """Who called which API path. Never stores request bodies, tokens or passwords."""
+
+    __tablename__ = "api_request_logs"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True, default=lambda: new_id("arl"))
+    user_id: Mapped[str | None] = mapped_column(String(40), index=True)
+    method: Mapped[str] = mapped_column(String(10))
+    path: Mapped[str] = mapped_column(String(300))
+    ip_address: Mapped[str | None] = mapped_column(String(64))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)

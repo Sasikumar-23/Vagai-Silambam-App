@@ -8,11 +8,11 @@ from .. import errors
 from ..auth.deps import require_role
 from ..auth.security import hash_password
 from ..database import get_db
-from ..models import AuditLog, EmailLog, License, Organization, Payment, Plan, Student, Subscription, User
-from ..schemas import ResetPasswordRequest
+from ..models import ApiRequestLog, AuditLog, EmailLog, License, Organization, Payment, Plan, Student, Subscription, User
+from ..schemas import PlanCreate, PlanUpdate, ResetPasswordRequest
 from ..services import audit
 from ..services import email as email_service
-from ..services.provisioning import generate_license_key
+from ..services.provisioning import generate_license_key, has_active_user_license, requires_seat_license
 from ..utils.time import as_utc
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
@@ -552,3 +552,131 @@ def retry_pending_emails(
         "sent": sum(1 for log in logs if log.status == "SENT"),
         "still_pending": sum(1 for log in logs if log.status != "SENT"),
     }
+
+
+def _plan_out(plan: Plan) -> dict:
+    return {
+        "id": plan.id,
+        "code": plan.code,
+        "name": plan.name,
+        "max_students": plan.max_students,
+        "max_branches": plan.max_branches,
+        "max_users": plan.max_users,
+        "price_monthly": plan.price_monthly,
+        "price_annual": plan.price_annual,
+        "sort_order": plan.sort_order,
+        "is_active": plan.is_active,
+    }
+
+
+@router.get("/plans")
+def list_all_plans(user: User = Depends(require_role("SUPER_ADMIN")), db: Session = Depends(get_db)):
+    return [_plan_out(p) for p in db.query(Plan).order_by(Plan.sort_order).all()]
+
+
+@router.post("/plans", status_code=201)
+def create_plan(
+    payload: PlanCreate,
+    request: Request,
+    user: User = Depends(require_role("SUPER_ADMIN")),
+    db: Session = Depends(get_db),
+):
+    code = payload.code.strip().upper()
+    if db.query(Plan).filter(Plan.code == code).first():
+        raise errors.conflict("PLAN_CODE_TAKEN", f"A plan with code {code} already exists")
+    plan = Plan(
+        id=f"plan_{code.lower()}",
+        code=code,
+        name=payload.name.strip(),
+        max_students=payload.max_students,
+        max_branches=payload.max_branches,
+        max_users=payload.max_users,
+        price_monthly=payload.price_monthly,
+        price_annual=payload.price_annual,
+        sort_order=payload.sort_order,
+        is_active=payload.is_active,
+    )
+    db.add(plan)
+    db.flush()
+    audit.record(db, action="PLAN_CREATED", user_id=user.id, entity_type="plans", entity_id=plan.id,
+                 meta={"code": code}, request=request)
+    db.commit()
+    return _plan_out(plan)
+
+
+@router.put("/plans/{plan_id}")
+def update_plan(
+    plan_id: str,
+    payload: PlanUpdate,
+    request: Request,
+    user: User = Depends(require_role("SUPER_ADMIN")),
+    db: Session = Depends(get_db),
+):
+    """Code is fixed after creation. Limit and price changes apply to every academy on the plan."""
+    plan = db.get(Plan, plan_id)
+    if plan is None:
+        raise errors.not_found("Plan not found")
+    before = _plan_out(plan)
+    plan.name = payload.name.strip()
+    plan.max_students = payload.max_students
+    plan.max_branches = payload.max_branches
+    plan.max_users = payload.max_users
+    plan.price_monthly = payload.price_monthly
+    plan.price_annual = payload.price_annual
+    plan.sort_order = payload.sort_order
+    plan.is_active = payload.is_active
+    audit.record(db, action="PLAN_UPDATED", user_id=user.id, entity_type="plans", entity_id=plan.id,
+                 meta={"before": before, "after": _plan_out(plan)}, request=request)
+    db.commit()
+    return _plan_out(plan)
+
+
+@router.get("/app-activations")
+def list_app_activations(user: User = Depends(require_role("SUPER_ADMIN")), db: Session = Depends(get_db)):
+    rows = (
+        db.query(User, Organization)
+        .outerjoin(Organization, Organization.id == User.organization_id)
+        .filter(User.role != "SUPER_ADMIN")
+        .order_by(User.last_login_at.desc().nullslast(), User.created_at.desc())
+        .limit(500)
+        .all()
+    )
+    out = []
+    for u, org in rows:
+        seat_licensed = requires_seat_license(u)
+        out.append({
+            "user_id": u.id,
+            "username": u.username,
+            "full_name_en": u.full_name_en,
+            "role": u.role,
+            "organization_name": org.name if org else None,
+            "is_active": u.is_active,
+            "last_login_at": u.last_login_at,
+            "license_status": (
+                ("ACTIVE" if has_active_user_license(db, u.id) else "REVOKED_OR_NONE") if seat_licensed else "NOT_REQUIRED"
+            ),
+        })
+    return out
+
+
+@router.get("/api-logs")
+def list_api_logs(
+    path_contains: str | None = Query(default=None, max_length=120),
+    limit: int = Query(default=200, ge=1, le=500),
+    user: User = Depends(require_role("SUPER_ADMIN")),
+    db: Session = Depends(get_db),
+):
+    query = db.query(ApiRequestLog, User).outerjoin(User, User.id == ApiRequestLog.user_id)
+    if path_contains:
+        query = query.filter(ApiRequestLog.path.contains(path_contains))
+    rows = query.order_by(ApiRequestLog.created_at.desc()).limit(limit).all()
+    return [
+        {
+            "method": log.method,
+            "path": log.path,
+            "username": u.username if u else None,
+            "ip_address": log.ip_address,
+            "created_at": log.created_at,
+        }
+        for log, u in rows
+    ]

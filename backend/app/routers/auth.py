@@ -80,6 +80,15 @@ def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)
 
     # Same message either way so the endpoint cannot be used to enumerate accounts.
     if user is None or not verify_password(payload.password, user.password_hash):
+        audit.record(
+            db,
+            action="LOGIN_FAILED",
+            organization_id=user.organization_id if user else None,
+            user_id=user.id if user else None,
+            meta={"username": identifier},
+            request=request,
+        )
+        db.commit()
         raise errors.unauthorized("Invalid username or password")
     if not user.is_active:
         raise errors.forbidden("ACCOUNT_DISABLED", "This account has been disabled")
