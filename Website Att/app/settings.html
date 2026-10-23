@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Settings · Vagai Silambam</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+  <style>
+    .settings-grid {
+      display: grid;
+      gap: 22px;
+      max-width: 800px;
+    }
+    .profile-banner {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 6px 0 16px;
+    }
+    .profile-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+      color: #FFF;
+      display: grid;
+      place-items: center;
+      font-size: 24px;
+      font-weight: 800;
+      box-shadow: 0 4px 12px rgba(26, 54, 115, 0.25);
+    }
+  </style>
+</head>
+<body>
+  <script type="module">
+    import { api } from './assets/js/api.js';
+    import { applyTranslations, currentLang, setLang } from './assets/js/i18n.js';
+    import { mountShell, requireSession, toast } from './assets/js/auth.js';
+
+    if (requireSession()) {
+      const page = mountShell({ titleKey: 'nav_settings' });
+      render(page);
+    }
+
+    function esc(v) {
+      return String(v ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+    }
+
+    async function render(page) {
+      page.innerHTML = '<div class="card"><div class="skeleton" style="height:200px"></div></div>';
+      try {
+        const [me, googleStatus] = await Promise.all([
+          api.me(),
+          api.googleConnectStatus().catch(() => ({ connected: false })),
+        ]);
+
+        const initials = ((me.full_name_en || me.username || 'A').slice(0, 2)).toUpperCase();
+
+        const googleSection = googleStatus.connected ? `
+          <div class="card">
+            <div class="card-head">
+              <h3><span>☁️</span> Google Drive &amp; Sheets Sync</h3>
+              <span class="badge badge-active">Connected</span>
+            </div>
+            <div style="background:var(--surface-subtle);padding:18px 20px;border-radius:var(--radius-lg);border:1px solid var(--border-light)">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+                <span style="font-size:20px">✅</span>
+                <div>
+                  <strong>Connected Account:</strong> ${esc(googleStatus.google_email)}
+                </div>
+              </div>
+              ${googleStatus.attendance_spreadsheet_id
+                ? `<div style="font-size:13px;color:var(--text-secondary);margin-top:6px">Spreadsheet ID: <code>${esc(googleStatus.attendance_spreadsheet_id)}</code></div>`
+                : '<div style="font-size:13px;color:var(--text-muted);margin-top:6px">Attendance sheet being provisioned…</div>'}
+              <div style="margin-top:16px">
+                <a href="/api/v1/google/connect" class="btn btn-ghost btn-sm">Reconnect Account</a>
+              </div>
+            </div>
+          </div>` : `
+          <div class="card">
+            <div class="card-head">
+              <h3><span>☁️</span> Connect Google Drive &amp; Sheets</h3>
+              <span class="badge badge-trial">Not Linked</span>
+            </div>
+            <p style="color:var(--text-secondary);margin:0 0 16px">
+              Sync attendance automatically to Google Sheets and store student belt photos on your Google Drive.
+            </p>
+            <a href="http://localhost:8000/api/v1/google/connect" class="btn btn-primary btn-sm">
+              Connect Google Account
+            </a>
+          </div>`;
+
+        page.innerHTML = `
+          <div class="settings-grid">
+            <div class="card">
+              <div class="card-head">
+                <h3><span>👤</span> User Account Profile</h3>
+                <span class="badge badge-active">${esc(me.role)}</span>
+              </div>
+              <div class="profile-banner">
+                <div class="profile-avatar">${initials}</div>
+                <div>
+                  <h2 style="font-size:18px">${esc(me.full_name_en)}</h2>
+                  <div style="color:var(--text-secondary);font-size:13.5px">@${esc(me.username)} · ${esc(me.email)}</div>
+                </div>
+              </div>
+            </div>
+
+            ${googleSection}
+
+            <div class="card">
+              <div class="card-head">
+                <h3><span>🌐</span> Language &amp; Localization (மொழி)</h3>
+              </div>
+              <p style="color:var(--text-secondary);margin:0 0 16px">
+                Select your preferred interface language across the academy management portal:
+              </p>
+              <div style="display:flex;gap:12px">
+                <button id="setEn" class="btn ${currentLang() === 'en' ? 'btn-primary' : 'btn-ghost'}">
+                  English
+                </button>
+                <button id="setTa" class="btn ${currentLang() === 'ta' ? 'btn-primary' : 'btn-ghost'}">
+                  தமிழ் (Tamil)
+                </button>
+              </div>
+            </div>
+          </div>`;
+
+        applyTranslations(page);
+
+        document.getElementById('setEn').addEventListener('click', () => { setLang('en'); location.reload(); });
+        document.getElementById('setTa').addEventListener('click', () => { setLang('ta'); location.reload(); });
+
+      } catch (err) {
+        page.innerHTML = `<div class="alert alert-error">${esc(err.message)}</div>`;
+      }
+    }
+  </script>
+</body>
+</html>
