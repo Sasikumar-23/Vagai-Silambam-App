@@ -373,7 +373,7 @@
       </div>
 
       <div class="forgot-row">
-        <a class="forgot-link" id="open-reset-btn">Forgot or reset password?</a>
+        <span class="forgot-link">Forgot your password? Ask your academy admin to reset it.</span>
       </div>
 
       <button class="btn-login" type="submit" id="submit-btn">Sign In</button>
@@ -381,33 +381,6 @@
 
     <p class="footer-text">Vagai Silambam SaaS &copy; 2025 · DTLP Technologies</p>
   </div>
-
-  <!-- Reset Password Modal -->
-  <div class="modal-backdrop" id="reset-modal" hidden>
-    <div class="modal-card">
-      <div class="modal-head">
-        <h3>Reset Password</h3>
-        <button class="modal-close" id="reset-close-btn" title="Close">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-        </button>
-      </div>
-      <div class="modal-body">
-        <div class="alert-error" id="reset-err" style="display:none">
-          <span id="reset-err-msg"></span>
-        </div>
-        <div class="field">
-          <label for="r-username">Username or Email *</label>
-          <input id="r-username" placeholder="e.g. sasikumar or superadmin" required>
-        </div>
-        <div class="field">
-          <label for="r-pass">New Password *</label>
-          <input id="r-pass" type="password" placeholder="Minimum 8 characters" required>
-        </div>
-        <div class="field">
-          <label for="r-pass2">Confirm Password *</label>
-          <input id="r-pass2" type="password" placeholder="Repeat new password" required>
-        </div>
-      </div>
       <div class="modal-footer">
         <button class="btn-secondary" id="reset-cancel-btn">Cancel</button>
         <button class="btn-primary-sm" id="reset-submit-btn">Reset Password</button>
@@ -507,73 +480,6 @@
         errMsg.textContent = friendlyError(ex);
         errBox.style.display = 'flex';
         btn.disabled = false; btn.textContent = 'Sign In';
-      }
-    });
-
-    // Reset Password modal events
-    const resetModal = document.getElementById('reset-modal');
-    const resetErr   = document.getElementById('reset-err');
-    const resetErrMsg = document.getElementById('reset-err-msg');
-    const resetBtn   = document.getElementById('reset-submit-btn');
-
-    document.getElementById('open-reset-btn').addEventListener('click', () => {
-      resetErr.style.display = 'none';
-      document.getElementById('r-username').value = document.getElementById('username').value || '';
-      document.getElementById('r-pass').value = '';
-      document.getElementById('r-pass2').value = '';
-      resetModal.hidden = false;
-    });
-
-    ['reset-close-btn', 'reset-cancel-btn'].forEach(id => {
-      document.getElementById(id).addEventListener('click', () => {
-        resetModal.hidden = true;
-      });
-    });
-
-    resetBtn.addEventListener('click', async () => {
-      const u = document.getElementById('r-username').value.trim();
-      const p1 = document.getElementById('r-pass').value;
-      const p2 = document.getElementById('r-pass2').value;
-
-      if (!u) {
-        resetErrMsg.textContent = 'Please enter your username or email.';
-        resetErr.style.display = 'flex';
-        return;
-      }
-      if (p1.length < 8) {
-        resetErrMsg.textContent = 'Password must be at least 8 characters long.';
-        resetErr.style.display = 'flex';
-        return;
-      }
-      if (p1 !== p2) {
-        resetErrMsg.textContent = 'Passwords do not match.';
-        resetErr.style.display = 'flex';
-        return;
-      }
-
-      resetErr.style.display = 'none';
-      resetBtn.disabled = true;
-      resetBtn.textContent = 'Resetting…';
-
-      try {
-        const res = await fetch(`${api.baseUrl || 'https://vagai-silambam-app.vercel.app'}/api/v1/auth/reset-password`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: u, new_password: p1 })
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail?.message || data.detail || 'Reset failed');
-
-        alert(data.message || 'Password reset successful! Please log in.');
-        resetModal.hidden = true;
-        document.getElementById('username').value = u;
-        document.getElementById('password').value = p1;
-      } catch (e) {
-        resetErrMsg.textContent = e.message;
-        resetErr.style.display = 'flex';
-      } finally {
-        resetBtn.disabled = false;
-        resetBtn.textContent = 'Reset Password';
       }
     });
   </script>
