@@ -7,7 +7,7 @@ from ..auth.deps import get_current_organization, require_active_subscription, r
 from ..auth.security import hash_password
 from ..database import get_db
 from ..models import License, Organization, Subscription, User
-from ..schemas import ResetPasswordRequest, UserCreate, UserCreatedOut, UserLicenseOut
+from ..schemas import ResetPasswordRequest, UserCreate, UserCreatedOut, UserLicenseOut, UserRoleUpdate
 from ..services import audit, limits, provisioning
 from ..services.provisioning import ADMIN_ROLES
 
@@ -110,7 +110,7 @@ def create_user(
         password_hash=hash_password(payload.password),
         full_name_en=payload.full_name_en.strip(),
         full_name_ta=(payload.full_name_ta or "").strip() or None,
-        role="INSTRUCTOR",
+        role=payload.role,
     )
     db.add(user)
     db.flush()
@@ -123,7 +123,7 @@ def create_user(
         user_id=admin.id,
         entity_type="users",
         entity_id=user.id,
-        meta={"username": username},
+        meta={"username": username, "role": payload.role},
         request=request,
     )
     db.commit()
@@ -190,6 +190,38 @@ def reissue_license(
     )
     db.commit()
     return UserCreatedOut(user=_to_out(target, "ACTIVE"), license_key=license_row.license_key)
+
+
+@router.patch("/{user_id}/role", response_model=UserLicenseOut)
+def change_member_role(
+    user_id: str,
+    payload: UserRoleUpdate,
+    request: Request,
+    organization: Organization = Depends(get_current_organization),
+    admin: User = Depends(require_role("ADMIN")),
+    db: Session = Depends(get_db),
+):
+    if user_id == admin.id:
+        raise errors.bad_request("CANNOT_CHANGE_OWN_ROLE", "You cannot change your own role")
+
+    target = _member_in_org(db, organization.id, user_id)
+    if target.role in ADMIN_ROLES:
+        raise errors.bad_request("ADMIN_ROLE_LOCKED", "Academy admin roles cannot be changed here")
+
+    previous = target.role
+    target.role = payload.role
+    audit.record(
+        db,
+        action="USER_ROLE_CHANGED",
+        organization_id=organization.id,
+        user_id=admin.id,
+        entity_type="users",
+        entity_id=target.id,
+        meta={"username": target.username, "from": previous, "to": payload.role},
+        request=request,
+    )
+    db.commit()
+    return _to_out(target, _license_status(db, target.id))
 
 
 @router.post("/{user_id}/reset-password", status_code=204)

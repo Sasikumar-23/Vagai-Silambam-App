@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
@@ -17,11 +18,20 @@ class LoginRequest(BaseModel):
     password: str
 
 
+# Roles an academy admin can give a member. ADMIN is the owner's role and is never assigned here.
+MemberRole = Literal["INSTRUCTOR", "STAFF", "STAFF_ACCOUNTANT"]
+
+
 class UserCreate(BaseModel):
     username: str = Field(min_length=3, max_length=80, pattern=r"^[A-Za-z0-9._-]+$")
     full_name_en: str = Field(min_length=2, max_length=200)
     full_name_ta: str | None = Field(default=None, max_length=200)
     password: str = Field(min_length=8, max_length=200)
+    role: MemberRole = "INSTRUCTOR"
+
+
+class UserRoleUpdate(BaseModel):
+    role: MemberRole
 
 
 class PlanCreate(BaseModel):
