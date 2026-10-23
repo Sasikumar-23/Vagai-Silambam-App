@@ -3,7 +3,7 @@
 
 const API_BASE = window.VAGAI_API_BASE
   || localStorage.getItem('vagai_api_base')
-  || (location.hostname.endsWith('.vercel.app') ? location.origin : 'https://vagai-silambam-app.vercel.app');
+  || 'https://vagai-silambam-app.vercel.app';
 
 const TOKEN_KEY = 'vagai_access_token';
 const REFRESH_KEY = 'vagai_refresh_token';
