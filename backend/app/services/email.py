@@ -95,7 +95,7 @@ def send_cash_receipt(
         f"Access valid until: {expires_at:%d %b %Y}\n"
         f"Academy license ID: {license_key}\n\n"
         "Your team can sign in to the Vagai Silambam app with their username and password.\n\n"
-        "Vagai Silambam, DTLP Technologies"
+        "Vagai Silambam, Dodoxtechs"
     )
     return enqueue(
         db,
