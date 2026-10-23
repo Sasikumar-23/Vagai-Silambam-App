@@ -6,11 +6,19 @@ from sqlalchemy.orm import Session
 
 from .. import errors
 from ..auth.deps import require_role
+from ..auth.security import hash_password
 from ..database import get_db
 from ..models import AuditLog, License, Organization, Payment, Plan, Student, Subscription, User
 from ..services import audit
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
+
+
+class ResetPasswordPayload(BaseModel):
+    organization_id: str | None = None
+    user_id: str | None = None
+    new_password: str
+
 
 
 class UpdatePlanPayload(BaseModel):
@@ -314,3 +322,45 @@ def list_audit_logs(
         }
         for l in logs
     ]
+
+
+@router.post("/reset-password")
+def reset_user_password(
+    payload: ResetPasswordPayload,
+    request: Request,
+    user: User = Depends(require_role("SUPER_ADMIN")),
+    db: Session = Depends(get_db),
+):
+    if len(payload.new_password) < 8:
+        raise errors.bad_request("WEAK_PASSWORD", "Password must be at least 8 characters")
+
+    target_user = None
+    if payload.user_id:
+        target_user = db.query(User).filter(User.id == payload.user_id).first()
+    elif payload.organization_id:
+        # Find organization admin
+        target_user = (
+            db.query(User)
+            .filter(User.organization_id == payload.organization_id, User.role == "ADMIN")
+            .first()
+        )
+        if not target_user:
+            target_user = db.query(User).filter(User.organization_id == payload.organization_id).first()
+
+    if not target_user:
+        raise errors.not_found("User not found")
+
+    target_user.password_hash = hash_password(payload.new_password)
+    audit.record(
+        db,
+        action="PASSWORD_RESET_BY_SUPERADMIN",
+        organization_id=target_user.organization_id,
+        user_id=user.id,
+        entity_type="users",
+        entity_id=target_user.id,
+        meta={"username": target_user.username},
+        request=request,
+    )
+    db.commit()
+    return {"success": True, "message": f"Password reset for user @{target_user.username}"}
+

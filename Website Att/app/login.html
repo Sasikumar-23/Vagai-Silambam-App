@@ -238,7 +238,97 @@
       margin-top: 24px;
     }
 
-    .footer-text a { color: var(--primary); font-weight: 600; }
+    .footer-text a { color: var(--primary); font-weight: 600; cursor: pointer; text-decoration: none; }
+    .footer-text a:hover { text-decoration: underline; }
+
+    .forgot-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: -8px;
+      margin-bottom: 16px;
+    }
+    .forgot-link {
+      font-size: 12.5px;
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .forgot-link:hover { text-decoration: underline; }
+
+    /* Modal Backdrop & Card */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(7, 13, 30, 0.65);
+      backdrop-filter: blur(6px);
+      z-index: 1000;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+    .modal-backdrop[hidden] { display: none; }
+    .modal-card {
+      width: 100%;
+      max-width: 400px;
+      background: #FFFFFF;
+      border-radius: 20px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+      animation: slideUp 0.3s ease;
+    }
+    .modal-head {
+      padding: 18px 22px;
+      background: #F8FAFC;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-head h3 { font-size: 16px; font-weight: 800; color: var(--navy-900); }
+    .modal-close {
+      border: none;
+      background: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      padding: 4px;
+      border-radius: 8px;
+    }
+    .modal-close:hover { background: var(--border); }
+    .modal-body { padding: 22px; }
+    .modal-footer {
+      padding: 14px 22px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      background: #FAFBFF;
+    }
+    .btn-secondary {
+      padding: 10px 16px;
+      border: 1px solid var(--border);
+      background: #FFFFFF;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text);
+    }
+    .btn-secondary:hover { background: #F1F5F9; }
+    .btn-primary-sm {
+      padding: 10px 18px;
+      border: none;
+      background: var(--primary);
+      color: #fff;
+      border-radius: 10px;
+      font-family: inherit;
+      font-size: 13.5px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    .btn-primary-sm:hover { background: var(--primary-hover); }
+    .btn-primary-sm:disabled { opacity: 0.6; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -282,11 +372,49 @@
         <input id="password" name="password" type="password" autocomplete="current-password" placeholder="••••••••" required>
       </div>
 
+      <div class="forgot-row">
+        <a class="forgot-link" id="open-reset-btn">Forgot or reset password?</a>
+      </div>
+
       <button class="btn-login" type="submit" id="submit-btn">Sign In</button>
     </form>
 
     <p class="footer-text">Vagai Silambam SaaS &copy; 2025 · DTLP Technologies</p>
   </div>
+
+  <!-- Reset Password Modal -->
+  <div class="modal-backdrop" id="reset-modal" hidden>
+    <div class="modal-card">
+      <div class="modal-head">
+        <h3>Reset Password</h3>
+        <button class="modal-close" id="reset-close-btn" title="Close">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="alert-error" id="reset-err" style="display:none">
+          <span id="reset-err-msg"></span>
+        </div>
+        <div class="field">
+          <label for="r-username">Username or Email *</label>
+          <input id="r-username" placeholder="e.g. sasikumar or superadmin" required>
+        </div>
+        <div class="field">
+          <label for="r-pass">New Password *</label>
+          <input id="r-pass" type="password" placeholder="Minimum 8 characters" required>
+        </div>
+        <div class="field">
+          <label for="r-pass2">Confirm Password *</label>
+          <input id="r-pass2" type="password" placeholder="Repeat new password" required>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" id="reset-cancel-btn">Cancel</button>
+        <button class="btn-primary-sm" id="reset-submit-btn">Reset Password</button>
+      </div>
+    </div>
+  </div>
+
 
   <script type="module">
     import { api, tokens } from './assets/js/api.js';
@@ -379,6 +507,73 @@
         errMsg.textContent = friendlyError(ex);
         errBox.style.display = 'flex';
         btn.disabled = false; btn.textContent = 'Sign In';
+      }
+    });
+
+    // Reset Password modal events
+    const resetModal = document.getElementById('reset-modal');
+    const resetErr   = document.getElementById('reset-err');
+    const resetErrMsg = document.getElementById('reset-err-msg');
+    const resetBtn   = document.getElementById('reset-submit-btn');
+
+    document.getElementById('open-reset-btn').addEventListener('click', () => {
+      resetErr.style.display = 'none';
+      document.getElementById('r-username').value = document.getElementById('username').value || '';
+      document.getElementById('r-pass').value = '';
+      document.getElementById('r-pass2').value = '';
+      resetModal.hidden = false;
+    });
+
+    ['reset-close-btn', 'reset-cancel-btn'].forEach(id => {
+      document.getElementById(id).addEventListener('click', () => {
+        resetModal.hidden = true;
+      });
+    });
+
+    resetBtn.addEventListener('click', async () => {
+      const u = document.getElementById('r-username').value.trim();
+      const p1 = document.getElementById('r-pass').value;
+      const p2 = document.getElementById('r-pass2').value;
+
+      if (!u) {
+        resetErrMsg.textContent = 'Please enter your username or email.';
+        resetErr.style.display = 'flex';
+        return;
+      }
+      if (p1.length < 8) {
+        resetErrMsg.textContent = 'Password must be at least 8 characters long.';
+        resetErr.style.display = 'flex';
+        return;
+      }
+      if (p1 !== p2) {
+        resetErrMsg.textContent = 'Passwords do not match.';
+        resetErr.style.display = 'flex';
+        return;
+      }
+
+      resetErr.style.display = 'none';
+      resetBtn.disabled = true;
+      resetBtn.textContent = 'Resetting…';
+
+      try {
+        const res = await fetch('/api/v1/auth/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: u, new_password: p1 })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail?.message || data.detail || 'Reset failed');
+
+        alert(data.message || 'Password reset successful! Please log in.');
+        resetModal.hidden = true;
+        document.getElementById('username').value = u;
+        document.getElementById('password').value = p1;
+      } catch (e) {
+        resetErrMsg.textContent = e.message;
+        resetErr.style.display = 'flex';
+      } finally {
+        resetBtn.disabled = false;
+        resetBtn.textContent = 'Reset Password';
       }
     });
   </script>
