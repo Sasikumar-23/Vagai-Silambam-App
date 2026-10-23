@@ -293,11 +293,28 @@
 
     let currentRole = 'superadmin';
 
-    // Check if already signed in
-    if (tokens.access) {
-      const stored = localStorage.getItem('vagai_role');
-      location.href = 'dashboard.html';
+    // Decode JWT payload without verification (for role reading only)
+    function parseJwt(token) {
+      try {
+        const base64 = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+        return JSON.parse(atob(base64));
+      } catch { return {}; }
     }
+
+    // Friendly error messages per backend error code
+    function friendlyError(ex) {
+      const code = ex?.code || '';
+      const msg  = ex?.message || '';
+      if (code === 'LICENSE_REVOKED') return 'Your license is not active. Contact your Super Admin.';
+      if (code === 'ACCOUNT_DISABLED') return 'This account has been disabled.';
+      if (ex?.status === 401 || msg.toLowerCase().includes('invalid')) return 'Incorrect username or password.';
+      if (ex?.status === 403) return msg || 'Access denied.';
+      if (ex?.status === 0) return 'Cannot reach the server. Check your internet connection.';
+      return msg || 'Sign-in failed. Please try again.';
+    }
+
+    // If already signed in, redirect
+    if (tokens.access) { location.href = 'dashboard.html'; }
 
     window.switchRole = function(role) {
       currentRole = role;
@@ -316,49 +333,52 @@
 
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const err = document.getElementById('error');
-      const btn = document.getElementById('submit-btn');
-      err.style.display = 'none';
+      const errBox = document.getElementById('error');
+      const errMsg = document.getElementById('error-msg');
+      const btn    = document.getElementById('submit-btn');
+      errBox.style.display = 'none';
       btn.disabled = true;
       btn.textContent = 'Signing in…';
 
       try {
+        // Step 1 — authenticate
         const result = await api.login({
           username: document.getElementById('username').value.trim(),
           password: document.getElementById('password').value,
         });
         tokens.set(result);
 
-        // Fetch current user to verify role
-        const me = await api.me();
-        const userRole = me.role || '';
-        localStorage.setItem('vagai_role', userRole);
+        // Step 2 — read role from JWT payload (no extra round-trip needed)
+        const claims  = parseJwt(result.access_token);
+        const userRole = (claims.role || '').toUpperCase();
+
+        // Step 3 — try to get full user profile (non-fatal if it fails)
+        let me = { role: userRole };
+        try {
+          me = await api.me();
+          me.role = me.role || userRole;
+        } catch { /* use token claims if /me fails */ }
+
+        localStorage.setItem('vagai_role', me.role);
         localStorage.setItem('vagai_user', JSON.stringify(me));
 
-        // Role gate
-        if (currentRole === 'superadmin' && userRole !== 'SUPER_ADMIN') {
+        // Step 4 — role gate
+        if (currentRole === 'superadmin' && me.role !== 'SUPER_ADMIN') {
           tokens.clear();
-          document.getElementById('error-msg').textContent = 'This account does not have Super Admin access.';
-          err.style.display = 'flex';
-          btn.disabled = false;
-          btn.textContent = 'Sign In';
-          return;
-        }
-        if (currentRole === 'admin' && !['SUPER_ADMIN','ADMIN','INSTRUCTOR'].includes(userRole)) {
-          tokens.clear();
-          document.getElementById('error-msg').textContent = 'Invalid admin credentials.';
-          err.style.display = 'flex';
-          btn.disabled = false;
-          btn.textContent = 'Sign In';
+          localStorage.removeItem('vagai_role');
+          localStorage.removeItem('vagai_user');
+          errMsg.textContent = 'This account is not a Super Admin. Please use the Admin tab instead.';
+          errBox.style.display = 'flex';
+          btn.disabled = false; btn.textContent = 'Sign In';
           return;
         }
 
         location.href = 'dashboard.html';
       } catch (ex) {
-        document.getElementById('error-msg').textContent = ex.message || 'Invalid username or password.';
-        err.style.display = 'flex';
-        btn.disabled = false;
-        btn.textContent = 'Sign In';
+        tokens.clear();
+        errMsg.textContent = friendlyError(ex);
+        errBox.style.display = 'flex';
+        btn.disabled = false; btn.textContent = 'Sign In';
       }
     });
   </script>
