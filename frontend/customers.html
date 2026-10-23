@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -254,6 +254,14 @@
                 <option value="">Select plan…</option>
               </select>
             </div>
+          </div>
+          <div class="field"><label>Admin Role *</label>
+            <select id="m-role">
+              <option value="ADMIN" selected>Admin — Full academy access</option>
+              <option value="INSTRUCTOR">Instructor</option>
+              <option value="STAFF">Staff</option>
+              <option value="STAFF_ACCOUNTANT">Accountant</option>
+            </select>
           </div>
         </div>
         <div class="modal-footer">
@@ -604,6 +612,7 @@
     const name = document.getElementById('m-name').value.trim();
     const email= document.getElementById('m-email').value.trim();
     const phone= document.getElementById('m-phone').value.trim();
+    const role = document.getElementById('m-role').value;
 
     if (!org||!uname||!pass||!name||!email) { err.textContent='All required fields must be filled.'; err.hidden=false; return; }
     if (pass.length < 8) { err.textContent='Password must be at least 8 characters.'; err.hidden=false; return; }
@@ -617,10 +626,12 @@
         full_name_en: name,
         email,
         phone: phone || undefined,
+        role: role || 'ADMIN',
       });
       toast(`Academy "${org}" created successfully!`, 'success');
       document.getElementById('add-modal').hidden = true;
       ['m-org','m-uname','m-pass','m-name','m-email','m-phone'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('m-role').value = 'ADMIN';
       err.hidden = true;
       await loadOrgs();
     } catch(e) {
