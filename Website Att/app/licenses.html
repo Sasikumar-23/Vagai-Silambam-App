@@ -69,6 +69,8 @@
     /* Generate License Modal */
     .modal-backdrop { position:fixed; inset:0; background:rgba(10,19,36,0.55); backdrop-filter:blur(4px); z-index:200; display:grid; place-items:center; padding:20px; }
     .modal-backdrop[hidden] { display:none; }
+    /* .btn and other classes set display, which would otherwise override the hidden attribute */
+    [hidden] { display:none !important; }
     .modal-card { width:100%; max-width:480px; background:#fff; border-radius:var(--radius-xl); border:1px solid var(--border); box-shadow:0 24px 60px rgba(10,19,36,0.25); overflow:hidden; animation:slideUp 0.3s cubic-bezier(0.16,1,0.3,1); }
     @keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
     .modal-head { padding:18px 24px; background:var(--surface-subtle); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
