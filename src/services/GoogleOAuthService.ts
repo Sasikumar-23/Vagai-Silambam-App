@@ -1,6 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
-import { GoogleSignin, isErrorWithCode, statusCodes } from '@react-native-google-signin/google-signin';
 import { SettingsRepository } from '../repositories/SettingsRepository';
 
 export interface GoogleUserProfile {
@@ -12,6 +11,8 @@ export interface GoogleUserProfile {
   expiresAt?: number;
   isDemoMode?: boolean;
 }
+
+type GoogleSigninModule = typeof import('@react-native-google-signin/google-signin');
 
 const STORAGE_KEY_OAUTH_TOKEN = '@vagai_google_oauth_token';
 const STORAGE_KEY_USER_PROFILE = '@vagai_google_user_profile';
@@ -26,17 +27,38 @@ const SCOPES = [
   'https://www.googleapis.com/auth/drive.file',
 ];
 
-// Configure Google Play Services native Sign-In SDK
-if (Platform.OS !== 'web') {
-  try {
-    GoogleSignin.configure({
-      webClientId: DEFAULT_WEB_CLIENT_ID,
-      scopes: SCOPES,
-      offlineAccess: true,
-    });
-  } catch (e) {
-    console.warn('GoogleSignin configure error:', e);
+// The native Google Sign-In module is loaded on first use, not at import time. A top-level import
+// crashes the whole app at startup when the installed build doesn't include the native module
+// (for example Expo Go or an older dev build). In that case Drive sign-in reports it is unavailable.
+let googleModule: GoogleSigninModule | null | undefined;
+let configuredClientId: string | null = null;
+
+function googleSdk(clientId = DEFAULT_WEB_CLIENT_ID): GoogleSigninModule | null {
+  if (Platform.OS === 'web') return null;
+
+  if (googleModule === undefined) {
+    try {
+      googleModule = require('@react-native-google-signin/google-signin');
+    } catch (e) {
+      console.warn('Google Sign-In is not available in this build:', e);
+      googleModule = null;
+    }
   }
+
+  if (googleModule && configuredClientId !== clientId) {
+    try {
+      googleModule.GoogleSignin.configure({
+        webClientId: clientId,
+        scopes: SCOPES,
+        offlineAccess: true,
+      });
+      configuredClientId = clientId;
+    } catch (e) {
+      console.warn('GoogleSignin configure error:', e);
+    }
+  }
+
+  return googleModule ?? null;
 }
 
 export const GoogleOAuthService = {
@@ -64,9 +86,10 @@ export const GoogleOAuthService = {
       if (profile.isDemoMode) return null;
 
       // In native mode, refresh or get fresh tokens from GoogleSignin if expired
-      if (Platform.OS !== 'web' && (!profile.expiresAt || Date.now() > profile.expiresAt - 60000)) {
+      const sdk = googleSdk();
+      if (sdk && (!profile.expiresAt || Date.now() > profile.expiresAt - 60000)) {
         try {
-          const tokens = await GoogleSignin.getTokens();
+          const tokens = await sdk.GoogleSignin.getTokens();
           if (tokens.accessToken) {
             profile.accessToken = tokens.accessToken;
             profile.expiresAt = Date.now() + 3600 * 1000;
@@ -100,17 +123,7 @@ export const GoogleOAuthService = {
    */
   async setClientId(clientId: string): Promise<void> {
     await SettingsRepository.setSetting(SETTING_OAUTH_CLIENT_ID, clientId.trim());
-    if (Platform.OS !== 'web') {
-      try {
-        GoogleSignin.configure({
-          webClientId: clientId.trim(),
-          scopes: SCOPES,
-          offlineAccess: true,
-        });
-      } catch (e) {
-        console.warn('GoogleSignin reconfigure error:', e);
-      }
-    }
+    googleSdk(clientId.trim());
   },
 
   /**
@@ -124,16 +137,21 @@ export const GoogleOAuthService = {
   }> {
     try {
       if (Platform.OS !== 'web') {
+        const sdk = googleSdk();
+        if (!sdk) {
+          return { success: false, message: 'Google Sign-In is not available in this version of the app.' };
+        }
+
         try {
-          await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-          const response = await GoogleSignin.signIn();
+          await sdk.GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+          const response = await sdk.GoogleSignin.signIn();
 
           if (response.type === 'cancelled') {
             return { success: false, message: 'Sign-in was cancelled.' };
           }
 
           const user = response.data.user;
-          const tokens = await GoogleSignin.getTokens();
+          const tokens = await sdk.GoogleSignin.getTokens();
 
           if (tokens.accessToken) {
             const profile: GoogleUserProfile = {
@@ -151,12 +169,12 @@ export const GoogleOAuthService = {
 
           return { success: false, message: 'Could not obtain access token from Google.' };
         } catch (error: any) {
-          if (isErrorWithCode(error)) {
-            if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+          if (sdk.isErrorWithCode(error)) {
+            if (error.code === sdk.statusCodes.SIGN_IN_CANCELLED) {
               return { success: false, message: 'Sign-in was cancelled.' };
-            } else if (error.code === statusCodes.IN_PROGRESS) {
+            } else if (error.code === sdk.statusCodes.IN_PROGRESS) {
               return { success: false, message: 'Sign-in is already in progress.' };
-            } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+            } else if (error.code === sdk.statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
               return { success: false, message: 'Google Play Services not available or outdated on this device.' };
             }
           }
@@ -208,8 +226,9 @@ export const GoogleOAuthService = {
    */
   async signOut(): Promise<void> {
     try {
-      if (Platform.OS !== 'web') {
-        await GoogleSignin.signOut();
+      const sdk = googleSdk();
+      if (sdk) {
+        await sdk.GoogleSignin.signOut();
       }
     } catch (e) {
       console.warn('GoogleSignin.signOut error:', e);
