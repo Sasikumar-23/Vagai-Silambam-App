@@ -21,9 +21,13 @@
     },
     "android": {
       "package": "com.sasi.vagaisilambam",
+      "versionCode": 1,
       "permissions": [
         "android.permission.INTERNET",
-        "android.permission.CAMERA"
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
       ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",

@@ -29,7 +29,18 @@ import { theme } from '../theme';
 import { useI18n } from '../i18n';
 import { AppHeader } from '../components/AppHeader';
 import { EmptyState } from '../components/EmptyState';
-import { GoogleSheetsAttendanceService, SheetAttendanceRecord } from '../services/GoogleSheetsAttendanceService';
+import { AttendanceRepository } from '../repositories/AttendanceRepository';
+
+export interface AttendanceRecordRow {
+  attendance_id: string;
+  date: string;
+  student_id: string;
+  student_name: string;
+  status: 'Present' | 'Absent' | 'Late' | 'Leave';
+  remarks?: string;
+  marked_by: string;
+  created_at: string;
+}
 
 export interface AttendanceSessionGroup {
   sessionId: string;
@@ -42,14 +53,14 @@ export interface AttendanceSessionGroup {
   lateCount: number;
   leaveCount: number;
   attendanceRate: number;
-  records: SheetAttendanceRecord[];
+  records: AttendanceRecordRow[];
 }
 
 export default function AttendanceHistoryScreen({ navigation }: any) {
   const isFocused = useIsFocused();
   const { t, language } = useI18n();
 
-  const [rawRecords, setRawRecords] = useState<SheetAttendanceRecord[]>([]);
+  const [totalRecords, setTotalRecords] = useState(0);
   const [sessions, setSessions] = useState<AttendanceSessionGroup[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -84,55 +95,34 @@ export default function AttendanceHistoryScreen({ navigation }: any) {
   const loadHistory = async () => {
     setLoading(true);
     try {
-      const records = await GoogleSheetsAttendanceService.getAllLocalRecords();
-      setRawRecords(records);
+      // Read from the same SQLite tables TakeAttendanceScreen writes to — already
+      // grouped by the real session id (not a derived date+time string key).
+      const sessionsData = await AttendanceRepository.getSessionHistory(100);
 
-      // Group records into Sessions by date and created_at
-      const sessionMap: { [key: string]: SheetAttendanceRecord[] } = {};
-
-      records.forEach(r => {
-        // Group key based on date and time session
-        const timeKey = r.created_at || '00:00';
-        const key = `${r.date}___${timeKey}`;
-        if (!sessionMap[key]) {
-          sessionMap[key] = [];
-        }
-        sessionMap[key].push(r);
-      });
-
-      const sessionList: AttendanceSessionGroup[] = Object.keys(sessionMap).map(key => {
-        const groupRecords = sessionMap[key];
-        const [date, time] = key.split('___');
-        const total = groupRecords.length;
-        const present = groupRecords.filter(r => r.status === 'Present').length;
-        const absent = groupRecords.filter(r => r.status === 'Absent').length;
-        const late = groupRecords.filter(r => r.status === 'Late').length;
-        const leave = groupRecords.filter(r => r.status === 'Leave').length;
-        const markedBy = groupRecords[0]?.marked_by || 'Instructor';
+      const sessionList: AttendanceSessionGroup[] = sessionsData.map(ses => {
+        const total = ses.records.length;
+        const present = ses.records.filter(r => r.status === 'Present').length;
+        const absent = ses.records.filter(r => r.status === 'Absent').length;
+        const late = ses.records.filter(r => r.status === 'Late').length;
+        const leave = ses.records.filter(r => r.status === 'Leave').length;
         const rate = total > 0 ? Math.round((present / total) * 100) : 0;
 
         return {
-          sessionId: key,
-          date,
-          time: time === '00:00' ? '' : time,
-          markedBy,
+          sessionId: ses.sessionId,
+          date: ses.date,
+          time: ses.time,
+          markedBy: ses.markedBy,
           totalStudents: total,
           presentCount: present,
           absentCount: absent,
           lateCount: late,
           leaveCount: leave,
           attendanceRate: rate,
-          records: groupRecords,
+          records: ses.records,
         };
       });
 
-      // Sort newest sessions first
-      sessionList.sort((a, b) => {
-        const cmp = b.date.localeCompare(a.date);
-        if (cmp !== 0) return cmp;
-        return b.time.localeCompare(a.time);
-      });
-
+      setTotalRecords(sessionList.reduce((sum, s) => sum + s.totalStudents, 0));
       setSessions(sessionList);
     } catch (e) {
       console.error('Failed to load history:', e);
@@ -438,11 +428,11 @@ export default function AttendanceHistoryScreen({ navigation }: any) {
     <View style={styles.container}>
       <AppHeader navigation={navigation} title={t.attendance.historyTitle} />
 
-      {/* Google Sheets Engine Header */}
+      {/* Device Database Header */}
       <View style={styles.sheetEngineBar}>
         <Cloud size={14} color="#047857" />
         <Text style={styles.sheetEngineText}>
-          Google Sheets Database • {sessions.length} Sessions ({rawRecords.length} Logs)
+          Device Database • {sessions.length} Sessions ({totalRecords} Logs)
         </Text>
       </View>
 

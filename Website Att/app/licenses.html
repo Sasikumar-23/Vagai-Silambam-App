@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Users & Licenses · Vagai Silambam</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+  <style>
+    .page-header-row { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:24px; flex-wrap:wrap; }
+    .page-title h1 { font-size:22px; font-weight:800; color:var(--text); letter-spacing:-0.4px; }
+    .page-title p  { font-size:13.5px; color:var(--text-muted); margin-top:3px; }
+
+    /* Metric cards */
+    .metric-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:24px; }
+    .metric-card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; box-shadow:var(--shadow-xs); position:relative; overflow:hidden; }
+    .metric-card::after { content:''; position:absolute; bottom:0; left:0; right:0; height:3px; background:var(--mc-color,var(--primary)); border-radius:0 0 2px 2px; }
+    .metric-info .lbl { font-size:10.5px; font-weight:800; letter-spacing:0.6px; text-transform:uppercase; color:var(--text-muted); margin-bottom:5px; }
+    .metric-info .val { font-size:26px; font-weight:800; color:var(--text); letter-spacing:-0.5px; }
+    .metric-icon { width:44px; height:44px; border-radius:13px; display:grid; place-items:center; flex-shrink:0; }
+    .mc-violet { --mc-color:#8B5CF6; } .mc-violet .metric-icon { background:#F5F3FF; color:#8B5CF6; }
+    .mc-green  { --mc-color:#10B981; } .mc-green  .metric-icon { background:#ECFDF5; color:#10B981; }
+    .mc-red    { --mc-color:#EF4444; } .mc-red    .metric-icon { background:#FEF2F2; color:#EF4444; }
+    .mc-amber  { --mc-color:#F59E0B; } .mc-amber  .metric-icon { background:#FFFBEB; color:#F59E0B; }
+
+    /* Toolbar */
+    .toolbar { display:flex; gap:10px; margin-bottom:18px; flex-wrap:wrap; align-items:center; }
+    .search-box { display:flex; align-items:center; gap:8px; background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius-md); padding:8px 14px; flex:1; min-width:220px; }
+    .search-box input { border:none; outline:none; font-family:inherit; font-size:13.5px; color:var(--text); background:transparent; flex:1; }
+    select.filter-sel { padding:8px 14px; border:1.5px solid var(--border); border-radius:var(--radius-md); font-family:inherit; font-size:13px; color:var(--text); background:var(--surface); outline:none; cursor:pointer; }
+
+    .table-wrap { overflow-x:auto; border-radius:var(--radius-lg); border:1px solid var(--border); background:var(--surface); box-shadow:var(--shadow-xs); }
+    table { width:100%; border-collapse:collapse; }
+    thead th { background:var(--surface-subtle); padding:11px 16px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted); text-align:left; border-bottom:1px solid var(--border); white-space:nowrap; }
+    tbody td { padding:12px 16px; font-size:13.5px; color:var(--text); border-bottom:1px solid var(--border-light); vertical-align:middle; }
+    tbody tr:last-child td { border-bottom:none; }
+    tbody tr:hover td { background:#F8FAFF; }
+
+    .badge { display:inline-flex; align-items:center; gap:4px; padding:3px 9px; border-radius:6px; font-size:11.5px; font-weight:700; }
+    .badge-green  { background:#ECFDF5; color:#065F46; }
+    .badge-red    { background:#FEF2F2; color:#991B1B; }
+    .badge-amber  { background:#FFFBEB; color:#92400E; }
+    .badge-blue   { background:#EFF6FF; color:#1E40AF; }
+    .badge-gray   { background:#F1F5F9; color:#475569; }
+    .badge-violet { background:#F5F3FF; color:#5B21B6; }
+
+    /* License key */
+    .lic-key {
+      font-family: 'SFMono-Regular',Consolas,monospace;
+      font-size:12px; letter-spacing:0.5px;
+      background:#F1F5F9; color:#1E3A8A;
+      border:1px solid #CBD5E1; border-radius:7px;
+      padding:4px 9px; cursor:pointer;
+      user-select:all; display:inline-flex; align-items:center; gap:5px;
+    }
+    .lic-key:hover { background:#E2E8F0; }
+
+    /* Actions */
+    .actions-wrap { position:relative; }
+    .actions-btn { border:none; background:transparent; cursor:pointer; padding:6px; border-radius:8px; color:var(--text-muted); display:flex; align-items:center; transition:background 0.15s; }
+    .actions-btn:hover { background:var(--surface-subtle); color:var(--text); }
+    .actions-menu { position:absolute; right:0; top:calc(100%+4px); z-index:50; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); box-shadow:var(--shadow-lg); min-width:190px; overflow:hidden; }
+    .actions-menu[hidden] { display:none; }
+    .actions-menu button { display:flex; align-items:center; gap:10px; width:100%; padding:10px 16px; background:none; border:none; font-family:inherit; font-size:13.5px; color:var(--text); cursor:pointer; text-align:left; transition:background 0.12s; }
+    .actions-menu button:hover { background:var(--surface-subtle); }
+    .actions-menu button.danger { color:#EF4444; }
+    .actions-menu button.danger:hover { background:#FEF2F2; }
+
+    /* Generate License Modal */
+    .modal-backdrop { position:fixed; inset:0; background:rgba(10,19,36,0.55); backdrop-filter:blur(4px); z-index:200; display:grid; place-items:center; padding:20px; }
+    .modal-backdrop[hidden] { display:none; }
+    .modal-card { width:100%; max-width:480px; background:#fff; border-radius:var(--radius-xl); border:1px solid var(--border); box-shadow:0 24px 60px rgba(10,19,36,0.25); overflow:hidden; animation:slideUp 0.3s cubic-bezier(0.16,1,0.3,1); }
+    @keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
+    .modal-head { padding:18px 24px; background:var(--surface-subtle); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+    .modal-head h3 { font-size:16px; font-weight:800; }
+    .modal-close { border:none; background:none; cursor:pointer; color:var(--text-muted); padding:4px; border-radius:8px; }
+    .modal-close:hover { background:var(--border); }
+    .modal-body { padding:24px; }
+    .modal-footer { padding:16px 24px; border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
+    .field { margin-bottom:16px; }
+    .field label { display:block; font-size:13px; font-weight:600; color:var(--text); margin-bottom:6px; }
+    .field input, .field select { width:100%; padding:10px 14px; border:1.5px solid var(--border); border-radius:var(--radius-md); font-family:inherit; font-size:14px; color:var(--text); background:#FAFBFF; outline:none; transition:border-color 0.2s; }
+    .field input:focus, .field select:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,0.1); }
+    .alert-err { background:#FEF2F2; border:1px solid #FECACA; color:#991B1B; padding:10px 14px; border-radius:10px; font-size:13px; margin-bottom:14px; }
+
+    /* New license reveal banner */
+    .license-reveal {
+      background:linear-gradient(135deg,#F0FDF4,#ECFDF5);
+      border:1.5px solid #86EFAC; border-radius:14px; padding:18px 20px; margin-bottom:16px;
+    }
+    .license-reveal h4 { font-size:14px; font-weight:800; color:#065F46; margin-bottom:8px; }
+    .lic-big {
+      font-family:monospace; font-size:15px; font-weight:700; letter-spacing:1.5px;
+      background:#fff; color:#065F46; border:1.5px solid #86EFAC;
+      border-radius:10px; padding:10px 16px; cursor:pointer;
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      word-break:break-all;
+    }
+    .lic-big:hover { background:#F0FDF4; }
+    .lic-big small { color:#10B981; font-size:11px; flex-shrink:0; }
+  </style>
+</head>
+<body>
+<script type="module">
+  import { requireSession, mountShell, toast } from './assets/js/auth.js';
+  import { api } from './assets/js/api.js';
+
+  if (!requireSession()) throw new Error('redirect');
+  mountShell({ title: 'Users & Licenses' });
+
+  const pg = document.getElementById('page');
+
+  pg.innerHTML = `
+    <div class="page-header-row">
+      <div class="page-title">
+        <h1>Users & Licenses</h1>
+        <p>Generate, revoke and manage app access licenses</p>
+      </div>
+      <button class="btn btn-primary" id="gen-lic-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Generate License
+      </button>
+    </div>
+
+    <!-- Metric cards -->
+    <div class="metric-grid" id="lic-metrics">
+      ${['','','',''].map(()=>`<div class="metric-card"><div class="metric-info"><div class="lbl"><span class="skeleton" style="width:70px;height:10px;display:block"></span></div><div class="val"><span class="skeleton" style="width:50px;height:24px;display:block;margin-top:5px"></span></div></div></div>`).join('')}
+    </div>
+
+    <div class="toolbar">
+      <div class="search-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="lic-search" placeholder="Search academy, license key…">
+      </div>
+      <select class="filter-sel" id="lic-status">
+        <option value="">All Statuses</option>
+        <option value="ACTIVE">Active</option>
+        <option value="REVOKED">Revoked</option>
+        <option value="EXPIRED">Expired</option>
+      </select>
+      <select class="filter-sel" id="lic-org">
+        <option value="">All Academies</option>
+      </select>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>License Key</th>
+            <th>Academy</th>
+            <th>Assigned User</th>
+            <th>Status</th>
+            <th>Issued</th>
+            <th>Expires</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="lic-tbody">
+          <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Generate License Modal -->
+    <div class="modal-backdrop" id="gen-modal" hidden>
+      <div class="modal-card">
+        <div class="modal-head">
+          <h3>🛡️ Generate License</h3>
+          <button class="modal-close" id="gen-close-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="license-reveal" id="new-lic-reveal" hidden>
+            <h4>✅ License Generated!</h4>
+            <p style="font-size:12.5px;color:#065F46;margin-bottom:10px">Copy this key — share it with the academy admin.</p>
+            <div class="lic-big" id="new-lic-key" onclick="copyLicKey()">
+              <span id="new-lic-text">—</span>
+              <small>Click to copy</small>
+            </div>
+          </div>
+          <div class="alert-err" id="gen-err" hidden></div>
+          <div class="field"><label>Academy *</label>
+            <select id="g-org"><option value="">Select academy…</option></select>
+          </div>
+          <div class="field"><label>Assign to User (optional)</label>
+            <select id="g-user"><option value="">Academy-wide license (no specific user)</option></select>
+          </div>
+          <div class="field"><label>Expiry Date</label>
+            <input id="g-exp" type="date">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" id="gen-cancel-btn">Close</button>
+          <button class="btn btn-primary" id="gen-submit-btn">Generate License</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  let licData = [], orgData = [];
+
+  // Load orgs for dropdowns
+  try {
+    const res = await api.listOrganizations();
+    orgData = res?.organizations || [];
+    const orgSel = document.getElementById('lic-org');
+    const gOrg = document.getElementById('g-org');
+    orgData.forEach(o => {
+      orgSel.insertAdjacentHTML('beforeend', `<option value="${o.id}">${o.name}</option>`);
+      gOrg.insertAdjacentHTML('beforeend', `<option value="${o.id}">${o.name}</option>`);
+    });
+  } catch(e) { /* */ }
+
+  // Load users when academy selected
+  document.getElementById('g-org').addEventListener('change', async function() {
+    const orgId = this.value;
+    const userSel = document.getElementById('g-user');
+    userSel.innerHTML = '<option value="">Academy-wide license (no specific user)</option>';
+    if (!orgId) return;
+    try {
+      const users = await api.listUsers();
+      (users || []).filter(u => u.organization_id === orgId).forEach(u => {
+        userSel.insertAdjacentHTML('beforeend', `<option value="${u.id}">${u.full_name_en} (@${u.username})</option>`);
+      });
+    } catch(e) { /* */ }
+  });
+
+  // Load licenses
+  async function loadLicenses() {
+    try {
+      const users = await api.listUsers();
+      licData = users || [];
+      updateMetrics();
+      renderTable();
+    } catch(e) {
+      document.getElementById('lic-tbody').innerHTML = `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">Failed to load: ${e.message}</td></tr>`;
+    }
+  }
+
+  function updateMetrics() {
+    const total   = licData.length;
+    const active  = licData.filter(u => u.license?.status === 'ACTIVE').length;
+    const revoked = licData.filter(u => u.license?.status === 'REVOKED').length;
+    const expiring = licData.filter(u => {
+      if (!u.license?.expires_at) return false;
+      const d = Math.ceil((new Date(u.license.expires_at) - Date.now()) / 86400000);
+      return d > 0 && d <= 30;
+    }).length;
+
+    document.getElementById('lic-metrics').innerHTML = `
+      <div class="metric-card mc-violet">
+        <div class="metric-info"><div class="lbl">Total Licenses</div><div class="val">${total}</div></div>
+        <div class="metric-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+      </div>
+      <div class="metric-card mc-green">
+        <div class="metric-info"><div class="lbl">Active</div><div class="val">${active}</div></div>
+        <div class="metric-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+      </div>
+      <div class="metric-card mc-red">
+        <div class="metric-info"><div class="lbl">Revoked</div><div class="val">${revoked}</div></div>
+        <div class="metric-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg></div>
+      </div>
+      <div class="metric-card mc-amber">
+        <div class="metric-info"><div class="lbl">Expiring Soon</div><div class="val">${expiring}</div></div>
+        <div class="metric-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+      </div>
+    `;
+  }
+
+  function renderTable() {
+    const q   = document.getElementById('lic-search').value.toLowerCase();
+    const sf  = document.getElementById('lic-status').value;
+    const of  = document.getElementById('lic-org').value;
+
+    const rows = licData.filter(u => {
+      const lic = u.license;
+      if (sf && lic?.status !== sf) return false;
+      if (of && u.organization_id !== of) return false;
+      const txt = `${u.full_name_en||''} ${u.username||''} ${lic?.license_key||''}`.toLowerCase();
+      return !q || txt.includes(q);
+    });
+
+    const tbody = document.getElementById('lic-tbody');
+    tbody.innerHTML = rows.map(u => {
+      const lic = u.license;
+      const key = lic?.license_key || '—';
+      const status = lic?.status || '—';
+      const cls = status==='ACTIVE'?'badge-green':status==='REVOKED'?'badge-red':status==='EXPIRED'?'badge-amber':'badge-gray';
+      const issued = lic?.issued_at ? new Date(lic.issued_at).toLocaleDateString('en-IN') : '—';
+      const exp    = lic?.expires_at ? new Date(lic.expires_at).toLocaleDateString('en-IN') : '—';
+      const orgName = orgData.find(o=>o.id===u.organization_id)?.name || u.organization_id || '—';
+
+      return `<tr>
+        <td>
+          ${lic ? `<span class="lic-key" onclick="copyKey('${key}')">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            ${key.length>28?key.slice(0,14)+'…'+key.slice(-8):key}
+          </span>` : '<span class="badge badge-gray">No License</span>'}
+        </td>
+        <td>${orgName}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#2563EB,#1E3A8A);display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff">${(u.full_name_en||u.username||'?').charAt(0).toUpperCase()}</div>
+            <div>
+              <div style="font-weight:600;font-size:13px">${u.full_name_en||'—'}</div>
+              <div style="font-size:11.5px;color:var(--text-muted)">@${u.username}</div>
+            </div>
+          </div>
+        </td>
+        <td><span class="badge ${cls}">${status}</span></td>
+        <td>${issued}</td>
+        <td>${exp}</td>
+        <td>
+          <div class="actions-wrap">
+            <button class="actions-btn" onclick="toggleLicMenu('${u.id}',this)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+            </button>
+            <div class="actions-menu" id="lmenu-${u.id}" hidden>
+              <button onclick="reissueLic('${u.id}')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-.91-5.54"/></svg>
+                Reissue License
+              </button>
+              <button onclick="copyKey('${key}')">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                Copy Key
+              </button>
+              ${status==='ACTIVE'
+                ? `<button class="danger" onclick="revokeLic('${u.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>Revoke License</button>`
+                : `<button onclick="reissueLic('${u.id}')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>Reactivate</button>`
+              }
+            </div>
+          </div>
+        </td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">No licenses found</td></tr>`;
+  }
+
+  await loadLicenses();
+
+  // Filters
+  ['lic-search','lic-status','lic-org'].forEach(id => {
+    document.getElementById(id).addEventListener('input', renderTable);
+    document.getElementById(id).addEventListener('change', renderTable);
+  });
+
+  // Global functions
+  window.toggleLicMenu = function(id, btn) {
+    document.querySelectorAll('.actions-menu').forEach(m => { if (m.id!==`lmenu-${id}`) m.hidden=true; });
+    const m = document.getElementById(`lmenu-${id}`);
+    m.hidden = !m.hidden;
+  };
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.actions-wrap')) document.querySelectorAll('.actions-menu').forEach(m => m.hidden=true);
+  });
+
+  window.copyKey = async function(key) {
+    document.querySelectorAll('.actions-menu').forEach(m => m.hidden=true);
+    try {
+      await navigator.clipboard.writeText(key);
+      toast('License key copied!', 'success');
+    } catch { toast('Copy key: ' + key, 'info'); }
+  };
+
+  window.revokeLic = async function(userId) {
+    document.querySelectorAll('.actions-menu').forEach(m => m.hidden=true);
+    if (!confirm('Revoke this license? The user will lose app access immediately.')) return;
+    try {
+      await api.revokeLicense(userId);
+      toast('License revoked', 'success');
+      await loadLicenses();
+    } catch(e) { toast(e.message, 'error'); }
+  };
+
+  window.reissueLic = async function(userId) {
+    document.querySelectorAll('.actions-menu').forEach(m => m.hidden=true);
+    try {
+      const res = await api.reissueLicense(userId);
+      toast('License reissued!', 'success');
+      if (res?.license_key) {
+        const el = document.getElementById('new-lic-text');
+        if (el) { el.textContent = res.license_key; document.getElementById('new-lic-reveal').hidden = false; document.getElementById('gen-modal').hidden = false; }
+      }
+      await loadLicenses();
+    } catch(e) { toast(e.message, 'error'); }
+  };
+
+  window.copyLicKey = async function() {
+    const key = document.getElementById('new-lic-text').textContent;
+    try { await navigator.clipboard.writeText(key); toast('Copied!', 'success'); } catch { /* */ }
+  };
+
+  // Generate License Modal
+  document.getElementById('gen-lic-btn').addEventListener('click', () => {
+    document.getElementById('new-lic-reveal').hidden = true;
+    document.getElementById('gen-err').hidden = true;
+    document.getElementById('gen-modal').hidden = false;
+  });
+  ['gen-close-btn','gen-cancel-btn'].forEach(id => {
+    document.getElementById(id).addEventListener('click', () => document.getElementById('gen-modal').hidden = true);
+  });
+
+  document.getElementById('gen-submit-btn').addEventListener('click', async () => {
+    const err = document.getElementById('gen-err');
+    const btn = document.getElementById('gen-submit-btn');
+    const orgId  = document.getElementById('g-org').value;
+    const userId = document.getElementById('g-user').value;
+    const expiry = document.getElementById('g-exp').value;
+
+    if (!orgId) { err.textContent='Please select an academy.'; err.hidden=false; return; }
+
+    btn.disabled=true; btn.textContent='Generating…';
+    try {
+      // If user selected, reissue their license; else call admin endpoint
+      let res;
+      if (userId) {
+        res = await api.reissueLicense(userId);
+      } else {
+        // Generic org-level license generation
+        res = await fetch(`/api/v1/admin/organizations/${orgId}/generate-license`, {
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('vagai_access_token')}`},
+          body: JSON.stringify({ expires_at: expiry || null })
+        }).then(r => r.json());
+      }
+      const licKey = res?.license_key || res?.license?.license_key || '—';
+      document.getElementById('new-lic-text').textContent = licKey;
+      document.getElementById('new-lic-reveal').hidden = false;
+      toast('License generated!', 'success');
+      await loadLicenses();
+    } catch(e) {
+      err.textContent = e.message || 'Failed to generate license.';
+      err.hidden = false;
+    } finally {
+      btn.disabled=false; btn.textContent='Generate License';
+    }
+  });
+</script>
+</body>
+</html>

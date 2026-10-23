@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SettingsRepository } from '../repositories/SettingsRepository';
+import { api } from './ApiClient';
 
 export interface SheetAttendanceRecord {
   attendance_id: string;
@@ -137,7 +138,24 @@ export const GoogleSheetsAttendanceService = {
     // Save to local cache
     await AsyncStorage.setItem(STORAGE_KEY_ATTENDANCE_RECORDS, JSON.stringify(updatedList));
 
-    // Push to Google Sheets API / Webhook
+    // 1. Push to FastAPI Backend (Supabase PostgreSQL permanent store)
+    let syncedToBackend = false;
+    try {
+      await api.syncAttendanceBatch(
+        newItemsToPush.map(r => ({
+          student_id: r.student_id,
+          date: r.date,
+          session_name: 'Regular',
+          status: r.status,
+          remarks: r.remarks || null,
+        }))
+      );
+      syncedToBackend = true;
+    } catch (apiErr) {
+      console.warn('Backend API sync offline/queued:', apiErr);
+    }
+
+    // 2. Push to Google Sheets API / Webhook (permanent sheet mirror)
     let syncedToGoogle = false;
     const webhookUrl = await this.getWebhookUrl();
 
@@ -156,19 +174,21 @@ export const GoogleSheetsAttendanceService = {
 
         if (response.ok) {
           syncedToGoogle = true;
-        } else {
+        } else if (!syncedToBackend) {
           await this.addToSyncQueue(newItemsToPush);
         }
       } catch (err) {
         console.warn('Network error pushing to Google Sheets, queued offline:', err);
-        await this.addToSyncQueue(newItemsToPush);
+        if (!syncedToBackend) {
+          await this.addToSyncQueue(newItemsToPush);
+        }
       }
-    } else {
-      // Queued for when webhook is configured
+    } else if (!syncedToBackend) {
+      // Queued for when connectivity or webhook is restored
       await this.addToSyncQueue(newItemsToPush);
     }
 
-    return { savedCount, updatedCount, syncedToGoogle };
+    return { savedCount, updatedCount, syncedToGoogle: syncedToGoogle || syncedToBackend };
   },
 
   /**
@@ -209,35 +229,60 @@ export const GoogleSheetsAttendanceService = {
   },
 
   /**
-   * Flush pending offline sync queue to Google Sheets
+   * Flush pending offline sync queue to FastAPI Backend & Google Sheets
    */
   async syncPendingQueue(): Promise<{ success: boolean; syncedCount: number; error?: string }> {
-    const webhookUrl = await this.getWebhookUrl();
-    if (!webhookUrl) {
-      return { success: false, syncedCount: 0, error: 'Google Sheets Webhook URL is not configured in Settings.' };
-    }
-
     try {
       const queueRaw = await AsyncStorage.getItem(STORAGE_KEY_PENDING_SYNC_QUEUE);
       if (!queueRaw) return { success: true, syncedCount: 0 };
       const queue: SheetAttendanceRecord[] = JSON.parse(queueRaw);
       if (queue.length === 0) return { success: true, syncedCount: 0 };
 
-      const response = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'sync_queue',
-          sheetName: 'Attendance',
-          records: queue,
-        }),
-      });
+      let backendSynced = false;
+      let sheetsSynced = false;
 
-      if (response.ok) {
+      // 1. Sync to FastAPI Backend (Supabase PostgreSQL permanent store)
+      try {
+        const results = await api.syncAttendanceBatch(
+          queue.map(r => ({
+            student_id: r.student_id,
+            date: r.date,
+            session_name: 'Regular',
+            status: r.status,
+            remarks: r.remarks || null,
+          }))
+        );
+        backendSynced = results.some(r => r.status === 'fulfilled');
+      } catch (backendErr) {
+        console.warn('Backend sync error:', backendErr);
+      }
+
+      // 2. Sync to Google Sheets Webhook if configured
+      const webhookUrl = await this.getWebhookUrl();
+      if (webhookUrl) {
+        try {
+          const response = await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'sync_queue',
+              sheetName: 'Attendance',
+              records: queue,
+            }),
+          });
+          if (response.ok) {
+            sheetsSynced = true;
+          }
+        } catch (sheetErr) {
+          console.warn('Google Sheets sync error:', sheetErr);
+        }
+      }
+
+      if (backendSynced || sheetsSynced) {
         await AsyncStorage.removeItem(STORAGE_KEY_PENDING_SYNC_QUEUE);
         return { success: true, syncedCount: queue.length };
       } else {
-        return { success: false, syncedCount: 0, error: `Server responded with ${response.status}` };
+        return { success: false, syncedCount: 0, error: 'Network unavailable. Queue preserved for sync when reconnected.' };
       }
     } catch (err: any) {
       return { success: false, syncedCount: 0, error: err.message || 'Sync failed.' };

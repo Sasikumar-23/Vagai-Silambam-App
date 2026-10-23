@@ -31,7 +31,14 @@ yarn-error.*
 *.pem
 
 # local env files
-.env*.local
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+*.pem
+*.key
 
 # typescript
 *.tsbuildinfo
@@ -41,10 +48,10 @@ yarn-error.*
 /android
 
 # Backend
-backend/.env
 __pycache__/
 *.py[cod]
 .pytest_cache/
 .venv/
 backend/*.db
 backend/**/*.db
+

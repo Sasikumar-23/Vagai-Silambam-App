@@ -17,7 +17,6 @@ import { CertificateRepository } from '../repositories/CertificateRepository';
 import { FeeRepository } from '../repositories/FeeRepository';
 import { EventRepository } from '../repositories/EventRepository';
 import { Student, ParentGuardian, Achievement, Certificate } from '../models/types';
-import { GoogleSheetsAttendanceService } from '../services/GoogleSheetsAttendanceService';
 import { GoogleDriveStorageService } from '../services/GoogleDriveStorageService';
 
 export default function StudentProfileScreen({ route, navigation }: any) {
@@ -50,9 +49,9 @@ export default function StudentProfileScreen({ route, navigation }: any) {
       setCertificates(certList);
 
       if (stu) {
-        // Calculate dynamic attendance percentage directly from Google Sheets attendance logs
-        const metrics = await GoogleSheetsAttendanceService.calculateStudentMetrics(stu.student_id);
-        setAttendanceRate(metrics.percentage);
+        // Calculate attendance percentage from the real SQLite view (same source as StudentsScreen).
+        const rate = await StudentRepository.getStudentAttendanceRate(stu.id);
+        setAttendanceRate(rate);
       }
     } catch (e) {
       console.error('Error loading student profile:', e);

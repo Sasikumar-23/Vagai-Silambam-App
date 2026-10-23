@@ -197,5 +197,83 @@ export const AttendanceRepository = {
     params.push(limit);
 
     return db.getAllAsync<any>(sql, ...params);
+  },
+
+  async getSessionHistory(limit: number = 50): Promise<Array<{
+    sessionId: string;
+    date: string;
+    time: string;
+    markedBy: string;
+    records: Array<{
+      attendance_id: string;
+      date: string;
+      student_id: string;
+      student_name: string;
+      status: 'Present' | 'Absent' | 'Late' | 'Leave';
+      remarks?: string;
+      marked_by: string;
+      created_at: string;
+    }>;
+  }>> {
+    const db = await getDatabase();
+    const statusLabel: Record<AttendanceStatus, 'Present' | 'Absent' | 'Late' | 'Leave'> = {
+      PRESENT: 'Present',
+      ABSENT: 'Absent',
+      LATE: 'Late',
+      LEAVE: 'Leave',
+    };
+
+    const sessionRows = await db.getAllAsync<{
+      id: string;
+      session_date: string;
+      start_time: string;
+      instructor_name: string | null;
+    }>(
+      `SELECT ses.id, ses.session_date, ses.start_time, inst.name_en as instructor_name
+       FROM attendance_sessions ses
+       LEFT JOIN instructors inst ON ses.instructor_id = inst.id
+       ORDER BY ses.session_date DESC, ses.start_time DESC
+       LIMIT ?`,
+      limit
+    );
+
+    const sessions = [];
+    for (const ses of sessionRows) {
+      const markedBy = ses.instructor_name || 'Instructor';
+      const rows = await db.getAllAsync<{
+        id: string;
+        status: AttendanceStatus;
+        remarks: string | null;
+        created_at: string;
+        student_code: string;
+        name_en: string;
+      }>(
+        `SELECT a.id, a.status, a.remarks, a.created_at, s.student_id as student_code, s.name_en
+         FROM attendance a
+         JOIN students s ON a.student_id = s.id
+         WHERE a.session_id = ?
+         ORDER BY s.name_en ASC`,
+        ses.id
+      );
+
+      sessions.push({
+        sessionId: ses.id,
+        date: ses.session_date,
+        time: ses.start_time,
+        markedBy,
+        records: rows.map(r => ({
+          attendance_id: r.id,
+          date: ses.session_date,
+          student_id: r.student_code,
+          student_name: r.name_en,
+          status: statusLabel[r.status],
+          remarks: r.remarks || undefined,
+          marked_by: markedBy,
+          created_at: r.created_at,
+        })),
+      });
+    }
+
+    return sessions;
   }
 };

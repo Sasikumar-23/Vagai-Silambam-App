@@ -180,6 +180,72 @@ export const UserRepository = {
       console.warn('Failed to delete user by email:', e);
       return 0;
     }
-  }
+  },
+
+  async findOrCreateFromApi(apiUser: {
+    id: string;
+    username: string;
+    full_name_en: string;
+    full_name_ta?: string;
+    email?: string;
+    phone?: string;
+    role: string;
+  }): Promise<User> {
+    const db = await getDatabase();
+    const existing = (await this.findById(apiUser.id)) || (await this.findByUsername(apiUser.username));
+    const now = new Date().toISOString();
+    const role: UserRole = (['ADMIN', 'INSTRUCTOR', 'STAFF', 'STUDENT', 'PARENT'].includes(apiUser.role)
+      ? apiUser.role
+      : 'INSTRUCTOR') as UserRole;
+
+    if (existing) {
+      await db.runAsync(
+        `UPDATE users SET full_name_en = ?, full_name_ta = ?, email = ?, phone = ?, role = ?, updated_at = ? WHERE id = ?`,
+        apiUser.full_name_en,
+        apiUser.full_name_ta || existing.full_name_ta || '',
+        apiUser.email || existing.email || null,
+        apiUser.phone || existing.phone || null,
+        role,
+        now,
+        existing.id
+      );
+      return {
+        ...existing,
+        full_name_en: apiUser.full_name_en,
+        full_name_ta: apiUser.full_name_ta || existing.full_name_ta,
+        role,
+      };
+    }
+
+    const dummyPasswordHash = await hashPassword('vagai_cloud_user');
+    await db.runAsync(
+      `INSERT INTO users (id, username, password_hash, full_name_en, full_name_ta, email, phone, role, is_active, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+      apiUser.id,
+      apiUser.username.trim().toLowerCase(),
+      dummyPasswordHash,
+      apiUser.full_name_en,
+      apiUser.full_name_ta || '',
+      apiUser.email || null,
+      apiUser.phone || null,
+      role,
+      now,
+      now
+    );
+
+    return {
+      id: apiUser.id,
+      username: apiUser.username.trim().toLowerCase(),
+      password_hash: dummyPasswordHash,
+      full_name_en: apiUser.full_name_en,
+      full_name_ta: apiUser.full_name_ta || '',
+      email: apiUser.email,
+      phone: apiUser.phone,
+      role,
+      is_active: 1,
+      created_at: now,
+      updated_at: now,
+    };
+  },
 };
 

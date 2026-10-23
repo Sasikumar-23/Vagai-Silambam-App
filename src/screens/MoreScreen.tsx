@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import {
   IndianRupee, Shirt, Award, FileText, Bell, Users,
-  Settings as SettingsIcon, LogOut, ChevronRight, Shield, RefreshCw
+  Settings as SettingsIcon, LogOut, ChevronRight, Shield, RefreshCw, Sparkles
 } from 'lucide-react-native';
 import { theme } from '../theme';
 import { useI18n } from '../i18n';
@@ -55,6 +55,13 @@ export default function MoreScreen({ navigation }: any) {
       icon: <Bell size={22} color={theme.colors.primary} />,
       bg: theme.colors.primaryMuted,
       screen: 'Notifications',
+    },
+    {
+      title: t.subscription?.title || 'Subscription & License',
+      subtitle: 'SaaS plan, student limits, renewal & UPI upgrade',
+      icon: <Sparkles size={22} color={theme.colors.gold} />,
+      bg: '#FEF3C7',
+      screen: 'Subscription',
     },
     {
       title: t.settings.title,

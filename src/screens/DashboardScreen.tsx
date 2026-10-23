@@ -14,13 +14,11 @@ import { StatCard } from '../components/StatCard';
 import { QuickActionCard } from '../components/QuickActionCard';
 import { StatusBadge } from '../components/StatusBadge';
 import { StudentRepository } from '../repositories/StudentRepository';
-import { GoogleSheetsAttendanceService, AttendanceDashboardStats } from '../services/GoogleSheetsAttendanceService';
+import { AttendanceRepository } from '../repositories/AttendanceRepository';
 import { EventRepository } from '../repositories/EventRepository';
 import { FeeRepository } from '../repositories/FeeRepository';
 import { AuditRepository } from '../repositories/AuditRepository';
 import { Student, EventItem, AuditLog } from '../models/types';
-import { todayLocalDate } from '../utils/date';
-import { Cloud } from 'lucide-react-native';
 
 export default function DashboardScreen({ navigation }: any) {
   const isFocused = useIsFocused();
@@ -29,7 +27,7 @@ export default function DashboardScreen({ navigation }: any) {
 
   const [refreshing, setRefreshing] = useState(false);
   const [totalStudents, setTotalStudents] = useState(0);
-  const [todayAttendance, setTodayAttendance] = useState<AttendanceDashboardStats>({
+  const [todayAttendance, setTodayAttendance] = useState({
     totalStudents: 0,
     presentToday: 0,
     absentToday: 0,
@@ -50,7 +48,6 @@ export default function DashboardScreen({ navigation }: any) {
 
   const loadDashboardData = async () => {
     try {
-      const todayStr = todayLocalDate();
       // The headline figure is a COUNT, not the length of a capped page of students.
       const [activeCount, students, events, fees, audits] = await Promise.all([
         StudentRepository.countStudents('ACTIVE'),
@@ -60,15 +57,19 @@ export default function DashboardScreen({ navigation }: any) {
         AuditRepository.getRecentLogs(5),
       ]);
 
-      // Calculate attendance dynamically from Google Sheets Attendance Engine
-      const sheetAttStats = await GoogleSheetsAttendanceService.getDashboardAttendanceStats(
-        todayStr,
-        activeCount
-      );
+      // Attendance marked today, read from the same SQLite tables TakeAttendanceScreen writes to.
+      const todaySummary = await AttendanceRepository.getTodayAttendanceSummary();
 
       setTotalStudents(activeCount);
       setRecentStudents(students.slice(0, 3));
-      setTodayAttendance(sheetAttStats);
+      setTodayAttendance({
+        totalStudents: activeCount,
+        presentToday: todaySummary.present,
+        absentToday: todaySummary.absent,
+        lateToday: todaySummary.late,
+        leaveToday: todaySummary.leave,
+        attendancePercentage: activeCount > 0 ? Math.round((todaySummary.present / activeCount) * 100) : 0,
+      });
       setUpcomingEvents(events.slice(0, 2));
       setFeeMetrics(fees);
       setRecentAudits(audits);

@@ -176,6 +176,9 @@ npm run typecheck
 
 ### Android APK / AAB (via EAS)
 ```bash
+# Local development build
+npx eas build -p android --profile development
+
 # Preview APK for testing on physical Android devices
 npx eas build -p android --profile preview
 
@@ -183,14 +186,24 @@ npx eas build -p android --profile preview
 npx eas build -p android --profile production
 ```
 
-### iOS IPA (via EAS)
-```bash
-# Simulator build
-npx eas build -p ios --profile preview
+### Environment Configuration
+- `EXPO_PUBLIC_API_URL`: Points to the FastAPI backend (e.g. `http://10.0.2.2:8000/api/v1` for local emulator or `https://api.vagaisilambam.com/api/v1` for production).
+- Configured in `eas.json` across `development`, `preview`, and `production` profiles.
 
-# Production IPA for Apple App Store / TestFlight
-npx eas build -p ios --profile production
-```
+---
+
+## ☁️ SaaS Cloud & Backend Integration
+- **FastAPI + PostgreSQL (Supabase)**: Primary cloud store for multi-tenant organizations, user authentication, SaaS plans, and global reports.
+- **Offline-First SQLite**: Local storage with `vagai_silambam.db` ensures zero-downtime attendance marking in rural / poor connectivity conditions.
+- **Attendance Sync Flow**:
+  1. Offline Mark: Saved to SQLite with duplicate prevention.
+  2. Online Sync: Automatically flushes to `POST /api/v1/attendance/mark` and synchronizes to Google Sheets.
+- **SaaS Subscription Screen**:
+  - Plan status badges (`ACTIVE`, `TRIAL`, `EXPIRED`, `SUSPENDED`).
+  - Student, instructor, and branch usage limits with warning meters.
+  - Multi-tier SaaS plan comparison (Starter, Pro / Growth, Enterprise).
+  - Direct UPI & Bank transfer upgrade workflow.
+  - Bilingual support (English & Tamil).
 
 ---
 

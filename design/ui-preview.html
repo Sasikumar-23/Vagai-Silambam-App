@@ -123,8 +123,8 @@
   }
   .action .ico { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; flex: none; }
   .action .txt { flex: 1; }
-  .action .t { font-size: 15px; font-weight: 800; letter-spacing: -0.3px; }
-  .action .s { font-size: 11px; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
+  .action .t { display: block; font-size: 15px; font-weight: 800; letter-spacing: -0.3px; }
+  .action .s { display: block; font-size: 11px; color: var(--text-muted); font-weight: 500; margin-top: 2px; }
   .chev { color: var(--text-muted); }
 
   .student {
@@ -173,6 +173,19 @@
   code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12.5px; }
   .scroll-x { overflow-x: auto; }
   footer { margin-top: 48px; color: var(--page-muted); font-size: 13px; border-top: 1px solid var(--page-line); padding-top: 16px; }
+
+  @media print {
+    /* Without this the swatches and app bars print as blank white boxes. */
+    * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    :root { --page-bg: #FFFFFF; --page-text: #0F172A; --page-muted: #5B6679; --page-card: #FFFFFF; --page-line: #DDE3EC; }
+    body { background: #FFFFFF; }
+    .wrap { max-width: none; padding: 0 0 8px; }
+    section { margin-top: 26px; break-inside: avoid; }
+    .panel, .device, .swatch, .stat, .action, .student, .empty { break-inside: avoid; }
+    .devices { grid-template-columns: 1fr 1fr; }
+    .device { box-shadow: none; }
+    footer { margin-top: 24px; }
+  }
 </style>
 
 <div class="wrap">
