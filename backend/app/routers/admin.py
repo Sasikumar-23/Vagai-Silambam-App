@@ -24,6 +24,17 @@ class VerifyPaymentPayload(BaseModel):
     notes: str | None = None
 
 
+class RecordOfflinePaymentPayload(BaseModel):
+    organization_id: str
+    plan_code: str
+    amount: float
+    duration_months: int = 1  # 1, 3, 6, 12 months
+    payment_mode: str = "CASH"  # CASH, UPI, DIRECT_TRANSFER
+    receipt_number: str | None = None
+    notes: str | None = None
+
+
+
 @router.get("/overview")
 def get_admin_overview(
     user: User = Depends(require_role("SUPER_ADMIN")),
@@ -166,6 +177,120 @@ def update_organization_plan(
     )
     db.commit()
     return {"success": True, "plan": plan.code, "status": sub.status}
+
+
+@router.post("/subscriptions/record-offline-payment")
+def record_offline_payment(
+    payload: RecordOfflinePaymentPayload,
+    request: Request,
+    user: User = Depends(require_role("SUPER_ADMIN")),
+    db: Session = Depends(get_db),
+):
+    """
+    Super Admin verifies cash-on-hand / direct offline payment from an academy.
+    Atomically:
+      1. Logs Payment record with CASH / DIRECT status.
+      2. Activates or extends the Academy Subscription with new expiry.
+      3. Provisions or ensures an ACTIVE License key.
+      4. Writes an Audit Log entry.
+    """
+    org = db.query(Organization).filter(Organization.id == payload.organization_id).one_or_none()
+    if not org:
+        raise errors.not_found("Academy / Organization not found")
+
+    plan = db.query(Plan).filter(Plan.code == payload.plan_code).one_or_none()
+    if not plan:
+        raise errors.not_found("Subscription plan not found")
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    duration_days = payload.duration_months * 30
+    expires_at = now + datetime.timedelta(days=duration_days)
+
+    # 1. Update or create subscription
+    sub = db.query(Subscription).filter(Subscription.organization_id == org.id).one_or_none()
+    if not sub:
+        sub = Subscription(
+            organization_id=org.id,
+            plan_id=plan.id,
+            status="ACTIVE",
+            subscription_start=now,
+            next_billing_date=expires_at,
+            expires_at=expires_at,
+        )
+        db.add(sub)
+    else:
+        sub.plan_id = plan.id
+        sub.status = "ACTIVE"
+        # If already active and unexpired, extend from current expiry
+        if sub.expires_at and sub.expires_at > now:
+            sub.expires_at = sub.expires_at + datetime.timedelta(days=duration_days)
+            sub.next_billing_date = sub.expires_at
+        else:
+            sub.subscription_start = now
+            sub.expires_at = expires_at
+            sub.next_billing_date = expires_at
+    db.flush()
+
+    # 2. Record Payment Entry
+    receipt_no = payload.receipt_number or f"CASH-{datetime.date.today().strftime('%Y%m%d')}-{secrets.token_hex(3).upper()}"
+    payment = Payment(
+        organization_id=org.id,
+        subscription_id=sub.id,
+        gateway="offline",
+        payment_reference=receipt_no,
+        amount=payload.amount,
+        currency="INR",
+        status="COMPLETED",
+        paid_at=now,
+    )
+    db.add(payment)
+
+    # 3. Ensure ACTIVE academy license key exists
+    lic = db.query(License).filter(License.organization_id == org.id, License.status == "ACTIVE").first()
+    if not lic:
+        lic = License(
+            organization_id=org.id,
+            license_key=f"VS-LIC-{secrets.token_hex(6).upper()}",
+            status="ACTIVE",
+            issued_at=now,
+            expires_at=sub.expires_at,
+        )
+        db.add(lic)
+    else:
+        lic.expires_at = sub.expires_at
+
+    # 4. Audit Log
+    audit.record(
+        db,
+        action="OFFLINE_PAYMENT_VERIFIED",
+        organization_id=org.id,
+        user_id=user.id,
+        entity_type="payments",
+        entity_id=payment.id,
+        meta={
+            "amount": payload.amount,
+            "plan": plan.code,
+            "duration_months": payload.duration_months,
+            "receipt_number": receipt_no,
+            "payment_mode": payload.payment_mode,
+            "notes": payload.notes,
+        },
+        request=request,
+    )
+
+    db.commit()
+
+    return {
+        "success": True,
+        "message": f"Cash payment of ₹{payload.amount} recorded. Subscription activated until {sub.expires_at.strftime('%Y-%m-%d')}.",
+        "organization_name": org.name,
+        "plan_name": plan.name,
+        "status": sub.status,
+        "expires_at": sub.expires_at.isoformat(),
+        "receipt_number": receipt_no,
+        "license_key": lic.license_key,
+    }
+
 
 
 @router.get("/audit-logs")

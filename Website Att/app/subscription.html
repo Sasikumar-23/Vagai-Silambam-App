@@ -3,15 +3,178 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Subscription · Vagai Silambam</title>
+  <title>Subscription &amp; Offline Payments · Vagai Silambam</title>
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/responsive.css">
+  <style>
+    .sub-hero-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 24px 28px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04), 0 6px 18px rgba(15, 23, 42, 0.03);
+    }
+    .sub-head-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .sub-org-name {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .sub-details-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 18px;
+      padding: 18px;
+      background: var(--surface-subtle);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+    }
+    .sub-detail-item .label {
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .sub-detail-item .val {
+      font-size: 14.5px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* Record Cash Payment Dialog */
+    .cash-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 19, 36, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 999;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+    .cash-modal-backdrop[hidden] {
+      display: none;
+    }
+    .cash-modal-card {
+      width: 100%;
+      max-width: 520px;
+      background: #FFFFFF;
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 50px rgba(10, 19, 36, 0.25);
+      overflow: hidden;
+    }
+    .cash-modal-head {
+      padding: 18px 24px;
+      background: var(--surface-subtle);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .cash-modal-head h3 {
+      font-size: 16.5px;
+      font-weight: 800;
+      color: var(--navy-900);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .cash-modal-body {
+      padding: 24px;
+    }
+    .cash-modal-foot {
+      padding: 16px 24px;
+      background: var(--surface-subtle);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+  </style>
 </head>
 <body>
+  <!-- Offline Payment Dialog Modal -->
+  <div class="cash-modal-backdrop" id="cashModal" hidden>
+    <div class="cash-modal-card">
+      <div class="cash-modal-head">
+        <h3><span>💵</span> Record Cash Payment &amp; Extend License</h3>
+        <button type="button" class="btn btn-ghost btn-sm" id="closeCashModal" style="border:none;font-size:16px">✕</button>
+      </div>
+      <form id="cashPaymentForm">
+        <div class="cash-modal-body">
+          <div style="display:grid;gap:14px;grid-template-columns:1fr 1fr">
+            <div class="field" style="grid-column:1/-1">
+              <label>Academy / Organization</label>
+              <input id="payOrgName" type="text" readonly style="background:var(--surface-subtle);font-weight:700">
+              <input id="payOrgId" type="hidden">
+            </div>
+
+            <div class="field">
+              <label>Select Plan</label>
+              <select id="payPlanCode" required class="filter-select" style="width:100%">
+                <option value="STARTER">Starter</option>
+                <option value="STANDARD">Standard</option>
+                <option value="PROFESSIONAL">Professional</option>
+                <option value="BUSINESS">Business</option>
+                <option value="ENTERPRISE">Enterprise</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Duration</label>
+              <select id="payDuration" class="filter-select" style="width:100%">
+                <option value="1">1 Month (30 Days)</option>
+                <option value="3">3 Months (90 Days)</option>
+                <option value="6">6 Months (180 Days)</option>
+                <option value="12" selected>1 Year (365 Days)</option>
+              </select>
+            </div>
+
+            <div class="field">
+              <label>Amount Collected (₹)</label>
+              <input id="payAmount" type="number" required min="1" step="50" placeholder="5000">
+            </div>
+
+            <div class="field">
+              <label>Payment Method</label>
+              <select id="payMode" class="filter-select" style="width:100%">
+                <option value="CASH">Cash on Hand</option>
+                <option value="UPI">Direct UPI / GPay</option>
+                <option value="BANK_TRANSFER">Direct Bank Transfer</option>
+              </select>
+            </div>
+
+            <div class="field" style="grid-column:1/-1">
+              <label>Receipt # / Reference (Optional)</label>
+              <input id="payReceipt" type="text" placeholder="e.g. CASH-2026-REC01">
+            </div>
+          </div>
+        </div>
+        <div class="cash-modal-foot">
+          <button type="button" class="btn btn-ghost" id="cancelCashModal">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="submitCashPayment">
+            ✓ Verify Cash &amp; Activate License
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script type="module">
     import { api } from './assets/js/api.js';
     import { applyTranslations, t } from './assets/js/i18n.js';
-    import { mountShell, requireSession } from './assets/js/auth.js';
+    import { mountShell, requireSession, toast } from './assets/js/auth.js';
     import { escapeHtml } from './assets/js/students.js';
 
     if (requireSession()) render(mountShell({ titleKey: 'nav_subscription' }));
@@ -20,35 +183,63 @@
     const cap = (limit) => (limit < 0 ? t('unlimited') : limit);
 
     async function render(page) {
-      page.innerHTML = '<div class="card"><div class="skeleton" style="height:160px"></div></div>';
+      page.innerHTML = '<div class="card"><div class="skeleton" style="height:200px"></div></div>';
 
       try {
-        const [subscription, plans] = await Promise.all([api.subscription(), api.plans()]);
+        const [subscription, plans, me] = await Promise.all([
+          api.subscription(),
+          api.plans(),
+          api.me().catch(() => null),
+        ]);
+
+        const isSuperAdmin = me && me.role === 'SUPER_ADMIN';
+
+        const recordCashBtn = isSuperAdmin ? `
+          <button id="openCashModalBtn" class="btn btn-primary btn-sm">
+            <span>💵</span> Record Cash Payment &amp; Extend
+          </button>` : '';
 
         page.innerHTML = `
-          <div class="card">
-            <div class="card-head">
-              <h3>${escapeHtml(subscription.organization_name)}</h3>
-              <span class="badge ${subscription.status === 'TRIAL' ? 'badge-trial' : 'badge-active'}">
-                ${subscription.status}
-              </span>
+          <div class="sub-hero-card">
+            <div class="sub-head-row">
+              <div>
+                <div class="sub-org-name">${escapeHtml(subscription.organization_name)}</div>
+                <div style="font-size:13px;color:var(--text-muted);margin-top:2px">
+                  Code: <code>${escapeHtml(subscription.organization_code)}</code>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:12px">
+                <span class="badge ${subscription.status === 'ACTIVE' ? 'badge-active' : 'badge-trial'}">
+                  ● ${subscription.status}
+                </span>
+                ${recordCashBtn}
+              </div>
             </div>
-            <table>
-              <tbody>
-                <tr><td data-label="-"><span data-i18n="organization_code"></span></td>
-                    <td><code>${escapeHtml(subscription.organization_code)}</code></td></tr>
-                <tr><td data-label="-"><span data-i18n="current_plan"></span></td>
-                    <td>${escapeHtml(subscription.plan.name)}</td></tr>
-                <tr><td data-label="-"><span data-i18n="trial_ends"></span></td>
-                    <td>${date(subscription.trial_end)}</td></tr>
-                <tr><td data-label="-"><span data-i18n="license_key"></span></td>
-                    <td><code>${escapeHtml(subscription.license_key || '—')}</code></td></tr>
-              </tbody>
-            </table>
+
+            <div class="sub-details-grid">
+              <div class="sub-detail-item">
+                <div class="label" data-i18n="current_plan">Current Plan</div>
+                <div class="val" style="color:var(--primary)">${escapeHtml(subscription.plan.name)}</div>
+              </div>
+              <div class="sub-detail-item">
+                <div class="label">Payment Mode</div>
+                <div class="val">Cash on Hand / Verified Offline</div>
+              </div>
+              <div class="sub-detail-item">
+                <div class="label">License Key</div>
+                <div class="val"><code>${escapeHtml(subscription.license_key || '—')}</code></div>
+              </div>
+              <div class="sub-detail-item">
+                <div class="label">Valid Until / Expiry</div>
+                <div class="val" style="color:#059669">${date(subscription.expires_at || subscription.trial_end)}</div>
+              </div>
+            </div>
           </div>
 
           <div class="card">
-            <h3 data-i18n="plan_usage"></h3>
+            <div class="card-head">
+              <h3 data-i18n="plan_usage">Academy Plan Usage</h3>
+            </div>
             <div class="stat-grid" style="margin:0">
               ${['students', 'branches', 'users'].map((key) => {
                 const used = subscription.usage[key];
@@ -66,29 +257,87 @@
           </div>
 
           <div class="card">
-            <h3 data-i18n="upgrade_plan"></h3>
-            <table>
-              <thead>
-                <tr><th>Plan</th><th>Students</th><th>Branches</th><th>Users</th><th>Monthly</th><th>Annual</th></tr>
-              </thead>
-              <tbody>
-                ${plans.map((plan) => `
-                  <tr${plan.code === subscription.plan.code ? ' style="background:var(--primary-muted)"' : ''}>
-                    <td data-label="Plan"><strong>${escapeHtml(plan.name)}</strong></td>
-                    <td data-label="Students">${cap(plan.max_students)}</td>
-                    <td data-label="Branches">${cap(plan.max_branches)}</td>
-                    <td data-label="Users">${cap(plan.max_users)}</td>
-                    <td data-label="Monthly">${plan.price_monthly ? '₹' + plan.price_monthly.toLocaleString('en-IN') : 'Custom'}</td>
-                    <td data-label="Annual">${plan.price_annual ? '₹' + plan.price_annual.toLocaleString('en-IN') : 'Custom'}</td>
-                  </tr>`).join('')}
-              </tbody>
-            </table>
-            <p style="color:var(--text-muted);font-size:13px;margin-top:14px">
-              Razorpay checkout is not wired up yet — upgrading is still a manual step.
-            </p>
+            <div class="card-head">
+              <h3 data-i18n="upgrade_plan">Available Academy Plans</h3>
+            </div>
+            <div class="table-responsive">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Plan Name</th>
+                    <th>Max Students</th>
+                    <th>Branches</th>
+                    <th>Instructors</th>
+                    <th>Monthly Fee</th>
+                    <th>Annual Fee</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${plans.map((plan) => `
+                    <tr${plan.code === subscription.plan.code ? ' style="background:var(--primary-muted);font-weight:700"' : ''}>
+                      <td><strong>${escapeHtml(plan.name)}</strong></td>
+                      <td>${cap(plan.max_students)}</td>
+                      <td>${cap(plan.max_branches)}</td>
+                      <td>${cap(plan.max_users)}</td>
+                      <td>${plan.price_monthly ? '₹' + plan.price_monthly.toLocaleString('en-IN') : 'Custom'}</td>
+                      <td>${plan.price_annual ? '₹' + plan.price_annual.toLocaleString('en-IN') : 'Custom'}</td>
+                    </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>
+            <div style="background:var(--surface-subtle);padding:14px 18px;border-radius:var(--radius-md);margin-top:16px;border:1px solid var(--border-light);font-size:13px;color:var(--text-secondary)">
+              ℹ️ <strong>Offline Cash on Hand Process:</strong> Academy subscriptions are activated upon cash collection or direct bank payment verified by the Super Admin. The academy license and mobile app limits are extended automatically.
+            </div>
           </div>`;
 
         applyTranslations(page);
+
+        // Bind Cash Modal
+        if (isSuperAdmin) {
+          const cashModal = document.getElementById('cashModal');
+          const openBtn = document.getElementById('openCashModalBtn');
+          const closeBtn = document.getElementById('closeCashModal');
+          const cancelBtn = document.getElementById('cancelCashModal');
+          const form = document.getElementById('cashPaymentForm');
+
+          const showModal = () => {
+            document.getElementById('payOrgName').value = subscription.organization_name;
+            // Get user's org id
+            document.getElementById('payOrgId').value = me.organization_id;
+            cashModal.hidden = false;
+          };
+          const hideModal = () => { cashModal.hidden = true; };
+
+          if (openBtn) openBtn.addEventListener('click', showModal);
+          if (closeBtn) closeBtn.addEventListener('click', hideModal);
+          if (cancelBtn) cancelBtn.addEventListener('click', hideModal);
+
+          form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitCashPayment');
+            btn.disabled = true;
+            btn.textContent = 'Verifying payment…';
+
+            try {
+              const res = await api.recordOfflinePayment({
+                organization_id: me.organization_id,
+                plan_code: document.getElementById('payPlanCode').value,
+                amount: parseFloat(document.getElementById('payAmount').value),
+                duration_months: parseInt(document.getElementById('payDuration').value, 10),
+                payment_mode: document.getElementById('payMode').value,
+                receipt_number: document.getElementById('payReceipt').value.trim() || null,
+              });
+              toast(res.message, 'success');
+              hideModal();
+              await render(page);
+            } catch (err) {
+              toast(err.message, 'error');
+              btn.disabled = false;
+              btn.textContent = '✓ Verify Cash & Activate License';
+            }
+          });
+        }
+
       } catch (error) {
         page.innerHTML = `<div class="alert alert-error">${escapeHtml(error.message)}</div>`;
       }

@@ -175,6 +175,7 @@ export const api = {
   suspendOrg: (id) => request(`/api/v1/admin/organizations/${id}/suspend`, { method: 'POST' }),
   activateOrg: (id) => request(`/api/v1/admin/organizations/${id}/activate`, { method: 'POST' }),
   updateOrgPlan: (id, payload) => request(`/api/v1/admin/organizations/${id}/subscription`, { method: 'PUT', body: payload }),
+  recordOfflinePayment: (payload) => request('/api/v1/admin/subscriptions/record-offline-payment', { method: 'POST', body: payload }),
   listAuditLogs: () => request('/api/v1/admin/audit-logs'),
 };
 
