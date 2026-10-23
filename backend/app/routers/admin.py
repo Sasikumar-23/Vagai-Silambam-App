@@ -11,14 +11,12 @@ from ..database import get_db
 from ..models import AuditLog, License, Organization, Payment, Plan, Student, Subscription, User
 from ..schemas import ResetPasswordRequest
 from ..services import audit
+from ..services.provisioning import generate_license_key
+from ..utils.time import as_utc
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
 
-class ResetPasswordPayload(BaseModel):
-    organization_id: str | None = None
-    user_id: str | None = None
-    new_password: str
 
 
 
@@ -151,7 +149,7 @@ def update_organization_plan(
     if not org:
         raise errors.not_found("Organization not found")
 
-    plan = db.query(Plan).filter(Plan.code == payload.plan_code).one_or_none()
+    plan = db.query(Plan).filter(Plan.code == payload.plan_code.strip().upper()).one_or_none()
     if not plan:
         raise errors.not_found("Plan code not found")
 
@@ -214,7 +212,7 @@ def record_offline_payment(
     if not org:
         raise errors.not_found("Academy / Organization not found")
 
-    plan = db.query(Plan).filter(Plan.code == payload.plan_code).one_or_none()
+    plan = db.query(Plan).filter(Plan.code == payload.plan_code.strip().upper()).one_or_none()
     if not plan:
         raise errors.not_found("Subscription plan not found")
 
@@ -238,7 +236,7 @@ def record_offline_payment(
         sub.plan_id = plan.id
         sub.status = "ACTIVE"
         # If already active and unexpired, extend from current expiry
-        if sub.expires_at and sub.expires_at > now:
+        if sub.expires_at and as_utc(sub.expires_at) > now:
             sub.expires_at = sub.expires_at + datetime.timedelta(days=duration_days)
             sub.next_billing_date = sub.expires_at
         else:
@@ -249,6 +247,8 @@ def record_offline_payment(
 
     # 2. Record Payment Entry
     receipt_no = payload.receipt_number or f"CASH-{datetime.date.today().strftime('%Y%m%d')}-{secrets.token_hex(3).upper()}"
+    if db.query(Payment).filter(Payment.gateway == "offline", Payment.payment_reference == receipt_no).first():
+        raise errors.conflict("DUPLICATE_RECEIPT", f"Receipt {receipt_no} has already been recorded")
     payment = Payment(
         organization_id=org.id,
         subscription_id=sub.id,
@@ -332,45 +332,6 @@ def list_audit_logs(
     ]
 
 
-@router.post("/reset-password")
-def reset_user_password(
-    payload: ResetPasswordPayload,
-    request: Request,
-    user: User = Depends(require_role("SUPER_ADMIN")),
-    db: Session = Depends(get_db),
-):
-    if len(payload.new_password) < 8:
-        raise errors.bad_request("WEAK_PASSWORD", "Password must be at least 8 characters")
-
-    target_user = None
-    if payload.user_id:
-        target_user = db.query(User).filter(User.id == payload.user_id).first()
-    elif payload.organization_id:
-        # Find organization admin
-        target_user = (
-            db.query(User)
-            .filter(User.organization_id == payload.organization_id, User.role == "ADMIN")
-            .first()
-        )
-        if not target_user:
-            target_user = db.query(User).filter(User.organization_id == payload.organization_id).first()
-
-    if not target_user:
-        raise errors.not_found("User not found")
-
-    target_user.password_hash = hash_password(payload.new_password)
-    audit.record(
-        db,
-        action="PASSWORD_RESET_BY_SUPERADMIN",
-        organization_id=target_user.organization_id,
-        user_id=user.id,
-        entity_type="users",
-        entity_id=target_user.id,
-        meta={"username": target_user.username},
-        request=request,
-    )
-    db.commit()
-    return {"success": True, "message": f"Password reset for user @{target_user.username}"}
 
 
 
@@ -430,3 +391,105 @@ def super_admin_reset_academy_admin_password(
         request=request,
     )
     db.commit()
+
+
+class GenerateLicensePayload(BaseModel):
+    expires_at: datetime.datetime | None = None
+
+
+@router.post("/organizations/{org_id}/generate-license")
+def generate_academy_license(
+    org_id: str,
+    payload: GenerateLicensePayload,
+    request: Request,
+    user: User = Depends(require_role("SUPER_ADMIN")),
+    db: Session = Depends(get_db),
+):
+    """Idempotent: returns the academy's active license, issuing one only if none exists."""
+    organization = db.get(Organization, org_id)
+    if organization is None:
+        raise errors.not_found("Academy not found")
+
+    lic = (
+        db.query(License)
+        .filter(License.organization_id == org_id, License.user_id.is_(None), License.status == "ACTIVE")
+        .first()
+    )
+    if lic is None:
+        sub = db.query(Subscription).filter(Subscription.organization_id == org_id).one_or_none()
+        lic = License(
+            organization_id=org_id,
+            license_key=generate_license_key(),
+            status="ACTIVE",
+            issued_at=datetime.datetime.now(datetime.timezone.utc),
+            expires_at=payload.expires_at or (sub.expires_at if sub else None),
+        )
+        db.add(lic)
+        db.flush()
+        audit.record(
+            db,
+            action="ACADEMY_LICENSE_ISSUED",
+            organization_id=org_id,
+            user_id=user.id,
+            entity_type="licenses",
+            entity_id=lic.id,
+            meta={"expires_at": lic.expires_at.isoformat() if lic.expires_at else None},
+            request=request,
+        )
+        db.commit()
+    return {"license_key": lic.license_key, "status": lic.status, "expires_at": lic.expires_at}
+
+
+@router.get("/licenses")
+def list_academy_licenses(
+    user: User = Depends(require_role("SUPER_ADMIN")),
+    db: Session = Depends(get_db),
+):
+    rows = (
+        db.query(License, Organization)
+        .join(Organization, Organization.id == License.organization_id)
+        .filter(License.user_id.is_(None))
+        .order_by(License.issued_at.desc())
+        .all()
+    )
+    return [
+        {
+            "license_key": lic.license_key,
+            "status": lic.status,
+            "issued_at": lic.issued_at,
+            "expires_at": lic.expires_at,
+            "organization_id": org.id,
+            "organization_name": org.name,
+            "organization_code": org.organization_code,
+        }
+        for lic, org in rows
+    ]
+
+
+@router.get("/payments")
+def list_payments(
+    organization_id: str | None = Query(default=None),
+    user: User = Depends(require_role("SUPER_ADMIN")),
+    db: Session = Depends(get_db),
+):
+    query = (
+        db.query(Payment, Organization)
+        .join(Organization, Organization.id == Payment.organization_id)
+    )
+    if organization_id:
+        query = query.filter(Payment.organization_id == organization_id)
+    rows = query.order_by(Payment.paid_at.desc().nullslast(), Payment.created_at.desc()).limit(200).all()
+    return [
+        {
+            "id": p.id,
+            "organization_name": org.name,
+            "organization_code": org.organization_code,
+            "amount": p.amount,
+            "currency": p.currency,
+            "gateway": p.gateway,
+            "receipt_number": p.payment_reference,
+            "status": p.status,
+            "paid_at": p.paid_at,
+        }
+        for p, org in rows
+    ]

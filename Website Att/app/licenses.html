@@ -418,11 +418,7 @@
         res = await api.reissueLicense(userId);
       } else {
         // Generic org-level license generation
-        res = await fetch(`/api/v1/admin/organizations/${orgId}/generate-license`, {
-          method:'POST',
-          headers:{'Content-Type':'application/json','Authorization':`Bearer ${localStorage.getItem('vagai_access_token')}`},
-          body: JSON.stringify({ expires_at: expiry || null })
-        }).then(r => r.json());
+        res = await api.generateAcademyLicense(orgId, expiry || null);
       }
       const licKey = res?.license_key || res?.license?.license_key || '—';
       document.getElementById('new-lic-text').textContent = licKey;

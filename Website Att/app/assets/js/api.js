@@ -173,6 +173,10 @@ export const api = {
 
   // Admin
   adminOverview: () => request('/api/v1/admin/overview'),
+  listPayments: (orgId) => request(`/api/v1/admin/payments${orgId ? `?organization_id=${encodeURIComponent(orgId)}` : ''}`),
+  listAcademyLicenses: () => request('/api/v1/admin/licenses'),
+  generateAcademyLicense: (orgId, expiresAt = null) =>
+    request(`/api/v1/admin/organizations/${orgId}/generate-license`, { method: 'POST', body: { expires_at: expiresAt } }),
   // backend returns a flat array; wrap so callers can do res.organizations
   listOrganizations: async () => {
     const list = await request('/api/v1/admin/organizations');

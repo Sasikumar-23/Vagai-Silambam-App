@@ -261,8 +261,7 @@
 
   // Load Payments
   try {
-    const ov = await api.adminOverview().catch(()=>null);
-    payData = ov?.recent_payments || [];
+    payData = await api.listPayments().catch(() => []);
     renderPayments();
   } catch(e) { /* no payments */ }
 
@@ -321,13 +320,13 @@
     });
     const tbody = document.getElementById('pay-tbody');
     tbody.innerHTML = rows.map(p => {
-      const cls = p.status==='VERIFIED'?'badge-green':p.status==='PENDING'?'badge-amber':'badge-red';
+      const cls = (p.status==='COMPLETED'||p.status==='VERIFIED')?'badge-green':p.status==='PENDING'?'badge-amber':'badge-red';
       return `<tr>
         <td><strong>${p.organization_name||p.organization_id}</strong></td>
         <td><strong>₹${p.amount?.toLocaleString('en-IN')}</strong></td>
         <td><span class="badge badge-gray">${p.gateway||'cash'}</span></td>
-        <td style="font-family:monospace;font-size:12px">${p.payment_reference||'—'}</td>
-        <td><span class="badge ${cls}">${p.status}</span></td>
+        <td style="font-family:monospace;font-size:12px">${p.receipt_number||p.payment_reference||'—'}</td>
+        <td><span class="badge ${cls}">${p.status==='COMPLETED'?'VERIFIED':p.status}</span></td>
         <td>${p.paid_at?new Date(p.paid_at).toLocaleDateString('en-IN'):'—'}</td>
         <td>
           ${p.status==='PENDING'?`<button class="btn btn-ghost btn-sm" onclick="verifyPay('${p.id}')">Verify</button>`:'—'}
