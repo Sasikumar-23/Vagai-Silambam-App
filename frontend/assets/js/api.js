@@ -167,10 +167,26 @@ export const api = {
   createUser: (payload) => request('/api/v1/users', { method: 'POST', body: payload }),
   revokeLicense: (id) => request(`/api/v1/users/${id}/license/revoke`, { method: 'POST' }),
   reissueLicense: (id) => request(`/api/v1/users/${id}/license/reissue`, { method: 'POST' }),
+  changeMemberRole: (id, role) => request(`/api/v1/users/${id}/role`, { method: 'PATCH', body: { role } }),
+  resetAcademyAdminPassword: (orgId, newPassword) =>
+    request(`/api/v1/admin/organizations/${orgId}/reset-admin-password`, { method: 'POST', body: { new_password: newPassword } }),
   subscription: () => request('/api/v1/subscription'),
 
   // Admin
   adminOverview: () => request('/api/v1/admin/overview'),
+  listPayments: (orgId) => request(`/api/v1/admin/payments${orgId ? `?organization_id=${encodeURIComponent(orgId)}` : ''}`),
+  listAcademyLicenses: () => request('/api/v1/admin/licenses'),
+  revokeAcademyLicense: (licenseId) => request(`/api/v1/admin/licenses/${licenseId}/revoke`, { method: 'POST' }),
+  listEmailLogs: () => request('/api/v1/admin/email-logs'),
+  adminPlans: () => request('/api/v1/admin/plans'),
+  createPlan: (payload) => request('/api/v1/admin/plans', { method: 'POST', body: payload }),
+  updatePlan: (id, payload) => request(`/api/v1/admin/plans/${id}`, { method: 'PUT', body: payload }),
+  listAppActivations: () => request('/api/v1/admin/app-activations'),
+  listApiLogs: (pathContains = '') =>
+    request(`/api/v1/admin/api-logs${pathContains ? `?path_contains=${encodeURIComponent(pathContains)}` : ''}`),
+  retryEmails: () => request('/api/v1/admin/email-logs/retry', { method: 'POST' }),
+  generateAcademyLicense: (orgId, expiresAt = null) =>
+    request(`/api/v1/admin/organizations/${orgId}/generate-license`, { method: 'POST', body: { expires_at: expiresAt } }),
   // backend returns a flat array; wrap so callers can do res.organizations
   listOrganizations: async () => {
     const list = await request('/api/v1/admin/organizations');

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Activity & API Logs · Vagai Silambam</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+</head>
+<body>
+<script type="module">
+  import { requireSession, mountShell, toast } from './assets/js/auth.js';
+  import { api } from './assets/js/api.js';
+
+  if (!requireSession()) throw new Error('redirect');
+  mountShell({ title: 'Activity & API Logs' });
+
+  const pg = document.getElementById('page');
+  const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+  const fmt = v => v ? new Date(v).toLocaleString('en-IN') : '—';
+
+  pg.innerHTML = `
+    <div class="page-header-row">
+      <div class="page-title">
+        <h1>Activity &amp; API Logs</h1>
+        <p>Which apps are signing in, and every API call that reached the server.</p>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="activations">App Activations</button>
+      <button class="tab-btn" data-tab="api">API Logs</button>
+    </div>
+    <div class="tab-content active" id="tab-activations">
+      <div class="card" style="padding:0">
+        <table>
+          <thead><tr><th>User</th><th>Academy</th><th>Role</th><th>Seat license</th><th>Last sign-in</th><th>Account</th></tr></thead>
+          <tbody id="act-tbody"><tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="tab-content" id="tab-api">
+      <div class="card" style="margin-bottom:12px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+        <input id="api-filter" placeholder="Filter by path, e.g. /api/v1/students" style="flex:1;min-width:220px">
+        <button class="btn btn-ghost btn-sm" id="api-refresh">Refresh</button>
+      </div>
+      <div class="card" style="padding:0">
+        <table>
+          <thead><tr><th>Time</th><th>Method</th><th>Path</th><th>User</th><th>IP</th></tr></thead>
+          <tbody id="api-tbody"><tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">Open this tab to load logs</td></tr></tbody>
+        </table>
+      </div>
+    </div>`;
+
+  document.querySelectorAll('.tabs .tab-btn').forEach(btn => btn.addEventListener('click', () => {
+    document.querySelectorAll('.tabs .tab-btn').forEach(b => b.classList.toggle('active', b === btn));
+    document.getElementById('tab-activations').classList.toggle('active', btn.dataset.tab === 'activations');
+    document.getElementById('tab-api').classList.toggle('active', btn.dataset.tab === 'api');
+    if (btn.dataset.tab === 'api') loadApi();
+  }));
+
+  async function loadActivations() {
+    try {
+      const rows = await api.listAppActivations();
+      document.getElementById('act-tbody').innerHTML = rows.map(r => {
+        const lic = r.license_status === 'ACTIVE' ? 'badge-green' : r.license_status === 'NOT_REQUIRED' ? 'badge-gray' : 'badge-red';
+        return `<tr>
+          <td><strong>${esc(r.full_name_en)}</strong><div style="font-size:12px;color:var(--text-muted)">@${esc(r.username)}</div></td>
+          <td>${esc(r.organization_name || '—')}</td>
+          <td>${esc(r.role)}</td>
+          <td><span class="badge ${lic}">${esc(r.license_status)}</span></td>
+          <td>${fmt(r.last_login_at)}</td>
+          <td><span class="badge ${r.is_active ? 'badge-green' : 'badge-red'}">${r.is_active ? 'Active' : 'Disabled'}</span></td>
+        </tr>`;
+      }).join('') || `<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--text-muted)">No users yet</td></tr>`;
+    } catch (e) { toast(e.message, 'error'); }
+  }
+
+  async function loadApi() {
+    const filter = document.getElementById('api-filter').value.trim();
+    try {
+      const rows = await api.listApiLogs(filter);
+      document.getElementById('api-tbody').innerHTML = rows.map(r => `<tr>
+        <td>${fmt(r.created_at)}</td>
+        <td><span class="badge badge-gray">${esc(r.method)}</span></td>
+        <td style="font-family:monospace;font-size:12px">${esc(r.path)}</td>
+        <td>${esc(r.username || 'anonymous')}</td>
+        <td style="font-size:12px">${esc(r.ip_address || '—')}</td>
+      </tr>`).join('') || `<tr><td colspan="5" style="text-align:center;padding:32px;color:var(--text-muted)">No matching requests</td></tr>`;
+    } catch (e) { toast(e.message, 'error'); }
+  }
+
+  document.getElementById('api-refresh').addEventListener('click', loadApi);
+  document.getElementById('api-filter').addEventListener('change', loadApi);
+  loadActivations();
+</script>
+</body>
+</html>

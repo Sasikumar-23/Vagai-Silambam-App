@@ -49,6 +49,7 @@ const NAV = [
   { href: 'customers.html',     label: 'Customers & Users',     icon: SVG.customers },
   { href: 'subscription.html',  label: 'Subscriptions',         icon: SVG.subscription },
   { href: 'licenses.html',      label: 'Users & Licenses',      icon: SVG.licenses },
+  { href: 'activity.html',      label: 'Activity & API Logs',   icon: SVG.customers },
 ];
 
 export function mountShell({ titleKey, title }) {

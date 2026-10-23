@@ -9,33 +9,33 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Tamil:wght@400;500;600;700&display=swap');
 
 :root {
-  /* Warm Orange & Cool Teal Palette
-     Teal shadows: #0F4C5C
-     Deep teal: #1B6B7A
-     Warm orange highlight: #E8913A
-     Skin-tone amber: #D9A066
-     Near-black: #0B1215
-     Soft off-white: #F2E8D5 */
+  /* Cinematic Teal & Orange Film Grade Palette
+     Background (Deep midnight teal): #0B1A20
+     Surface / cards (Dark slate):    #132A33
+     Primary text (Warm off-white):   #EDE6DA
+     Muted text (Fog grey):           #8FA3A8
+     Accent (Amber orange):           #E8873A
+     Highlight (Burnt gold):          #C9A25A */
 
   /* Dark Bases */
-  --navy-950: #0B1215;          /* Near-black */
-  --navy-900: #0C171C;          /* Deep dark teal-black */
-  --navy-850: #0F2026;          /* Teal shadow background */
-  --navy-800: #0F4C5C;          /* Teal shadows */
-  --navy-700: #1B6B7A;          /* Deep teal */
+  --navy-950: #0B1A20;          /* Deep midnight teal */
+  --navy-900: #0E222A;          /* Midnight dark slate */
+  --navy-850: #102630;          /* Deep slate */
+  --navy-800: #132A33;          /* Dark slate surface */
+  --navy-700: #1D3B47;          /* Elevated slate border */
 
   /* Primary Accent & Highlights */
-  --primary: #E8913A;           /* Warm orange highlight */
-  --primary-hover: #D98028;     /* Deeper warm orange */
-  --primary-light: #E8913A;
-  --primary-glow: rgba(232, 145, 58, 0.35);
-  --primary-muted: rgba(232, 145, 58, 0.15);
+  --primary: #E8873A;           /* Amber orange */
+  --primary-hover: #D77628;     /* Rich amber orange */
+  --primary-light: #E8873A;
+  --primary-glow: rgba(232, 135, 58, 0.35);
+  --primary-muted: rgba(232, 135, 58, 0.15);
 
-  /* Secondary Accent / Skin tone amber */
-  --accent-amber: #D9A066;      /* Skin-tone amber */
-  --accent-amber-glow: rgba(217, 160, 102, 0.25);
-  --accent-teal: #1B6B7A;       /* Deep teal */
-  --accent-teal-shadow: #0F4C5C;/* Teal shadows */
+  /* Highlight Accent (Burnt Gold) */
+  --highlight: #C9A25A;         /* Burnt gold */
+  --highlight-glow: rgba(201, 162, 90, 0.3);
+  --accent-amber: #E8873A;      /* Amber orange */
+  --accent-gold: #C9A25A;       /* Burnt gold */
 
   /* Semantic Colors */
   --success: #34D399;
@@ -43,10 +43,10 @@
   --success-border: rgba(52, 211, 153, 0.35);
   --success-text: #6EE7B7;
 
-  --warning: #E8913A;
-  --warning-bg: rgba(232, 145, 58, 0.14);
-  --warning-border: rgba(232, 145, 58, 0.35);
-  --warning-text: #D9A066;
+  --warning: #C9A25A;           /* Burnt gold warning */
+  --warning-bg: rgba(201, 162, 90, 0.15);
+  --warning-border: rgba(201, 162, 90, 0.35);
+  --warning-text: #C9A25A;
 
   --danger: #F87171;
   --danger-bg: rgba(248, 113, 113, 0.12);
@@ -54,19 +54,19 @@
   --danger-text: #FCA5A5;
 
   /* Backgrounds & Glassmorphism */
-  --bg: #0B1215;                /* Near-black base */
-  --surface: #0E1E24;           /* Cool teal-black container */
-  --surface-subtle: #122830;    /* Dark teal shadow surface */
-  --surface-glass: rgba(14, 30, 36, 0.88);
-  --border: rgba(242, 232, 213, 0.12);
-  --border-light: rgba(242, 232, 213, 0.07);
-  --border-strong: rgba(232, 145, 58, 0.35);
+  --bg: #0B1A20;                /* Deep midnight teal base */
+  --surface: #132A33;           /* Dark slate card/container */
+  --surface-subtle: #0E222A;    /* Midnight deep surface */
+  --surface-glass: rgba(19, 42, 51, 0.88);
+  --border: rgba(237, 230, 218, 0.12);
+  --border-light: rgba(237, 230, 218, 0.07);
+  --border-strong: rgba(232, 135, 58, 0.38);
 
   /* Text Colors */
-  --text: #F2E8D5;              /* Soft off-white */
-  --text-secondary: #D9A066;    /* Skin-tone amber */
-  --text-muted: #8AA4AD;        /* Muted cool teal-gray */
-  --text-subtle: #4D6B74;       /* Subtle teal */
+  --text: #EDE6DA;              /* Warm off-white */
+  --text-secondary: #C9A25A;    /* Burnt gold highlight text */
+  --text-muted: #8FA3A8;        /* Fog grey */
+  --text-subtle: #566E75;       /* Slate muted */
 
   /* Radii */
   --radius-sm: 6px;
@@ -76,11 +76,11 @@
   --radius-pill: 9999px;
 
   /* Elevation Shadows */
-  --shadow-xs: 0 1px 2px rgba(11, 18, 21, 0.6);
-  --shadow-sm: 0 2px 6px rgba(11, 18, 21, 0.5);
-  --shadow-md: 0 6px 18px rgba(11, 18, 21, 0.6);
-  --shadow-lg: 0 16px 36px rgba(11, 18, 21, 0.7);
-  --shadow-spotlight: 0 0 45px rgba(232, 145, 58, 0.18);
+  --shadow-xs: 0 1px 2px rgba(11, 26, 32, 0.6);
+  --shadow-sm: 0 2px 6px rgba(11, 26, 32, 0.5);
+  --shadow-md: 0 6px 18px rgba(11, 26, 32, 0.65);
+  --shadow-lg: 0 16px 36px rgba(11, 26, 32, 0.75);
+  --shadow-spotlight: 0 0 45px rgba(232, 135, 58, 0.2);
 
   --sidebar-width: 254px;
 }
@@ -127,15 +127,15 @@ h1, h2, h3, h4, h5, h6 {
 .sidebar {
   width: var(--sidebar-width);
   flex: none;
-  background: #0B1215;
+  background: #0B1A20;
   background-image: 
-    radial-gradient(circle at 10% 0%, rgba(15, 76, 92, 0.45) 0%, transparent 50%),
-    radial-gradient(circle at 90% 90%, rgba(27, 107, 122, 0.25) 0%, transparent 60%);
-  color: #F2E8D5;
+    radial-gradient(circle at 10% 0%, rgba(232, 135, 58, 0.18) 0%, transparent 45%),
+    radial-gradient(circle at 90% 90%, rgba(19, 42, 51, 0.6) 0%, transparent 60%);
+  color: #EDE6DA;
   padding: 20px 14px;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid rgba(242, 232, 213, 0.08);
+  border-right: 1px solid rgba(237, 230, 218, 0.08);
   position: relative;
   z-index: 30;
 }
@@ -145,19 +145,19 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   gap: 12px;
   padding: 6px 10px 20px;
-  border-bottom: 1px solid rgba(242, 232, 213, 0.08);
+  border-bottom: 1px solid rgba(237, 230, 218, 0.08);
   margin-bottom: 16px;
 }
 .sidebar .brand .mark {
   width: 38px;
   height: 38px;
   border-radius: var(--radius-md);
-  background: linear-gradient(135deg, #0F4C5C, #1B6B7A);
-  border: 1.5px solid rgba(232, 145, 58, 0.4);
+  background: linear-gradient(135deg, #132A33, #0B1A20);
+  border: 1.5px solid rgba(232, 135, 58, 0.45);
   display: grid;
   place-items: center;
-  color: #E8913A;
-  box-shadow: 0 4px 14px rgba(15, 76, 92, 0.4);
+  color: #E8873A;
+  box-shadow: 0 4px 14px rgba(11, 26, 32, 0.5);
 }
 .sidebar .brand-text {
   display: flex;
@@ -166,13 +166,13 @@ h1, h2, h3, h4, h5, h6 {
 .sidebar .brand-name {
   font-size: 15.5px;
   font-weight: 800;
-  color: #F2E8D5;
+  color: #EDE6DA;
   letter-spacing: -0.2px;
 }
 .sidebar .brand-sub {
   font-size: 10.5px;
   font-weight: 700;
-  color: #D9A066;
+  color: #C9A25A;
   text-transform: uppercase;
   letter-spacing: 0.6px;
 }
@@ -188,7 +188,7 @@ h1, h2, h3, h4, h5, h6 {
   gap: 12px;
   padding: 9px 12px;
   border-radius: var(--radius-md);
-  color: #8AA4AD;
+  color: #8FA3A8;
   font-weight: 600;
   font-size: 13.5px;
   transition: all 0.16s ease;
@@ -202,23 +202,23 @@ h1, h2, h3, h4, h5, h6 {
   transition: transform 0.15s ease, color 0.15s ease;
 }
 .sidebar a:hover {
-  background: rgba(15, 76, 92, 0.3);
-  color: #F2E8D5;
+  background: rgba(19, 42, 51, 0.55);
+  color: #EDE6DA;
 }
 .sidebar a:hover .nav-icon {
   transform: translateX(1px);
-  color: #E8913A;
+  color: #E8873A;
   opacity: 1;
 }
 
-/* Glowing Warm Orange Active Tab Indicator */
+/* Glowing Amber Orange Active Tab Indicator */
 .sidebar a.active,
 .sidebar .nav-link.active {
-  background: linear-gradient(90deg, rgba(232, 145, 58, 0.22) 0%, rgba(27, 107, 122, 0.15) 100%);
-  color: #F2E8D5;
+  background: linear-gradient(90deg, rgba(232, 135, 58, 0.22) 0%, rgba(19, 42, 51, 0.4) 100%);
+  color: #EDE6DA;
   font-weight: 700;
-  border: 1px solid rgba(232, 145, 58, 0.35);
-  box-shadow: 0 0 18px rgba(232, 145, 58, 0.2);
+  border: 1px solid rgba(232, 135, 58, 0.4);
+  box-shadow: 0 0 18px rgba(232, 135, 58, 0.22);
 }
 .sidebar a.active::before,
 .sidebar .nav-link.active::before {
@@ -229,12 +229,12 @@ h1, h2, h3, h4, h5, h6 {
   bottom: 6px;
   width: 3.5px;
   border-radius: 0 4px 4px 0;
-  background: #E8913A;
-  box-shadow: 0 0 10px #E8913A;
+  background: #E8873A;
+  box-shadow: 0 0 10px #E8873A;
 }
 .sidebar a.active .nav-icon,
 .sidebar .nav-link.active .nav-icon {
-  color: #E8913A;
+  color: #E8873A;
   opacity: 1;
 }
 
@@ -243,7 +243,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .logout-link {
-  color: #8AA4AD !important;
+  color: #8FA3A8 !important;
   padding: 8px !important;
   border-radius: var(--radius-md) !important;
   flex-shrink: 0;
@@ -267,14 +267,14 @@ h1, h2, h3, h4, h5, h6 {
   margin: 0 10px 16px;
 }
 .role-chip.superadmin {
-  background: rgba(15, 76, 92, 0.55);
-  color: #E8913A;
-  border: 1px solid rgba(232, 145, 58, 0.35);
+  background: rgba(232, 135, 58, 0.18);
+  color: #E8873A;
+  border: 1px solid rgba(232, 135, 58, 0.4);
 }
 .role-chip.admin {
-  background: rgba(27, 107, 122, 0.45);
-  color: #D9A066;
-  border: 1px solid rgba(217, 160, 102, 0.3);
+  background: rgba(201, 162, 90, 0.18);
+  color: #C9A25A;
+  border: 1px solid rgba(201, 162, 90, 0.35);
 }
 
 /* Sidebar footer */
@@ -283,7 +283,7 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   gap: 8px;
   padding: 12px 8px 4px;
-  border-top: 1px solid rgba(242, 232, 213, 0.08);
+  border-top: 1px solid rgba(237, 230, 218, 0.08);
   margin-top: 12px;
 }
 .user-chip {
@@ -297,13 +297,13 @@ h1, h2, h3, h4, h5, h6 {
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  background: linear-gradient(135deg, #E8913A, #0F4C5C);
-  border: 1px solid rgba(232, 145, 58, 0.4);
+  background: linear-gradient(135deg, #E8873A, #132A33);
+  border: 1px solid rgba(201, 162, 90, 0.4);
   display: grid;
   place-items: center;
   font-size: 14px;
   font-weight: 800;
-  color: #F2E8D5;
+  color: #EDE6DA;
   flex-shrink: 0;
 }
 .user-info {
@@ -314,14 +314,14 @@ h1, h2, h3, h4, h5, h6 {
 .user-name {
   font-size: 13px;
   font-weight: 700;
-  color: #F2E8D5;
+  color: #EDE6DA;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .user-role {
   font-size: 10.5px;
-  color: #D9A066;
+  color: #C9A25A;
   text-transform: uppercase;
   letter-spacing: 0.4px;
   font-weight: 600;
