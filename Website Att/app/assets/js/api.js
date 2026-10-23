@@ -167,6 +167,7 @@ export const api = {
   createUser: (payload) => request('/api/v1/users', { method: 'POST', body: payload }),
   revokeLicense: (id) => request(`/api/v1/users/${id}/license/revoke`, { method: 'POST' }),
   reissueLicense: (id) => request(`/api/v1/users/${id}/license/reissue`, { method: 'POST' }),
+  changeMemberRole: (id, role) => request(`/api/v1/users/${id}/role`, { method: 'PATCH', body: { role } }),
   resetAcademyAdminPassword: (orgId, newPassword) =>
     request(`/api/v1/admin/organizations/${orgId}/reset-admin-password`, { method: 'POST', body: { new_password: newPassword } }),
   subscription: () => request('/api/v1/subscription'),

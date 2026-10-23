@@ -120,6 +120,10 @@
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
         Generate License
       </button>
+      <button class="btn btn-primary" id="add-member-btn" hidden>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+        Add Member
+      </button>
     </div>
 
     <!-- Metric cards -->
@@ -162,6 +166,49 @@
       </table>
     </div>
 
+    <!-- Member Modal: add a member with a role, or change a member's role -->
+    <div class="modal-backdrop" id="member-modal" hidden>
+      <div class="modal-card">
+        <div class="modal-head">
+          <h3 id="m-title">Add Member</h3>
+          <button class="modal-close" id="m-close-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="modal-body">
+          <div class="license-reveal" id="m-reveal" hidden>
+            <h4>✅ Member licensed</h4>
+            <p style="font-size:12.5px;color:#065F46;margin-bottom:10px">Copy this key now. It is shown only once.</p>
+            <div class="lic-big" onclick="copyMemberKey()">
+              <span id="m-key">—</span>
+              <small>Click to copy</small>
+            </div>
+          </div>
+          <div class="alert-err" id="m-err" hidden></div>
+          <div class="field"><label>Username *</label>
+            <input id="m-username" autocomplete="off" placeholder="e.g. coach.raj">
+          </div>
+          <div class="field" id="m-password-field"><label>Temporary password *</label>
+            <input id="m-password" type="password" autocomplete="new-password" placeholder="At least 8 characters">
+          </div>
+          <div class="field"><label>Full name *</label>
+            <input id="m-name" placeholder="Full name">
+          </div>
+          <div class="field"><label>Role *</label>
+            <select id="m-role">
+              <option value="INSTRUCTOR">Instructor</option>
+              <option value="STAFF">Staff</option>
+              <option value="STAFF_ACCOUNTANT">Accountant</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" id="m-cancel-btn">Close</button>
+          <button class="btn btn-primary" id="m-submit">Add Member</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Generate License Modal -->
     <div class="modal-backdrop" id="gen-modal" hidden>
       <div class="modal-card">
@@ -199,16 +246,20 @@
     </div>
   `;
 
-  // Super Admin sees every academy and seat license. Academy admins see their own members' seats.
+  // Super Admin sees every academy and seat license. Academy admins manage their own members.
   const superAdmin = isSuperAdmin();
   const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
   const shortKey = k => k.length > 28 ? k.slice(0, 14) + '…' + k.slice(-8) : k;
+  const ROLE_LABELS = { INSTRUCTOR: 'Instructor', STAFF: 'Staff', STAFF_ACCOUNTANT: 'Accountant' };
 
   let rows = [];
   let orgData = [];
+  let memberMode = 'add';
+  let memberRowId = null;
 
   if (superAdmin) {
     document.getElementById('g-user-field').hidden = true;
+    document.getElementById('add-member-btn').hidden = true;
     try {
       const res = await api.listOrganizations();
       orgData = res.organizations || [];
@@ -217,9 +268,13 @@
     document.getElementById('lic-org').insertAdjacentHTML('beforeend', opts);
     document.getElementById('g-org').insertAdjacentHTML('beforeend', opts);
   } else {
+    document.getElementById('gen-lic-btn').hidden = true;
     document.getElementById('g-org-field').hidden = true;
+    document.getElementById('g-user-field').hidden = true;
     document.getElementById('g-exp-field').hidden = true;
+    document.getElementById('gen-submit-btn').hidden = true;
     document.getElementById('lic-org').hidden = true;
+    document.getElementById('add-member-btn').addEventListener('click', () => openMemberModal('add'));
   }
 
   async function loadRows() {
@@ -234,26 +289,27 @@
         orgName: l.organization_name,
         person: l.full_name_en || '',
         username: l.username || '',
+        role: null,
         issuedAt: l.issued_at,
         expiresAt: l.expires_at,
       }));
     } else {
       const users = await api.listUsers();
-      const members = users.filter(u => u.role !== 'ADMIN' && u.role !== 'SUPER_ADMIN');
-      rows = members.map(u => ({
-        id: u.id,
-        key: null,
-        status: u.license_status || 'NONE',
-        scope: 'SEAT',
-        orgId: null,
-        orgName: 'Your academy',
-        person: u.full_name_en || '',
-        username: u.username || '',
-        issuedAt: null,
-        expiresAt: null,
-      }));
-      document.getElementById('g-user').innerHTML = '<option value="">Select member…</option>' +
-        members.map(u => `<option value="${esc(u.id)}">${esc(u.full_name_en)} (@${esc(u.username)})</option>`).join('');
+      rows = users
+        .filter(u => u.role !== 'ADMIN' && u.role !== 'SUPER_ADMIN')
+        .map(u => ({
+          id: u.id,
+          key: null,
+          status: u.license_status || 'NONE',
+          scope: 'SEAT',
+          orgId: null,
+          orgName: 'Your academy',
+          person: u.full_name_en || '',
+          username: u.username || '',
+          role: u.role,
+          issuedAt: null,
+          expiresAt: null,
+        }));
     }
   }
 
@@ -304,9 +360,10 @@
       const keyCell = r.key
         ? `<span class="lic-key" onclick="copyKey('${esc(r.key)}')">${esc(shortKey(r.key))}</span>`
         : `<span style="font-size:12px;color:var(--text-muted)">${superAdmin ? '—' : 'Shown once when issued'}</span>`;
+      const roleText = r.role ? ` · ${esc(ROLE_LABELS[r.role] || r.role)}` : '';
       const who = r.scope === 'ACADEMY'
         ? '<span class="badge badge-violet">Academy-wide</span>'
-        : `<div style="font-weight:600;font-size:13px">${esc(r.person || '—')}</div><div style="font-size:11.5px;color:var(--text-muted)">@${esc(r.username)}</div>`;
+        : `<div style="font-weight:600;font-size:13px">${esc(r.person || '—')}</div><div style="font-size:11.5px;color:var(--text-muted)">@${esc(r.username)}${roleText}</div>`;
       const issued = r.issuedAt ? new Date(r.issuedAt).toLocaleDateString('en-IN') : '—';
       const exp = r.expiresAt ? new Date(r.expiresAt).toLocaleDateString('en-IN') : '—';
 
@@ -319,6 +376,7 @@
           menu.push(`<button onclick="reactivateLic('${esc(r.id)}')">Reactivate</button>`);
         }
       } else {
+        menu.push(`<button onclick="openRoleModal('${esc(r.id)}')">Change Role</button>`);
         menu.push(`<button onclick="reactivateLic('${esc(r.id)}')">Reissue License</button>`);
         if (r.status === 'ACTIVE') {
           menu.push(`<button class="danger" onclick="revokeLic('${esc(r.id)}')">Revoke License</button>`);
@@ -372,6 +430,77 @@
     document.getElementById('gen-modal').hidden = false;
   }
 
+  // Member modal: "add" creates a member with a role; "role" changes an existing member's role.
+  function openMemberModal(mode, rowId = null) {
+    memberMode = mode;
+    memberRowId = rowId;
+    const row = rows.find(r => r.id === rowId);
+    const isAdd = mode === 'add';
+    document.getElementById('m-title').textContent = isAdd ? 'Add Member' : 'Change Role';
+    document.getElementById('m-username').value = isAdd ? '' : (row?.username || '');
+    document.getElementById('m-name').value = isAdd ? '' : (row?.person || '');
+    document.getElementById('m-password').value = '';
+    document.getElementById('m-role').value = (isAdd ? 'INSTRUCTOR' : row?.role) || 'INSTRUCTOR';
+    document.getElementById('m-username').disabled = !isAdd;
+    document.getElementById('m-name').disabled = !isAdd;
+    document.getElementById('m-password-field').hidden = !isAdd;
+    document.getElementById('m-reveal').hidden = true;
+    document.getElementById('m-err').hidden = true;
+    document.getElementById('m-submit').hidden = false;
+    document.getElementById('m-submit').textContent = isAdd ? 'Add Member' : 'Save Role';
+    document.getElementById('member-modal').hidden = false;
+  }
+
+  function closeMemberModal() {
+    document.getElementById('member-modal').hidden = true;
+  }
+
+  window.openRoleModal = function (id) {
+    closeMenus();
+    openMemberModal('role', id);
+  };
+
+  ['m-close-btn', 'm-cancel-btn'].forEach(id => {
+    document.getElementById(id).addEventListener('click', closeMemberModal);
+  });
+
+  document.getElementById('m-submit').addEventListener('click', async () => {
+    const err = document.getElementById('m-err');
+    const btn = document.getElementById('m-submit');
+    const role = document.getElementById('m-role').value;
+    err.hidden = true;
+    btn.disabled = true;
+    try {
+      if (memberMode === 'add') {
+        const username = document.getElementById('m-username').value.trim();
+        const fullName = document.getElementById('m-name').value.trim();
+        const password = document.getElementById('m-password').value;
+        if (!username || !fullName) throw new Error('Enter a username and full name.');
+        if (password.length < 8) throw new Error('Password must be at least 8 characters.');
+        const res = await api.createUser({ username, full_name_en: fullName, password, role });
+        document.getElementById('m-key').textContent = res.license_key;
+        document.getElementById('m-reveal').hidden = false;
+        btn.hidden = true;
+        toast('Member added', 'success');
+      } else {
+        await api.changeMemberRole(memberRowId, role);
+        toast('Role updated', 'success');
+        closeMemberModal();
+      }
+      await refresh();
+    } catch (e) {
+      err.textContent = e.message || 'Could not save.';
+      err.hidden = false;
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  window.copyMemberKey = async function () {
+    const key = document.getElementById('m-key').textContent;
+    try { await navigator.clipboard.writeText(key); toast('License key copied!', 'success'); } catch { /* */ }
+  };
+
   window.toggleLicMenu = function (id, btn) {
     document.querySelectorAll('.actions-menu').forEach(m => { if (m.id !== `lmenu-${id}`) m.hidden = true; });
     const m = document.getElementById(`lmenu-${id}`);
@@ -417,7 +546,7 @@
     try { await navigator.clipboard.writeText(key); toast('Copied!', 'success'); } catch { /* */ }
   };
 
-  // Generate License Modal
+  // Generate License Modal (Super Admin only)
   document.getElementById('gen-lic-btn').addEventListener('click', () => {
     document.getElementById('new-lic-reveal').hidden = true;
     document.getElementById('gen-err').hidden = true;
@@ -431,17 +560,13 @@
     const err = document.getElementById('gen-err');
     const btn = document.getElementById('gen-submit-btn');
     const orgId = document.getElementById('g-org').value;
-    const userId = document.getElementById('g-user').value;
     const expiry = document.getElementById('g-exp').value;
 
-    if (superAdmin && !orgId) { err.textContent = 'Please select an academy.'; err.hidden = false; return; }
-    if (!superAdmin && !userId) { err.textContent = 'Please select a member.'; err.hidden = false; return; }
+    if (!orgId) { err.textContent = 'Please select an academy.'; err.hidden = false; return; }
 
     btn.disabled = true; btn.textContent = 'Generating…';
     try {
-      const res = superAdmin
-        ? await api.generateAcademyLicense(orgId, expiry || null)
-        : await api.reissueLicense(userId);
+      const res = await api.generateAcademyLicense(orgId, expiry || null);
       showReveal(res.license_key);
       toast('License generated!', 'success');
       await refresh();
