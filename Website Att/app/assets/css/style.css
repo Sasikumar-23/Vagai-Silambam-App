@@ -6,67 +6,67 @@
    - Deep rich navy aesthetic (#0A1128, #0F1E36) with crisp white cards
    - Smooth micro-interactions & modern spring ease transitions */
 
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Tamil:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Tamil:wght@400;500;600;700&display=swap');
 
 :root {
   /* Brand Navy Palette */
-  --navy-950: #070D1E;
-  --navy-900: #0B162C;
-  --navy-850: #10203E;
-  --navy-800: #162B52;
-  --navy-700: #1E3A6E;
+  --navy-950: #08090A;
+  --navy-900: #0A090D;
+  --navy-850: #101113;
+  --navy-800: #17181B;
+  --navy-700: #262829;
 
   /* Primary Accent & Glow */
-  --primary: #2563EB;
-  --primary-hover: #1D4ED8;
-  --primary-light: #3B82F6;
-  --primary-glow: rgba(37, 99, 235, 0.25);
-  --primary-muted: #EFF6FF;
+  --primary: #39C3EF;
+  --primary-hover: #2AB2E0;
+  --primary-light: #39C3EF;
+  --primary-glow: rgba(57, 195, 239, 0.25);
+  --primary-muted: rgba(57, 195, 239, 0.12);
 
   /* Semantic Colors */
-  --success: #10B981;
-  --success-bg: #ECFDF5;
-  --success-border: #A7F3D0;
-  --success-text: #065F46;
+  --success: #34D399;
+  --success-bg: rgba(52, 211, 153, 0.12);
+  --success-border: rgba(52, 211, 153, 0.35);
+  --success-text: #6EE7B7;
 
-  --warning: #F59E0B;
-  --warning-bg: #FFFBEB;
-  --warning-border: #FDE68A;
-  --warning-text: #92400E;
+  --warning: #FBBF24;
+  --warning-bg: rgba(251, 191, 36, 0.12);
+  --warning-border: rgba(251, 191, 36, 0.35);
+  --warning-text: #FCD34D;
 
-  --danger: #EF4444;
-  --danger-bg: #FEF2F2;
-  --danger-border: #FECACA;
-  --danger-text: #991B1B;
+  --danger: #F87171;
+  --danger-bg: rgba(248, 113, 113, 0.12);
+  --danger-border: rgba(248, 113, 113, 0.35);
+  --danger-text: #FCA5A5;
 
   /* Backgrounds & Glassmorphism */
-  --bg: #F8FAFC;
-  --surface: #FFFFFF;
-  --surface-subtle: #F1F5F9;
-  --surface-glass: rgba(255, 255, 255, 0.82);
-  --border: #E2E8F0;
-  --border-light: #EDF2F7;
-  --border-strong: #CBD5E1;
+  --bg: #08090A;
+  --surface: #111214;
+  --surface-subtle: #17181B;
+  --surface-glass: rgba(17, 18, 20, 0.85);
+  --border: rgba(255, 255, 255, 0.1);
+  --border-light: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.2);
 
   /* Text */
-  --text: #0F172A;
-  --text-secondary: #475569;
-  --text-muted: #64748B;
-  --text-subtle: #94A3B8;
+  --text: #FFFFFF;
+  --text-secondary: #C8C8C8;
+  --text-muted: #959595;
+  --text-subtle: #5B5B5B;
 
   /* Radii */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 22px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
   --radius-pill: 9999px;
 
   /* Elevation Shadows */
-  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --shadow-sm: 0 2px 6px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
-  --shadow-md: 0 6px 16px rgba(15, 23, 42, 0.06), 0 2px 4px rgba(15, 23, 42, 0.02);
-  --shadow-lg: 0 16px 36px rgba(15, 23, 42, 0.08), 0 4px 12px rgba(15, 23, 42, 0.04);
-  --shadow-spotlight: 0 0 40px rgba(37, 99, 235, 0.12);
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 2px 6px rgba(0, 0, 0, 0.35);
+  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.5);
+  --shadow-spotlight: 0 0 40px rgba(57, 195, 239, 0.15);
 
   --sidebar-width: 254px;
 }
@@ -79,10 +79,10 @@ body {
   margin: 0;
   background-color: var(--bg);
   /* Magic UI Subtle Dot Pattern */
-  background-image: radial-gradient(rgba(148, 163, 184, 0.28) 1px, transparent 1px);
+  background-image: radial-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px);
   background-size: 24px 24px;
   color: var(--text);
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Tamil", sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans Tamil", sans-serif;
   font-size: 14px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -115,8 +115,8 @@ h1, h2, h3, h4, h5, h6 {
   flex: none;
   background: var(--navy-950);
   background-image: 
-    radial-gradient(circle at 10% 0%, rgba(37, 99, 235, 0.15) 0%, transparent 40%),
-    radial-gradient(circle at 90% 90%, rgba(59, 130, 246, 0.08) 0%, transparent 50%);
+    radial-gradient(circle at 10% 0%, rgba(57, 195, 239, 0.15) 0%, transparent 40%),
+    radial-gradient(circle at 90% 90%, rgba(57, 195, 239, 0.08) 0%, transparent 50%);
   color: #FFFFFF;
   padding: 20px 14px;
   display: flex;
@@ -198,11 +198,11 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Aceternity Glowing Active Tab Indicator */
 .sidebar a.active {
-  background: linear-gradient(90deg, rgba(37, 99, 235, 0.22) 0%, rgba(37, 99, 235, 0.08) 100%);
+  background: linear-gradient(90deg, rgba(57, 195, 239, 0.22) 0%, rgba(57, 195, 239, 0.08) 100%);
   color: #FFFFFF;
   font-weight: 700;
   border: 1px solid rgba(96, 165, 250, 0.3);
-  box-shadow: 0 0 16px rgba(37, 99, 235, 0.18);
+  box-shadow: 0 0 16px rgba(57, 195, 239, 0.18);
 }
 .sidebar a.active::before {
   content: '';
@@ -431,10 +431,10 @@ h1, h2, h3, h4, h5, h6 {
   justify-content: space-between;
   gap: 16px;
   padding: 14px 34px;
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(8, 9, 10, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   position: sticky;
   top: 0;
   z-index: 20;
@@ -523,9 +523,9 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Aceternity Shimmer Button */
 .btn-primary {
-  background: linear-gradient(135deg, #1E40AF 0%, #172554 100%);
+  background: var(--primary);
   color: #FFFFFF;
-  box-shadow: 0 4px 14px rgba(30, 64, 175, 0.28);
+  box-shadow: 0 0 20px rgba(57, 195, 239, 0.25);
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 .btn-primary::after {
@@ -552,8 +552,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-primary:hover:not([disabled]) {
-  background: linear-gradient(135deg, #2563EB 0%, #1E3A8A 100%);
-  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+  background: var(--primary);
+  box-shadow: 0 0 20px rgba(57, 195, 239, 0.25);
   transform: translateY(-1px);
 }
 
@@ -612,7 +612,7 @@ h1, h2, h3, h4, h5, h6 {
 .skeleton {
   height: 14px;
   border-radius: 4px;
-  background: linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 37%, #F1F5F9 63%);
+  background: linear-gradient(90deg, #17181B 25%, #26282B 37%, #17181B 63%);
   background-size: 400% 100%;
   animation: shimmer 1.3s infinite linear;
 }
