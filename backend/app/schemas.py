@@ -84,6 +84,13 @@ class UserOut(BaseModel):
     is_active: bool
 
 
+class SessionResponse(TokenResponse):
+    """Login and register also return the signed-in user, so clients need no second call."""
+
+    organization_id: str | None
+    user: UserOut
+
+
 class StudentCreate(BaseModel):
     # organization_id is deliberately absent: it is taken from the access token.
     student_code: str = Field(min_length=1, max_length=40)

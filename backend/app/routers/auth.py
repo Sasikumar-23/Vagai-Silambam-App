@@ -13,13 +13,23 @@ from ..auth.security import (
 )
 from ..database import get_db
 from ..models import Organization, User
-from ..schemas import LoginRequest, RegisterRequest, TokenResponse, UserOut
+from ..schemas import LoginRequest, RegisterRequest, SessionResponse, TokenResponse, UserOut
 from ..services import audit, provisioning
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
 
 
-@router.post("/register", response_model=TokenResponse, status_code=201)
+def _session(user: User) -> SessionResponse:
+    """Tokens plus the user, so the mobile app can store the account without a second request."""
+    return SessionResponse(
+        access_token=create_access_token(user.id, user.organization_id, user.role),
+        refresh_token=create_refresh_token(user.id),
+        organization_id=user.organization_id,
+        user=UserOut.model_validate(user),
+    )
+
+
+@router.post("/register", response_model=SessionResponse, status_code=201)
 def register(payload: RegisterRequest, request: Request, db: Session = Depends(get_db)):
     """Public signup: creates the organization, its admin, a 14-day trial and a license."""
     email = payload.email.lower()
@@ -63,13 +73,10 @@ def register(payload: RegisterRequest, request: Request, db: Session = Depends(g
     )
     db.commit()
 
-    return TokenResponse(
-        access_token=create_access_token(user.id, user.organization_id, user.role),
-        refresh_token=create_refresh_token(user.id),
-    )
+    return _session(user)
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post("/login", response_model=SessionResponse)
 def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)):
     identifier = payload.username.strip().lower()
     user = (
@@ -110,10 +117,7 @@ def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)
     )
     db.commit()
 
-    return TokenResponse(
-        access_token=create_access_token(user.id, user.organization_id, user.role),
-        refresh_token=create_refresh_token(user.id),
-    )
+    return _session(user)
 
 
 @router.post("/refresh", response_model=TokenResponse)
