@@ -63,8 +63,24 @@ export default function SubscriptionScreen({ navigation }: any) {
         api.subscription(),
       ]);
 
-      if (plansRes.status === 'fulfilled' && plansRes.value) {
-        setPlans(plansRes.value);
+      if (plansRes.status === 'fulfilled' && Array.isArray(plansRes.value)) {
+        const normalized = plansRes.value.map((p: any) => ({
+          id: p.id || p.code?.toLowerCase() || 'starter',
+          name: p.name || 'Academy Plan',
+          price_monthly: Number(p.price_monthly ?? 0),
+          price_yearly: Number(p.price_yearly ?? p.price_annual ?? (p.price_monthly ? p.price_monthly * 10 : 0)),
+          max_students: p.max_students ?? 50,
+          max_branches: p.max_branches ?? 1,
+          max_users: p.max_users ?? 2,
+          features: Array.isArray(p.features) && p.features.length ? p.features : [
+            `Up to ${p.max_students || 50} students`,
+            `${p.max_branches || 1} branch${(p.max_branches || 1) > 1 ? 'es' : ''}`,
+            `${p.max_users || 2} admin user${(p.max_users || 1) > 1 ? 's' : ''}`,
+            'Offline attendance tracking',
+            'Cloud & sync support',
+          ],
+        }));
+        setPlans(normalized);
       } else {
         // Fallback default plans for offline view
         setPlans([
@@ -428,8 +444,11 @@ export default function SubscriptionScreen({ navigation }: any) {
 
           {/* Plan Cards */}
           {plans.map((p) => {
-            const isCurrent = subscription?.plan.id === p.id;
-            const price = billingCycle === 'yearly' ? p.price_yearly : p.price_monthly;
+            const isCurrent = (subscription?.plan?.id === p.id) || (subscription?.plan?.name === p.name);
+            const rawPrice = billingCycle === 'yearly'
+              ? (p.price_yearly ?? (p as any).price_annual ?? (p.price_monthly ? p.price_monthly * 10 : 0))
+              : (p.price_monthly ?? 0);
+            const price = Number(rawPrice) || 0;
             const cycleText = billingCycle === 'yearly' ? t.subscription.yearly : t.subscription.monthly;
 
             return (
@@ -463,7 +482,7 @@ export default function SubscriptionScreen({ navigation }: any) {
 
                 {/* Features list */}
                 <View style={styles.featureList}>
-                  {p.features.map((feat, idx) => (
+                  {(p.features || []).map((feat, idx) => (
                     <View key={idx} style={styles.featureRow}>
                       <CheckCircle2 size={14} color="#059669" style={{ marginTop: 2 }} />
                       <Text style={styles.featureText}>{feat}</Text>
@@ -558,9 +577,9 @@ export default function SubscriptionScreen({ navigation }: any) {
                 <Text style={styles.payAmountLabel}>{language === 'ta' ? 'செலுத்த வேண்டிய தொகை' : 'Payable Amount'}</Text>
                 <Text style={styles.payAmountValue}>
                   ₹
-                  {(billingCycle === 'yearly'
-                    ? selectedPlanForUpgrade?.price_yearly || 9990
-                    : selectedPlanForUpgrade?.price_monthly || 999
+                  {Number(billingCycle === 'yearly'
+                    ? (selectedPlanForUpgrade?.price_yearly ?? (selectedPlanForUpgrade as any)?.price_annual ?? 9990)
+                    : (selectedPlanForUpgrade?.price_monthly ?? 999)
                   ).toLocaleString('en-IN')}{' '}
                   <Text style={{ fontSize: 13, fontWeight: '400', color: theme.colors.textSecondary }}>
                     ({billingCycle === 'yearly' ? 'Yearly Plan' : 'Monthly Plan'})

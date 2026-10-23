@@ -141,3 +141,36 @@ def test_cash_payment_uses_the_academy_license_not_a_member_seat(client, make_or
     sub = db_session.query(Subscription).filter(Subscription.organization_id == org_id).one()
     refreshed = db_session.query(License).filter(License.license_key == academy.license_key).one()
     assert refreshed.expires_at == sub.expires_at
+
+
+def test_upi_and_pending_payment_verification(client, make_org, db_session):
+    admin = make_org("Academy UPI", "admin_upi")
+    org_id = _org_id(db_session, "admin_upi")
+    headers = _super_admin_headers(client, db_session)
+
+    # 1. Record PENDING UPI payment
+    res = _record(client, headers, org_id, payment_mode="UPI", status="PENDING", receipt_number="UPI-TEST-001")
+    assert res.status_code == 200
+    assert res.json()["payment_status"] == "PENDING"
+
+    # Payment is saved as PENDING
+    pay = db_session.query(Payment).filter(Payment.payment_reference == "UPI-TEST-001").one()
+    assert pay.status == "PENDING"
+    assert pay.gateway == "upi"
+
+    # Academy admin can fetch own payments
+    admin_payments = client.get("/api/v1/subscription/payments", headers=admin["headers"]).json()
+    assert len(admin_payments) >= 1
+    assert any(p["receipt_number"] == "UPI-TEST-001" and p["status"] == "PENDING" for p in admin_payments)
+
+    # 2. Super Admin verifies the pending payment
+    v_res = client.post(f"/api/v1/admin/payments/{pay.id}/verify", headers=headers, json={})
+    assert v_res.status_code == 200
+    assert v_res.json()["status"] == "COMPLETED"
+
+    # Now payment is completed and subscription is active
+    db_session.expire_all()
+    pay_after = db_session.query(Payment).filter(Payment.id == pay.id).one()
+    assert pay_after.status == "COMPLETED"
+    sub_after = db_session.query(Subscription).filter(Subscription.organization_id == org_id).one()
+    assert sub_after.status == "ACTIVE"

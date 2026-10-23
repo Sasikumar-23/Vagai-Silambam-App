@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, computed_field
 
 
 class RegisterRequest(BaseModel):
@@ -157,6 +157,7 @@ class StudentPage(BaseModel):
 class PlanOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
+    id: str | None = None
     code: str
     name: str
     max_students: int
@@ -164,6 +165,11 @@ class PlanOut(BaseModel):
     max_users: int
     price_monthly: float
     price_annual: float
+
+    @computed_field
+    @property
+    def price_yearly(self) -> float:
+        return self.price_annual
 
 
 class GoogleConnectRequest(BaseModel):

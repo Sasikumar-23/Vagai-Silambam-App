@@ -126,6 +126,22 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--text);
 }
 
+select {
+  background-color: var(--surface-subtle);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  outline: none;
+}
+select option {
+  background-color: #0E222A;
+  color: #EDE6DA;
+}
+select option:checked {
+  background-color: #1D3B47;
+  color: #E8873A;
+}
+
 /* ═══════════════════════════════════════════════════
    APP SHELL
 ═══════════════════════════════════════════════════ */

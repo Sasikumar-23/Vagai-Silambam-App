@@ -46,8 +46,8 @@ const SVG = {
 
 const NAV_ALL = [
   { href: 'dashboard.html',     label: 'Dashboard',             icon: SVG.dashboard,      superAdminOnly: false },
-  { href: 'customers.html',     label: 'Customers & Users',     icon: SVG.customers,      superAdminOnly: true  },
-  { href: 'subscription.html',  label: 'Subscriptions',         icon: SVG.subscription,   superAdminOnly: true  },
+  { href: 'customers.html',     label: 'Customers & Users',     icon: SVG.customers,      superAdminOnly: false },
+  { href: 'subscription.html',  label: 'Subscriptions',         icon: SVG.subscription,   superAdminOnly: false },
   { href: 'licenses.html',      label: 'Users & Licenses',      icon: SVG.licenses,       superAdminOnly: false },
   { href: 'activity.html',      label: 'Activity & API Logs',   icon: SVG.customers,      superAdminOnly: true  },
 ];

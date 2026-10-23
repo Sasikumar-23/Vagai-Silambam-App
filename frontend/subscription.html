@@ -68,8 +68,10 @@
     .modal-footer { padding:16px 24px; border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
     .field { margin-bottom:16px; }
     .field label { display:block; font-size:13px; font-weight:600; color:var(--text); margin-bottom:6px; }
-    .field input, .field select { width:100%; padding:10px 14px; border:1.5px solid var(--border); border-radius:var(--radius-md); font-family:inherit; font-size:14px; color:var(--text); background:rgba(255, 255, 255, 0.04); outline:none; transition:border-color 0.2s; }
-    .field input:focus, .field select:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,0.1); }
+    .field input, .field select { width:100%; padding:10px 14px; border:1.5px solid var(--border); border-radius:var(--radius-md); font-family:inherit; font-size:14px; color:var(--text); background:var(--navy-900); outline:none; transition:border-color 0.2s; }
+    .field select option, .filter-sel option { background-color:#0E222A; color:#EDE6DA; }
+    .field select option:checked, .filter-sel option:checked { background-color:#1D3B47; color:#E8873A; }
+    .field input:focus, .field select:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(232,135,58,0.18); }
     .alert-err { background:rgba(248, 113, 113, 0.12); border:1px solid rgba(248, 113, 113, 0.35); color:#FCA5A5; padding:10px 14px; border-radius:10px; font-size:13px; margin-bottom:14px; }
 
     /* Actions */
@@ -102,7 +104,7 @@
       </div>
       <button class="btn btn-primary" id="cash-pay-btn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Record Cash Payment
+        Record Payment
       </button>
     </div>
 
@@ -173,7 +175,7 @@
       </div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Academy</th><th>Amount</th><th>Gateway</th><th>Reference</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Academy</th><th>Amount</th><th>Method</th><th>Reference</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
           <tbody id="pay-tbody"><tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">Loading…</td></tr></tbody>
         </table>
       </div>
@@ -220,7 +222,7 @@
     <div class="modal-backdrop" id="cash-modal" hidden>
       <div class="modal-card">
         <div class="modal-head">
-          <h3>💵 Record Cash Payment</h3>
+          <h3 id="payment-modal-title">💳 Record Payment</h3>
           <button class="modal-close" id="cash-close-btn">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
@@ -233,16 +235,35 @@
           <div class="field"><label>Plan *</label>
             <select id="c-plan"><option value="">Select plan…</option></select>
           </div>
-          <div class="field"><label>Amount (₹) *</label><input id="c-amt" type="number" placeholder="e.g. 2999"></div>
-          <div class="field"><label>Months to Extend *</label>
-            <select id="c-months">
-              <option value="1">1 Month</option>
-              <option value="3">3 Months</option>
-              <option value="6">6 Months</option>
-              <option value="12" selected>12 Months (Annual)</option>
-            </select>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="field"><label>Amount (₹) *</label><input id="c-amt" type="number" placeholder="e.g. 2999"></div>
+            <div class="field"><label>Months to Extend *</label>
+              <select id="c-months">
+                <option value="1">1 Month</option>
+                <option value="3">3 Months</option>
+                <option value="6">6 Months</option>
+                <option value="12" selected>12 Months (Annual)</option>
+              </select>
+            </div>
           </div>
-          <div class="field"><label>Receipt / Reference No.</label><input id="c-ref" placeholder="e.g. CASH-2025-001"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div class="field"><label>Payment Method *</label>
+              <select id="c-method">
+                <option value="CASH" selected>💵 Cash on Hand</option>
+                <option value="UPI">📱 UPI (GPay / PhonePe / QR)</option>
+                <option value="DIRECT_TRANSFER">🏦 Bank / Direct Transfer</option>
+                <option value="CHEQUE">📄 Cheque / DD</option>
+                <option value="OTHER">⚡ Other</option>
+              </select>
+            </div>
+            <div class="field"><label>Payment Status *</label>
+              <select id="c-status">
+                <option value="COMPLETED" selected>✅ Completed</option>
+                <option value="PENDING">⏳ Pending</option>
+              </select>
+            </div>
+          </div>
+          <div class="field"><label>Receipt / Reference No.</label><input id="c-ref" placeholder="e.g. CASH-2025-001 or UPI Ref / UTR"></div>
           <div class="field"><label>Notes</label><input id="c-note" placeholder="Any notes about this payment…"></div>
         </div>
         <div class="modal-footer">
@@ -377,15 +398,27 @@
     const tbody = document.getElementById('pay-tbody');
     tbody.innerHTML = rows.map(p => {
       const cls = (p.status==='COMPLETED'||p.status==='VERIFIED')?'badge-green':p.status==='PENDING'?'badge-amber':'badge-red';
+      const methodLabels = {
+        cash: '💵 Cash on Hand',
+        cash_on_hand: '💵 Cash on Hand',
+        upi: '📱 UPI',
+        direct_transfer: '🏦 Bank Transfer',
+        bank_transfer: '🏦 Bank Transfer',
+        cheque: '📄 Cheque',
+        razorpay: '💳 Razorpay',
+        offline: '💵 Cash on Hand',
+      };
+      const method = methodLabels[p.gateway?.toLowerCase()] || p.gateway || 'Cash';
+      const statusLabel = (p.status==='COMPLETED'||p.status==='VERIFIED') ? 'Completed' : (p.status==='PENDING' ? 'Pending' : p.status);
       return `<tr>
         <td><strong>${p.organization_name||p.organization_id}</strong></td>
         <td><strong>₹${p.amount?.toLocaleString('en-IN')}</strong></td>
-        <td><span class="badge badge-gray">${p.gateway||'cash'}</span></td>
+        <td><span class="badge badge-gray">${method}</span></td>
         <td style="font-family:monospace;font-size:12px">${p.receipt_number||p.payment_reference||'—'}</td>
-        <td><span class="badge ${cls}">${p.status==='COMPLETED'?'VERIFIED':p.status}</span></td>
+        <td><span class="badge ${cls}">${statusLabel}</span></td>
         <td>${p.paid_at?new Date(p.paid_at).toLocaleDateString('en-IN'):'—'}</td>
         <td>
-          ${p.status==='PENDING'?`<button class="btn btn-ghost btn-sm" onclick="verifyPay('${p.id}')">Verify</button>`:'—'}
+          ${(p.status==='PENDING' && isSA)?`<button class="btn btn-ghost btn-sm" onclick="verifyPay('${p.id}')">Verify</button>`:'—'}
         </td>
       </tr>`;
     }).join('') || `<tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted)">No payment records</td></tr>`;
@@ -523,53 +556,95 @@
   };
 
   window.verifyPay = async function(id) {
-    toast('Payment verification — connect to your backend endpoint', 'info');
+    if (!confirm('Mark this payment as COMPLETED and activate / extend the academy subscription?')) return;
+    try {
+      await api.verifyPayment(id);
+      toast('Payment verified and subscription activated!', 'success');
+      payData = await api.listPayments().catch(() => []);
+      renderPayments();
+      if (isSA) {
+        const res = await api.listOrganizations().catch(() => ({ organizations: [] }));
+        orgData = res?.organizations || [];
+        subData = orgData.filter(o => o.subscription);
+        renderSubs();
+      }
+    } catch(e) {
+      toast(e.message, 'error');
+    }
   };
 
-  // Cash Payment Modal
-  document.getElementById('cash-pay-btn').addEventListener('click', () => {
+  // Payment Modal UI & Events
+  const methodSel = document.getElementById('c-method');
+  const statusSel = document.getElementById('c-status');
+  const refInput  = document.getElementById('c-ref');
+  const submitBtn = document.getElementById('cash-submit-btn');
+
+  statusSel?.addEventListener('change', () => {
+    if (statusSel.value === 'PENDING') {
+      submitBtn.textContent = 'Record as Pending';
+    } else {
+      submitBtn.textContent = 'Record & Activate';
+    }
+  });
+
+  methodSel?.addEventListener('change', () => {
+    const v = methodSel.value;
+    if (v === 'UPI') refInput.placeholder = 'e.g. UPI Ref / UTR / Transaction ID';
+    else if (v === 'DIRECT_TRANSFER') refInput.placeholder = 'e.g. IMPS / NEFT Ref / UTR';
+    else if (v === 'CHEQUE') refInput.placeholder = 'e.g. Cheque No. / Bank Name';
+    else refInput.placeholder = 'e.g. CASH-2025-001';
+  });
+
+  document.getElementById('cash-pay-btn')?.addEventListener('click', () => {
     document.getElementById('cash-modal').hidden = false;
   });
   ['cash-close-btn','cash-cancel-btn'].forEach(id => {
-    document.getElementById(id).addEventListener('click', () => document.getElementById('cash-modal').hidden = true);
+    document.getElementById(id)?.addEventListener('click', () => document.getElementById('cash-modal').hidden = true);
   });
 
-  document.getElementById('cash-submit-btn').addEventListener('click', async () => {
+  submitBtn?.addEventListener('click', async () => {
     const err = document.getElementById('cash-err');
-    const btn = document.getElementById('cash-submit-btn');
     const orgId   = document.getElementById('c-org').value;
     const amount  = parseFloat(document.getElementById('c-amt').value);
     const months  = parseInt(document.getElementById('c-months').value);
+    const mode    = document.getElementById('c-method').value;
+    const status  = document.getElementById('c-status').value;
     const ref     = document.getElementById('c-ref').value.trim();
     const notes   = document.getElementById('c-note').value.trim();
 
     if (!orgId) { err.textContent='Please select an academy.'; err.hidden=false; return; }
     if (!amount || amount <= 0) { err.textContent='Enter a valid amount.'; err.hidden=false; return; }
 
-    btn.disabled=true; btn.textContent='Processing…';
+    submitBtn.disabled=true;
+    submitBtn.textContent='Processing…';
     try {
-      // Backend expects: organization_id, plan_code, amount, duration_months, payment_mode, receipt_number, notes
       const planCode = document.getElementById('c-plan')?.value || 'starter';
       await api.recordOfflinePayment({
         organization_id: orgId,
         plan_code: planCode,
         amount,
         duration_months: months,
-        payment_mode: 'CASH',
+        payment_mode: mode,
+        status: status,
         receipt_number: ref || undefined,
         notes: notes || undefined,
       });
-      toast('Payment recorded & subscription activated!', 'success');
+      toast(status === 'COMPLETED' ? 'Payment recorded & subscription activated!' : 'Payment recorded as Pending.', 'success');
       document.getElementById('cash-modal').hidden = true;
-      const res = await api.listOrganizations();
-      orgData = res?.organizations || [];
-      subData = orgData.filter(o=>o.subscription);
-      renderSubs();
+      payData = await api.listPayments().catch(() => []);
+      renderPayments();
+      if (isSA) {
+        const res = await api.listOrganizations().catch(() => ({ organizations: [] }));
+        orgData = res?.organizations || [];
+        subData = orgData.filter(o=>o.subscription);
+        renderSubs();
+      }
     } catch(e) {
       err.textContent = e.message;
       err.hidden = false;
     } finally {
-      btn.disabled=false; btn.textContent='Record & Activate';
+      submitBtn.disabled=false;
+      submitBtn.textContent = (document.getElementById('c-status')?.value === 'PENDING') ? 'Record as Pending' : 'Record & Activate';
     }
   });
 </script>

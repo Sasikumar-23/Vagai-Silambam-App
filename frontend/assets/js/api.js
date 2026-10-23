@@ -174,7 +174,17 @@ export const api = {
 
   // Admin
   adminOverview: () => request('/api/v1/admin/overview'),
-  listPayments: (orgId) => request(`/api/v1/admin/payments${orgId ? `?organization_id=${encodeURIComponent(orgId)}` : ''}`),
+  listPayments: (orgId) => {
+    try {
+      const u = JSON.parse(localStorage.getItem('user') || '{}');
+      if (u.role && u.role !== 'SUPER_ADMIN') {
+        return request('/api/v1/subscription/payments');
+      }
+    } catch (_) {}
+    return request(`/api/v1/admin/payments${orgId ? `?organization_id=${encodeURIComponent(orgId)}` : ''}`);
+  },
+  verifyPayment: (paymentId, payload = {}) =>
+    request(`/api/v1/admin/payments/${paymentId}/verify`, { method: 'POST', body: payload }),
   listAcademyLicenses: () => request('/api/v1/admin/licenses'),
   revokeAcademyLicense: (licenseId) => request(`/api/v1/admin/licenses/${licenseId}/revoke`, { method: 'POST' }),
   listEmailLogs: () => request('/api/v1/admin/email-logs'),
@@ -196,7 +206,7 @@ export const api = {
   activateOrg: (id) => request(`/api/v1/admin/organizations/${id}/activate`, { method: 'POST' }),
   // payload must contain { plan_code: string }
   updateOrgPlan: (id, payload) => request(`/api/v1/admin/organizations/${id}/subscription`, { method: 'PUT', body: payload }),
-  // payload: { organization_id, plan_code, amount, duration_months, payment_mode, receipt_number, notes }
+  // payload: { organization_id, plan_code, amount, duration_months, payment_mode, status, receipt_number, notes }
   recordOfflinePayment: (payload) => request('/api/v1/admin/subscriptions/record-offline-payment', { method: 'POST', body: payload }),
   listAuditLogs: () => request('/api/v1/admin/audit-logs'),
 };

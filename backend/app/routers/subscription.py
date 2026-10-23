@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from ..auth.deps import get_current_organization, get_subscription
 from ..database import get_db
-from ..models import License, Organization, Plan, Subscription
+from ..models import License, Organization, Payment, Plan, Subscription
 from ..schemas import PlanOut, SubscriptionOut
 from ..services import limits
 
@@ -41,3 +41,31 @@ def my_subscription(
         usage=limits.usage_for(db, organization.id),
         limits=limits.limits_for(db, subscription),
     )
+
+
+@router.get("/subscription/payments")
+def my_payments(
+    organization: Organization = Depends(get_current_organization),
+    db: Session = Depends(get_db),
+):
+    rows = (
+        db.query(Payment)
+        .filter(Payment.organization_id == organization.id)
+        .order_by(Payment.paid_at.desc().nullslast(), Payment.created_at.desc())
+        .limit(100)
+        .all()
+    )
+    return [
+        {
+            "id": p.id,
+            "organization_name": organization.name,
+            "organization_code": organization.organization_code,
+            "amount": p.amount,
+            "currency": p.currency,
+            "gateway": p.gateway,
+            "receipt_number": p.payment_reference,
+            "status": p.status,
+            "paid_at": p.paid_at,
+        }
+        for p in rows
+    ]

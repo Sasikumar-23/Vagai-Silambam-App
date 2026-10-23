@@ -38,7 +38,8 @@ class RecordOfflinePaymentPayload(BaseModel):
     plan_code: str
     amount: float
     duration_months: int = 1  # 1, 3, 6, 12 months
-    payment_mode: str = "CASH"  # CASH, UPI, DIRECT_TRANSFER
+    payment_mode: str = "CASH"  # CASH, UPI, DIRECT_TRANSFER, CHEQUE, OTHER
+    status: str = "COMPLETED"  # COMPLETED, PENDING
     receipt_number: str | None = None
     notes: str | None = None
 
@@ -209,19 +210,41 @@ def record_offline_payment(
     db: Session = Depends(get_db),
 ):
     """
-    Super Admin verifies cash-on-hand / direct offline payment from an academy.
-    Atomically:
-      1. Logs Payment record with CASH / DIRECT status.
+    Super Admin records offline / direct payment (Cash on Hand, UPI, Bank Transfer, etc.).
+    If COMPLETED:
+      1. Logs Payment record with COMPLETED status and timestamp.
       2. Activates or extends the Academy Subscription with new expiry.
       3. Provisions or ensures an ACTIVE License key.
-      4. Writes an Audit Log entry.
+      4. Sends receipt email & writes Audit Log entry.
+    If PENDING:
+      1. Logs Payment record with PENDING status (awaiting verification).
+      2. Writes Audit Log entry.
     """
     if payload.amount <= 0:
         raise errors.bad_request("INVALID_AMOUNT", "Amount must be greater than zero")
     if payload.duration_months not in (1, 3, 6, 12):
         raise errors.bad_request("INVALID_DURATION", "Duration must be 1, 3, 6 or 12 months")
-    if payload.payment_mode not in ("CASH", "UPI", "DIRECT_TRANSFER"):
-        raise errors.bad_request("INVALID_PAYMENT_MODE", "Payment mode must be CASH, UPI or DIRECT_TRANSFER")
+
+    raw_mode = (payload.payment_mode or "CASH").strip().upper()
+    if raw_mode in ("CASH_ON_HAND", "CASH"):
+        payment_mode = "CASH"
+    elif raw_mode == "UPI":
+        payment_mode = "UPI"
+    elif raw_mode in ("DIRECT_TRANSFER", "BANK_TRANSFER"):
+        payment_mode = "DIRECT_TRANSFER"
+    elif raw_mode == "CHEQUE":
+        payment_mode = "CHEQUE"
+    elif raw_mode == "OTHER":
+        payment_mode = "OTHER"
+    else:
+        payment_mode = raw_mode
+
+    if payment_mode not in ("CASH", "UPI", "DIRECT_TRANSFER", "CHEQUE", "OTHER"):
+        raise errors.bad_request("INVALID_PAYMENT_MODE", "Payment mode must be CASH, UPI, DIRECT_TRANSFER, CHEQUE or OTHER")
+
+    status = (payload.status or "COMPLETED").strip().upper()
+    if status not in ("COMPLETED", "PENDING"):
+        raise errors.bad_request("INVALID_STATUS", "Status must be COMPLETED or PENDING")
 
     org = db.query(Organization).filter(Organization.id == payload.organization_id).one_or_none()
     if not org:
@@ -235,107 +258,167 @@ def record_offline_payment(
     duration_days = payload.duration_months * 30
     expires_at = now + datetime.timedelta(days=duration_days)
 
-    # 1. Update or create subscription
-    sub = db.query(Subscription).filter(Subscription.organization_id == org.id).one_or_none()
-    if not sub:
-        sub = Subscription(
-            organization_id=org.id,
-            plan_id=plan.id,
-            status="ACTIVE",
-            subscription_start=now,
-            next_billing_date=expires_at,
-            expires_at=expires_at,
-        )
-        db.add(sub)
-    else:
-        sub.plan_id = plan.id
-        sub.status = "ACTIVE"
-        # If already active and unexpired, extend from current expiry
-        if sub.expires_at and as_utc(sub.expires_at) > now:
-            sub.expires_at = sub.expires_at + datetime.timedelta(days=duration_days)
-            sub.next_billing_date = sub.expires_at
-        else:
-            sub.subscription_start = now
-            sub.expires_at = expires_at
-            sub.next_billing_date = expires_at
-    db.flush()
-
-    # 2. Record Payment Entry
-    receipt_no = payload.receipt_number or f"CASH-{datetime.date.today().strftime('%Y%m%d')}-{secrets.token_hex(3).upper()}"
-    if db.query(Payment).filter(Payment.gateway == "offline", Payment.payment_reference == receipt_no).first():
+    mode_prefix = "CASH" if payment_mode == "CASH" else ("UPI" if payment_mode == "UPI" else ("BANK" if payment_mode == "DIRECT_TRANSFER" else "OFFLINE"))
+    receipt_no = payload.receipt_number or f"{mode_prefix}-{datetime.date.today().strftime('%Y%m%d')}-{secrets.token_hex(3).upper()}"
+    if db.query(Payment).filter(Payment.payment_reference == receipt_no).first():
         raise errors.conflict("DUPLICATE_RECEIPT", f"Receipt {receipt_no} has already been recorded")
-    payment = Payment(
-        organization_id=org.id,
-        subscription_id=sub.id,
-        gateway="offline",
-        payment_reference=receipt_no,
-        amount=payload.amount,
-        currency="INR",
-        status="COMPLETED",
-        paid_at=now,
-    )
-    db.add(payment)
 
-    # 3. Ensure ACTIVE academy license key exists
-    lic = (
-        db.query(License)
-        .filter(License.organization_id == org.id, License.user_id.is_(None), License.status == "ACTIVE")
-        .first()
-    )
-    if not lic:
-        lic = License(
+    sub = db.query(Subscription).filter(Subscription.organization_id == org.id).one_or_none()
+    lic = None
+
+    if status == "COMPLETED":
+        # 1. Update or create active subscription
+        if not sub:
+            sub = Subscription(
+                organization_id=org.id,
+                plan_id=plan.id,
+                status="ACTIVE",
+                subscription_start=now,
+                next_billing_date=expires_at,
+                expires_at=expires_at,
+            )
+            db.add(sub)
+        else:
+            sub.plan_id = plan.id
+            sub.status = "ACTIVE"
+            if sub.expires_at and as_utc(sub.expires_at) > now:
+                sub.expires_at = sub.expires_at + datetime.timedelta(days=duration_days)
+                sub.next_billing_date = sub.expires_at
+            else:
+                sub.subscription_start = now
+                sub.expires_at = expires_at
+                sub.next_billing_date = expires_at
+        db.flush()
+
+        # 2. Record Payment Entry
+        payment = Payment(
             organization_id=org.id,
-            license_key=f"VS-LIC-{secrets.token_hex(6).upper()}",
-            status="ACTIVE",
-            issued_at=now,
+            subscription_id=sub.id,
+            gateway=payment_mode.lower(),
+            payment_reference=receipt_no,
+            amount=payload.amount,
+            currency="INR",
+            status="COMPLETED",
+            paid_at=now,
+        )
+        db.add(payment)
+
+        # 3. Ensure ACTIVE academy license key exists
+        lic = (
+            db.query(License)
+            .filter(License.organization_id == org.id, License.user_id.is_(None), License.status == "ACTIVE")
+            .first()
+        )
+        if not lic:
+            lic = License(
+                organization_id=org.id,
+                license_key=f"VS-LIC-{secrets.token_hex(6).upper()}",
+                status="ACTIVE",
+                issued_at=now,
+                expires_at=sub.expires_at,
+            )
+            db.add(lic)
+        else:
+            lic.expires_at = sub.expires_at
+
+        # 4. Audit Log
+        audit.record(
+            db,
+            action="OFFLINE_PAYMENT_VERIFIED",
+            organization_id=org.id,
+            user_id=user.id,
+            entity_type="payments",
+            entity_id=payment.id,
+            meta={
+                "amount": payload.amount,
+                "plan": plan.code,
+                "duration_months": payload.duration_months,
+                "receipt_number": receipt_no,
+                "payment_mode": payment_mode,
+                "status": "COMPLETED",
+                "notes": payload.notes,
+            },
+            request=request,
+        )
+        db.commit()
+
+        email_service.send_cash_receipt(
+            db,
+            organization=org,
+            payment=payment,
+            plan=plan,
+            license_key=lic.license_key,
+            duration_months=payload.duration_months,
             expires_at=sub.expires_at,
         )
-        db.add(lic)
-    else:
-        lic.expires_at = sub.expires_at
+        db.commit()
 
-    # 4. Audit Log
-    audit.record(
-        db,
-        action="OFFLINE_PAYMENT_VERIFIED",
-        organization_id=org.id,
-        user_id=user.id,
-        entity_type="payments",
-        entity_id=payment.id,
-        meta={
-            "amount": payload.amount,
-            "plan": plan.code,
-            "duration_months": payload.duration_months,
+        return {
+            "success": True,
+            "message": f"Payment of ₹{payload.amount} recorded. Subscription activated until {sub.expires_at.strftime('%Y-%m-%d')}.",
+            "organization_name": org.name,
+            "plan_name": plan.name,
+            "status": sub.status,
+            "payment_status": "COMPLETED",
+            "expires_at": sub.expires_at.isoformat(),
             "receipt_number": receipt_no,
-            "payment_mode": payload.payment_mode,
-            "notes": payload.notes,
-        },
-        request=request,
-    )
+            "license_key": lic.license_key,
+        }
+    else:
+        # PENDING payment recording
+        if not sub:
+            sub = Subscription(
+                organization_id=org.id,
+                plan_id=plan.id,
+                status="PENDING",
+                subscription_start=now,
+            )
+            db.add(sub)
+            db.flush()
 
-    db.commit()
+        payment = Payment(
+            organization_id=org.id,
+            subscription_id=sub.id,
+            gateway=payment_mode.lower(),
+            payment_reference=receipt_no,
+            amount=payload.amount,
+            currency="INR",
+            status="PENDING",
+            paid_at=None,
+        )
+        db.add(payment)
 
-    email_service.send_cash_receipt(
-        db,
-        organization=org,
-        payment=payment,
-        plan=plan,
-        license_key=lic.license_key,
-        duration_months=payload.duration_months,
-        expires_at=sub.expires_at,
-    )
-    db.commit()
+        audit.record(
+            db,
+            action="OFFLINE_PAYMENT_PENDING",
+            organization_id=org.id,
+            user_id=user.id,
+            entity_type="payments",
+            entity_id=payment.id,
+            meta={
+                "amount": payload.amount,
+                "plan": plan.code,
+                "duration_months": payload.duration_months,
+                "receipt_number": receipt_no,
+                "payment_mode": payment_mode,
+                "status": "PENDING",
+                "notes": payload.notes,
+            },
+            request=request,
+        )
+        db.commit()
 
-    return {
-        "success": True,
-        "message": f"Cash payment of ₹{payload.amount} recorded. Subscription activated until {sub.expires_at.strftime('%Y-%m-%d')}.",
-        "organization_name": org.name,
-        "plan_name": plan.name,
-        "status": sub.status,
-        "expires_at": sub.expires_at.isoformat(),
-        "receipt_number": receipt_no,
-        "license_key": lic.license_key,
-    }
+        return {
+            "success": True,
+            "message": f"Payment of ₹{payload.amount} recorded with status PENDING.",
+            "organization_name": org.name,
+            "plan_name": plan.name,
+            "status": sub.status if sub else "PENDING",
+            "payment_status": "PENDING",
+            "expires_at": sub.expires_at.isoformat() if sub and sub.expires_at else None,
+            "receipt_number": receipt_no,
+            "license_key": None,
+        }
 
 
 
@@ -555,6 +638,87 @@ def list_payments(
         }
         for p, org in rows
     ]
+
+
+@router.post("/payments/{payment_id}/verify")
+def verify_payment(
+    payment_id: str,
+    payload: VerifyPaymentPayload | None = None,
+    user: User = Depends(require_role("SUPER_ADMIN")),
+    db: Session = Depends(get_db),
+    request: Request = None,
+):
+    payment = db.query(Payment).filter(Payment.id == payment_id).one_or_none()
+    if not payment:
+        raise errors.not_found("Payment record not found")
+
+    if payment.status == "COMPLETED":
+        return {"success": True, "message": "Payment is already verified", "status": "COMPLETED"}
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    payment.status = "COMPLETED"
+    payment.paid_at = now
+
+    org = db.query(Organization).filter(Organization.id == payment.organization_id).one_or_none()
+    sub = db.query(Subscription).filter(Subscription.id == payment.subscription_id).one_or_none() if payment.subscription_id else None
+    if not sub and org:
+        sub = db.query(Subscription).filter(Subscription.organization_id == org.id).one_or_none()
+
+    lic = None
+    if org and sub:
+        duration_days = 30
+        plan = db.query(Plan).filter(Plan.id == sub.plan_id).one_or_none()
+        expires_at = now + datetime.timedelta(days=duration_days)
+        sub.status = "ACTIVE"
+        if sub.expires_at and as_utc(sub.expires_at) > now:
+            sub.expires_at = sub.expires_at + datetime.timedelta(days=duration_days)
+            sub.next_billing_date = sub.expires_at
+        else:
+            sub.subscription_start = now
+            sub.expires_at = expires_at
+            sub.next_billing_date = expires_at
+
+        lic = (
+            db.query(License)
+            .filter(License.organization_id == org.id, License.user_id.is_(None), License.status == "ACTIVE")
+            .first()
+        )
+        if not lic:
+            lic = License(
+                organization_id=org.id,
+                license_key=f"VS-LIC-{secrets.token_hex(6).upper()}",
+                status="ACTIVE",
+                issued_at=now,
+                expires_at=sub.expires_at,
+            )
+            db.add(lic)
+        else:
+            lic.expires_at = sub.expires_at
+
+        db.flush()
+        if plan:
+            email_service.send_cash_receipt(
+                db,
+                organization=org,
+                payment=payment,
+                plan=plan,
+                license_key=lic.license_key if lic else "N/A",
+                duration_months=1,
+                expires_at=sub.expires_at,
+            )
+
+    audit.record(
+        db,
+        action="OFFLINE_PAYMENT_VERIFIED",
+        organization_id=payment.organization_id,
+        user_id=user.id,
+        entity_type="payments",
+        entity_id=payment.id,
+        meta={"amount": payment.amount, "notes": payload.notes if payload else None},
+        request=request,
+    )
+    db.commit()
+    return {"success": True, "message": "Payment verified and subscription activated.", "status": "COMPLETED"}
 
 
 @router.get("/email-logs")
