@@ -59,6 +59,19 @@ def has_active_user_license(db: Session, user_id: str) -> bool:
     )
 
 
+def users_with_active_license(db: Session, user_ids: list[str]) -> set[str]:
+    """One query for many users; use instead of calling has_active_user_license in a loop."""
+    if not user_ids:
+        return set()
+    rows = (
+        db.query(License.user_id)
+        .filter(License.user_id.in_(user_ids), License.status == "ACTIVE")
+        .distinct()
+        .all()
+    )
+    return {user_id for (user_id,) in rows}
+
+
 def start_trial(db: Session, organization: Organization, plan: Plan | None = None) -> Subscription:
     settings = get_settings()
     plan = plan or default_plan(db)

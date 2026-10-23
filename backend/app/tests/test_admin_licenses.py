@@ -71,3 +71,30 @@ def test_academy_admin_cannot_use_super_admin_license_routes(client, make_org):
     admin = make_org("Academy A", "admin_a")
     assert client.get("/api/v1/admin/licenses", headers=admin["headers"]).status_code == 403
     assert client.post("/api/v1/admin/licenses/lic_x/revoke", headers=admin["headers"]).status_code == 403
+
+
+def test_member_list_reports_each_member_status_in_one_pass(client, make_org, db_session):
+    admin = make_org("Academy A", "admin_a")
+    _create_member(client, admin["headers"], "teacher_one")
+    _create_member(client, admin["headers"], "teacher_two")
+    members = {u["username"]: u for u in client.get("/api/v1/users", headers=admin["headers"]).json()}
+    client.post(f"/api/v1/users/{members['teacher_two']['id']}/license/revoke", headers=admin["headers"])
+
+    statuses = {u["username"]: u["license_status"] for u in client.get("/api/v1/users", headers=admin["headers"]).json()}
+    assert statuses["teacher_one"] == "ACTIVE"
+    assert statuses["teacher_two"] == "REVOKED"
+    # The academy admin also holds a license row from registration; the batched lookup reports it
+    # exactly as the per-user check did before batching.
+    assert statuses["admin_a"] == "ACTIVE"
+
+
+def test_organization_list_counts_only_active_students(client, make_org, db_session):
+    admin = make_org("Academy A", "admin_a")
+    client.post("/api/v1/students", headers=admin["headers"], json={"student_code": "VS-A-01", "name_en": "Asha"})
+    client.post("/api/v1/students", headers=admin["headers"], json={"student_code": "VS-A-02", "name_en": "Bala"})
+    headers = _super_admin_headers(client, db_session)
+
+    orgs = client.get("/api/v1/admin/organizations", headers=headers).json()
+    row = next(o for o in orgs if o["name"] == "Academy A")
+    assert row["active_students"] == 2
+    assert row["plan_code"] == "STARTER"

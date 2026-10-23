@@ -26,14 +26,32 @@ def _license_status(db: Session, user_id: str) -> str | None:
     return latest[0] if latest else None
 
 
-def _to_out(db: Session, user: User) -> UserLicenseOut:
+def _license_statuses(db: Session, users: list[User]) -> dict[str, str]:
+    """Status for many users in two queries: active licenses first, then the latest row for the rest."""
+    user_ids = [u.id for u in users]
+    statuses = {user_id: "ACTIVE" for user_id in provisioning.users_with_active_license(db, user_ids)}
+    pending = [user_id for user_id in user_ids if user_id not in statuses]
+    if pending:
+        # Newest first, so the first row seen for each user is its latest license.
+        rows = (
+            db.query(License.user_id, License.status)
+            .filter(License.user_id.in_(pending))
+            .order_by(License.created_at.desc())
+            .all()
+        )
+        for user_id, status in rows:
+            statuses.setdefault(user_id, status)
+    return statuses
+
+
+def _to_out(user: User, license_status: str | None) -> UserLicenseOut:
     return UserLicenseOut(
         id=user.id,
         username=user.username,
         full_name_en=user.full_name_en,
         role=user.role,
         is_active=user.is_active,
-        license_status=_license_status(db, user.id),
+        license_status=license_status,
     )
 
 
@@ -60,7 +78,8 @@ def list_users(
         .order_by(User.created_at)
         .all()
     )
-    return [_to_out(db, user) for user in users]
+    statuses = _license_statuses(db, users)
+    return [_to_out(user, statuses.get(user.id)) for user in users]
 
 
 @router.post("", response_model=UserCreatedOut, status_code=201)
@@ -109,7 +128,7 @@ def create_user(
     )
     db.commit()
 
-    return UserCreatedOut(user=_to_out(db, user), license_key=license_row.license_key)
+    return UserCreatedOut(user=_to_out(user, "ACTIVE"), license_key=license_row.license_key)
 
 
 @router.post("/{user_id}/license/revoke", response_model=UserLicenseOut)
@@ -140,7 +159,7 @@ def revoke_license(
         request=request,
     )
     db.commit()
-    return _to_out(db, target)
+    return _to_out(target, _license_status(db, target.id))
 
 
 @router.post("/{user_id}/license/reissue", response_model=UserCreatedOut)
@@ -170,7 +189,7 @@ def reissue_license(
         request=request,
     )
     db.commit()
-    return UserCreatedOut(user=_to_out(db, target), license_key=license_row.license_key)
+    return UserCreatedOut(user=_to_out(target, "ACTIVE"), license_key=license_row.license_key)
 
 
 @router.post("/{user_id}/reset-password", status_code=204)

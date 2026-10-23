@@ -2,7 +2,8 @@ import datetime
 import secrets
 from fastapi import APIRouter, Depends, Query, Request
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy import func
+from sqlalchemy.orm import Session, joinedload
 
 from .. import errors
 from ..auth.deps import require_role
@@ -12,7 +13,7 @@ from ..models import ApiRequestLog, AuditLog, EmailLog, License, Organization, P
 from ..schemas import PlanCreate, PlanUpdate, ResetPasswordRequest
 from ..services import audit
 from ..services import email as email_service
-from ..services.provisioning import generate_license_key, has_active_user_license, requires_seat_license
+from ..services.provisioning import generate_license_key, requires_seat_license, users_with_active_license
 from ..utils.time import as_utc
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
@@ -70,10 +71,22 @@ def list_organizations(
     db: Session = Depends(get_db),
 ):
     orgs = db.query(Organization).order_by(Organization.created_at.desc()).limit(limit).all()
+    org_ids = [org.id for org in orgs]
+    # Three queries total, regardless of how many academies are listed.
+    subs = {
+        sub.organization_id: sub
+        for sub in db.query(Subscription).options(joinedload(Subscription.plan))
+        .filter(Subscription.organization_id.in_(org_ids)).all()
+    }
+    student_counts = dict(
+        db.query(Student.organization_id, func.count(Student.id))
+        .filter(Student.organization_id.in_(org_ids), Student.student_status == "ACTIVE")
+        .group_by(Student.organization_id)
+        .all()
+    )
     results = []
     for org in orgs:
-        sub = db.query(Subscription).filter(Subscription.organization_id == org.id).one_or_none()
-        student_count = db.query(Student).filter(Student.organization_id == org.id, Student.student_status == "ACTIVE").count()
+        sub = subs.get(org.id)
         results.append({
             "id": org.id,
             "organization_code": org.organization_code,
@@ -83,7 +96,7 @@ def list_organizations(
             "created_at": org.created_at,
             "plan_code": sub.plan.code if sub and sub.plan else "NONE",
             "subscription_status": sub.status if sub else "NONE",
-            "active_students": student_count,
+            "active_students": student_counts.get(org.id, 0),
         })
     return results
 
@@ -673,9 +686,14 @@ def list_app_activations(user: User = Depends(require_role("SUPER_ADMIN")), db: 
         .limit(500)
         .all()
     )
+    seat_user_ids = [u.id for u, _ in rows if requires_seat_license(u)]
+    licensed = users_with_active_license(db, seat_user_ids)
     out = []
     for u, org in rows:
-        seat_licensed = requires_seat_license(u)
+        if not requires_seat_license(u):
+            license_status = "NOT_REQUIRED"
+        else:
+            license_status = "ACTIVE" if u.id in licensed else "REVOKED_OR_NONE"
         out.append({
             "user_id": u.id,
             "username": u.username,
@@ -684,9 +702,7 @@ def list_app_activations(user: User = Depends(require_role("SUPER_ADMIN")), db: 
             "organization_name": org.name if org else None,
             "is_active": u.is_active,
             "last_login_at": u.last_login_at,
-            "license_status": (
-                ("ACTIVE" if has_active_user_license(db, u.id) else "REVOKED_OR_NONE") if seat_licensed else "NOT_REQUIRED"
-            ),
+            "license_status": license_status,
         })
     return out
 
