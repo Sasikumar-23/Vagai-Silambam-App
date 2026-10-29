@@ -85,6 +85,13 @@
     .field input:focus, .field select:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,0.1); }
     .alert-err { background:rgba(248, 113, 113, 0.12); border:1px solid rgba(248, 113, 113, 0.35); color:#FCA5A5; padding:10px 14px; border-radius:10px; font-size:13px; margin-bottom:14px; }
 
+    /* Read-only facts that fill in once an academy or plan is picked */
+    .info-card { border:1px solid var(--border); background:var(--surface-subtle); border-radius:var(--radius-md); padding:12px 14px; margin:-6px 0 16px; font-size:13px; }
+    .info-card .row { display:flex; justify-content:space-between; gap:12px; padding:3px 0; }
+    .info-card .row span:first-child { color:var(--text-muted); }
+    .info-card .row span:last-child { font-weight:600; text-align:right; word-break:break-word; }
+    .info-card .head { font-weight:700; margin-bottom:4px; }
+
     /* New license reveal banner */
     .license-reveal {
       background:linear-gradient(135deg,#F0FDF4,rgba(52, 211, 153, 0.12));
@@ -236,16 +243,23 @@
           <div class="field" id="g-org-field"><label>Academy *</label>
             <select id="g-org"><option value="">Select academy…</option></select>
           </div>
-          <div class="field" id="g-user-field"><label>Member *</label>
-            <select id="g-user"><option value="">Select member…</option></select>
+          <div class="info-card" id="g-owner" hidden></div>
+          <div class="field" id="g-plan-field"><label>Plan *</label>
+            <select id="g-plan" disabled><option value="">Select plan…</option></select>
           </div>
-          <div class="field" id="g-exp-field"><label>Expiry Date</label>
-            <input id="g-exp" type="date" lang="en-IN">
+          <div class="field" id="g-term-field"><label>Duration</label>
+            <select id="g-term" disabled>
+              <option value="1">1 month</option>
+              <option value="3">3 months</option>
+              <option value="6">6 months</option>
+              <option value="12">12 months (1 year)</option>
+            </select>
           </div>
+          <div class="info-card" id="g-plan-info" hidden></div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-ghost" id="gen-cancel-btn">Close</button>
-          <button class="btn btn-primary" id="gen-submit-btn">Generate License</button>
+          <button class="btn btn-primary" id="gen-submit-btn">Upgrade &amp; Generate License</button>
         </div>
       </div>
     </div>
@@ -262,21 +276,24 @@
   let memberMode = 'add';
   let memberRowId = null;
 
+  let plans = [];
   if (superAdmin) {
-    document.getElementById('g-user-field').hidden = true;
     document.getElementById('add-member-btn').hidden = true;
     try {
       const res = await api.listOrganizations();
       orgData = res.organizations || [];
     } catch { orgData = []; }
+    try {
+      plans = (await api.adminPlans()).filter(p => p.is_active);
+    } catch { plans = []; }
     const opts = orgData.map(o => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('');
     document.getElementById('lic-org').insertAdjacentHTML('beforeend', opts);
     document.getElementById('g-org').insertAdjacentHTML('beforeend', opts);
+    document.getElementById('g-plan').insertAdjacentHTML('beforeend',
+      plans.map(p => `<option value="${esc(p.code)}">${esc(p.name)}</option>`).join(''));
   } else {
     document.getElementById('gen-lic-btn').hidden = true;
     document.getElementById('g-org-field').hidden = true;
-    document.getElementById('g-user-field').hidden = true;
-    document.getElementById('g-exp-field').hidden = true;
     document.getElementById('gen-submit-btn').hidden = true;
     document.getElementById('lic-org').hidden = true;
     document.getElementById('add-member-btn').hidden = false;
@@ -374,6 +391,9 @@
       const menu = [];
       if (r.key) menu.push(`<button onclick="copyKey('${esc(r.key)}')">Copy Key</button>`);
       if (superAdmin) {
+        if (r.scope === 'ACADEMY') {
+          menu.push(`<button onclick="openUpgrade('${esc(r.orgId)}')">Upgrade</button>`);
+        }
         if (r.status === 'ACTIVE') {
           menu.push(`<button class="danger" onclick="revokeLic('${esc(r.id)}')">Revoke License</button>`);
         } else if (r.scope === 'ACADEMY') {
@@ -550,12 +570,90 @@
     try { await navigator.clipboard.writeText(key); toast('Copied!', 'success'); } catch { /* */ }
   };
 
-  // Generate License Modal (Super Admin only)
-  document.getElementById('gen-lic-btn').addEventListener('click', () => {
+  // Upgrade / Generate License modal (Super Admin only). Picking an academy fetches its owner and
+  // current plan; picking a plan and duration shows the limits, price and the resulting expiry date.
+  const fmtDate = d => new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+  const money = n => '₹' + Number(n).toLocaleString('en-IN');
+  const infoRow = (label, value) => `<div class="row"><span>${label}</span><span>${esc(value)}</span></div>`;
+  let overview = null;
+
+  // Same rule as the server: renewing the current paid plan extends it, anything else starts today.
+  function projectedExpiry(plan, months) {
+    const renewing = overview && overview.plan_code === plan.code && overview.subscription_status === 'ACTIVE'
+      && overview.expires_at && new Date(overview.expires_at) > new Date();
+    const d = renewing ? new Date(overview.expires_at) : new Date();
+    const day = d.getDate();
+    d.setDate(1);
+    d.setMonth(d.getMonth() + months);
+    d.setDate(Math.min(day, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate()));
+    return { date: d, renewing };
+  }
+
+  function renderPlanInfo() {
+    const box = document.getElementById('g-plan-info');
+    const plan = plans.find(p => p.code === document.getElementById('g-plan').value);
+    if (!plan || !overview) { box.hidden = true; return; }
+    const months = Number(document.getElementById('g-term').value);
+    const price = months === 12 ? plan.price_annual : plan.price_monthly * months;
+    const { date, renewing } = projectedExpiry(plan, months);
+    box.innerHTML = `<div class="head">${esc(plan.name)}</div>`
+      + infoRow('Students', plan.max_students)
+      + infoRow('Branches', plan.max_branches)
+      + infoRow('Team members', plan.max_users)
+      + infoRow(`Price for ${months === 12 ? '1 year' : months + (months === 1 ? ' month' : ' months')}`, money(price))
+      + infoRow(renewing ? 'Extends current term to' : 'Expires on', fmtDate(date));
+    box.hidden = false;
+  }
+
+  async function loadOverview(orgId) {
+    const owner = document.getElementById('g-owner');
+    const planSel = document.getElementById('g-plan');
+    const termSel = document.getElementById('g-term');
+    overview = null;
+    document.getElementById('g-plan-info').hidden = true;
+    planSel.disabled = termSel.disabled = !orgId;
+    if (!orgId) { owner.hidden = true; planSel.value = ''; return; }
+    try {
+      overview = await api.academyLicenseOverview(orgId);
+    } catch (e) {
+      owner.hidden = true;
+      const err = document.getElementById('gen-err');
+      err.textContent = e.message || 'Could not load this academy.';
+      err.hidden = false;
+      return;
+    }
+    document.getElementById('gen-err').hidden = true;
+    const a = overview.admin;
+    owner.innerHTML = `<div class="head">Assigned user</div>`
+      + (a
+        ? infoRow('Name', a.full_name_en) + infoRow('Username', '@' + a.username)
+          + infoRow('Email', a.email) + (a.phone ? infoRow('Phone', a.phone) : '')
+        : infoRow('Admin', 'No admin account'))
+      + infoRow('Current plan', overview.plan_code ? `${overview.plan_code} · ${overview.subscription_status}` : 'None')
+      + infoRow('Current expiry', overview.expires_at ? fmtDate(overview.expires_at) : '—')
+      + infoRow('License key', overview.license_key ? shortKey(overview.license_key) : 'Not issued yet');
+    owner.hidden = false;
+    planSel.value = plans.some(p => p.code === overview.plan_code) ? overview.plan_code : '';
+    renderPlanInfo();
+  }
+
+  function openGenModal(orgId = '') {
     document.getElementById('new-lic-reveal').hidden = true;
     document.getElementById('gen-err').hidden = true;
+    document.getElementById('g-org').value = orgId;
+    document.getElementById('g-term').value = '1';
     document.getElementById('gen-modal').hidden = false;
-  });
+    return loadOverview(orgId);
+  }
+
+  window.openUpgrade = function (orgId) {
+    closeMenus();
+    return openGenModal(orgId);
+  };
+
+  document.getElementById('gen-lic-btn').addEventListener('click', () => openGenModal());
+  document.getElementById('g-org').addEventListener('change', e => loadOverview(e.target.value));
+  ['g-plan', 'g-term'].forEach(id => document.getElementById(id).addEventListener('change', renderPlanInfo));
   ['gen-close-btn', 'gen-cancel-btn'].forEach(id => {
     document.getElementById(id).addEventListener('click', () => document.getElementById('gen-modal').hidden = true);
   });
@@ -564,23 +662,33 @@
     const err = document.getElementById('gen-err');
     const btn = document.getElementById('gen-submit-btn');
     const orgId = document.getElementById('g-org').value;
-    const expiry = document.getElementById('g-exp').value;
+    const planCode = document.getElementById('g-plan').value;
 
     if (!orgId) { err.textContent = 'Please select an academy.'; err.hidden = false; return; }
+    if (!planCode) { err.textContent = 'Please select a plan.'; err.hidden = false; return; }
 
-    btn.disabled = true; btn.textContent = 'Generating…';
+    err.hidden = true;
+    btn.disabled = true; btn.textContent = 'Saving…';
     try {
-      const res = await api.generateAcademyLicense(orgId, expiry || null);
+      const res = await api.upgradeAcademy(orgId, {
+        plan_code: planCode,
+        duration_months: Number(document.getElementById('g-term').value),
+      });
       showReveal(res.license_key);
-      toast('License generated!', 'success');
+      toast('Academy upgraded', 'success');
       await refresh();
+      await loadOverview(orgId);
     } catch (e) {
-      err.textContent = e.message || 'Failed to generate license.';
+      err.textContent = e.message || 'Could not upgrade this academy.';
       err.hidden = false;
     } finally {
-      btn.disabled = false; btn.textContent = 'Generate License';
+      btn.disabled = false; btn.textContent = 'Upgrade & Generate License';
     }
   });
+
+  // Arriving from the Customers page menu: licenses.html?upgrade=<academy id>
+  const upgradeOrg = new URLSearchParams(location.search).get('upgrade');
+  if (superAdmin && upgradeOrg && orgData.some(o => o.id === upgradeOrg)) openGenModal(upgradeOrg);
 </script>
 </body>
 </html>

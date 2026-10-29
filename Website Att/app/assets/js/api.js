@@ -197,6 +197,10 @@ export const api = {
   retryEmails: () => request('/api/v1/admin/email-logs/retry', { method: 'POST' }),
   generateAcademyLicense: (orgId, expiresAt = null) =>
     request(`/api/v1/admin/organizations/${orgId}/generate-license`, { method: 'POST', body: { expires_at: expiresAt } }),
+  academyLicenseOverview: (orgId) => request(`/api/v1/admin/organizations/${orgId}/license-overview`),
+  // payload: { plan_code, duration_months } — the server works out the expiry date
+  upgradeAcademy: (orgId, payload) =>
+    request(`/api/v1/admin/organizations/${orgId}/upgrade`, { method: 'POST', body: payload }),
   // backend returns a flat array; wrap so callers can do res.organizations
   listOrganizations: async () => {
     const list = await request('/api/v1/admin/organizations');

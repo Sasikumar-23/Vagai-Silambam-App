@@ -1,3 +1,4 @@
+import calendar
 import datetime
 import secrets
 from fastapi import APIRouter, Depends, Query, Request
@@ -551,6 +552,152 @@ def generate_academy_license(
         )
         db.commit()
     return {"license_key": lic.license_key, "status": lic.status, "expires_at": lic.expires_at}
+
+
+def _add_months(start: datetime.datetime, months: int) -> datetime.datetime:
+    month_index = start.month - 1 + months
+    year, month = start.year + month_index // 12, month_index % 12 + 1
+    last_day = calendar.monthrange(year, month)[1]
+    return start.replace(year=year, month=month, day=min(start.day, last_day))
+
+
+def _upgrade_expiry(sub: Subscription | None, plan: Plan, months: int, now: datetime.datetime) -> datetime.datetime:
+    """Renewing the same paid plan extends the current term; anything else starts a fresh term today."""
+    renewing = (
+        sub is not None
+        and sub.plan_id == plan.id
+        and sub.status == "ACTIVE"
+        and sub.expires_at is not None
+        and as_utc(sub.expires_at) > now
+    )
+    return _add_months(as_utc(sub.expires_at) if renewing else now, months)
+
+
+@router.get("/organizations/{org_id}/license-overview")
+def academy_license_overview(
+    org_id: str,
+    user: User = Depends(require_role("SUPER_ADMIN")),
+    db: Session = Depends(get_db),
+):
+    """What the Upgrade dialog shows once an academy is picked: who owns it, its plan and its license."""
+    organization = db.get(Organization, org_id)
+    if organization is None:
+        raise errors.not_found("Academy not found")
+    owner = (
+        db.query(User)
+        .filter(User.organization_id == org_id, User.role == "ADMIN")
+        .order_by(User.created_at)
+        .first()
+    )
+    sub = (
+        db.query(Subscription)
+        .options(joinedload(Subscription.plan))
+        .filter(Subscription.organization_id == org_id)
+        .one_or_none()
+    )
+    lic = (
+        db.query(License)
+        .filter(License.organization_id == org_id, License.user_id.is_(None), License.status == "ACTIVE")
+        .first()
+    )
+    return {
+        "organization_id": org_id,
+        "organization_name": organization.name,
+        "admin": {
+            "full_name_en": owner.full_name_en,
+            "username": owner.username,
+            "email": owner.email,
+            "phone": owner.phone,
+        } if owner else None,
+        "plan_code": sub.plan.code if sub and sub.plan else None,
+        "subscription_status": sub.status if sub else None,
+        "expires_at": sub.expires_at if sub else None,
+        "license_key": lic.license_key if lic else None,
+    }
+
+
+class UpgradePayload(BaseModel):
+    plan_code: str
+    duration_months: int = 1
+
+
+@router.post("/organizations/{org_id}/upgrade")
+def upgrade_academy(
+    org_id: str,
+    payload: UpgradePayload,
+    request: Request,
+    user: User = Depends(require_role("SUPER_ADMIN")),
+    db: Session = Depends(get_db),
+):
+    """Moves an academy onto a plan for 1, 3, 6 or 12 months and keeps its academy license in step.
+    This grants access only; money received is recorded separately as a payment."""
+    if payload.duration_months not in (1, 3, 6, 12):
+        raise errors.bad_request("INVALID_DURATION", "Duration must be 1, 3, 6 or 12 months")
+    organization = db.get(Organization, org_id)
+    if organization is None:
+        raise errors.not_found("Academy not found")
+    plan = db.query(Plan).filter(Plan.code == payload.plan_code.strip().upper()).one_or_none()
+    if plan is None:
+        raise errors.not_found("Plan not found")
+
+    now = datetime.datetime.now(datetime.timezone.utc)
+    sub = db.query(Subscription).filter(Subscription.organization_id == org_id).one_or_none()
+    expires_at = _upgrade_expiry(sub, plan, payload.duration_months, now)
+    previous_plan = sub.plan.code if sub and sub.plan else None
+
+    if sub is None:
+        sub = Subscription(organization_id=org_id, plan_id=plan.id)
+        db.add(sub)
+    if sub.plan_id != plan.id or sub.status != "ACTIVE":
+        sub.subscription_start = now
+    sub.plan_id = plan.id
+    sub.status = "ACTIVE"
+    sub.billing_cycle = "ANNUAL" if payload.duration_months == 12 else "MONTHLY"
+    sub.expires_at = expires_at
+    sub.next_billing_date = expires_at
+    db.flush()
+
+    lic = (
+        db.query(License)
+        .filter(License.organization_id == org_id, License.user_id.is_(None), License.status == "ACTIVE")
+        .first()
+    )
+    if lic is None:
+        lic = License(
+            organization_id=org_id,
+            license_key=generate_license_key(),
+            status="ACTIVE",
+            issued_at=now,
+            expires_at=expires_at,
+        )
+        db.add(lic)
+    else:
+        lic.expires_at = expires_at
+    db.flush()
+
+    audit.record(
+        db,
+        action="ACADEMY_UPGRADED",
+        organization_id=org_id,
+        user_id=user.id,
+        entity_type="subscriptions",
+        entity_id=sub.id,
+        meta={
+            "from_plan": previous_plan,
+            "to_plan": plan.code,
+            "duration_months": payload.duration_months,
+            "expires_at": expires_at.isoformat(),
+        },
+        request=request,
+    )
+    db.commit()
+    return {
+        "success": True,
+        "plan_code": plan.code,
+        "status": sub.status,
+        "expires_at": expires_at,
+        "license_key": lic.license_key,
+    }
 
 
 @router.get("/licenses")
