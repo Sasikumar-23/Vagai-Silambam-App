@@ -3,1236 +3,401 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Vagai Silambam — Academy Management Software for Silambam Schools</title>
-  <meta name="description" content="Manage students, training attendance, events, fees, uniforms and certificates for your Silambam academy. Works offline on Android, in English and தமிழ். Free 14-day trial.">
-  
-  <!-- Open Graph / Meta -->
+  <title>Vagai Silambam: run your Silambam academy without paper registers</title>
+  <meta name="description" content="Attendance, fees, certificates and tournaments for Silambam academies in one phone app that works without internet. English and Tamil. 14-day free trial, no credit card.">
+  <meta name="theme-color" content="#FBF6EC">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%23E8A317'/%3E%3Cpath d='M9 31 31 9' stroke='%231F1B16' stroke-width='3.5' stroke-linecap='round'/%3E%3Cpath d='M9 9 31 31' stroke='%23B3261E' stroke-width='3.5' stroke-linecap='round'/%3E%3Ccircle cx='20' cy='20' r='3' fill='%23FBF6EC'/%3E%3C/svg%3E">
+  <meta property="og:title" content="Vagai Silambam">
+  <meta property="og:description" content="Run your Silambam academy, not a pile of registers.">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Vagai Silambam — Academy Management for Silambam Schools">
-  <meta property="og:description" content="Run your Silambam academy, not a pile of registers. Bilingual English & Tamil, offline mobile sync, fee tracking, and certificates.">
-  
-  <link rel="stylesheet" href="assets/css/site.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,800&family=Noto+Sans+Tamil:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="assets/css/home.css">
+  <script>document.documentElement.classList.add('js');</script>
 </head>
-<body>
+<body id="top">
+  <a class="skip-link" href="#main" data-i18n="skip">Skip to content</a>
 
-  <!-- Top Scroll Progress Indicator -->
-  <div class="scroll-progress-bar" id="scrollProgressBar"></div>
+  <!-- Icons: one small sprite, reused everywhere. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-calendar-check" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/></symbol>
+    <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2V2z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/></symbol>
+    <symbol id="i-award" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.48 12.89 17 22l-5-3-5 3 1.52-9.11"/></symbol>
+    <symbol id="i-bag" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></symbol>
+    <symbol id="i-wifi-off" viewBox="0 0 24 24"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></symbol>
+    <symbol id="i-sync" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></symbol>
+    <symbol id="i-sheet" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></symbol>
+    <symbol id="i-branch" viewBox="0 0 24 24"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+  </svg>
 
-  <!-- =========================================================================
-       1. STICKY NAVBAR
-       ========================================================================= -->
   <header class="site-header">
-    <div class="wrap">
-      <a class="brand-logo" href="index.html" aria-label="Vagai Silambam Home">
-        <div class="brand-icon">
-          <!-- Silambam Staves Cross Icon -->
-          <svg viewBox="0 0 24 24">
-            <path d="M4.5 3L3 4.5 19.5 21l1.5-1.5L4.5 3zm15 0l-4.5 4.5 1.5 1.5L21 4.5 19.5 3zM3 19.5L7.5 15l-1.5-1.5L1.5 18 3 19.5z" />
-          </svg>
-        </div>
-        <span>Vagai Silambam</span>
-        <span class="brand-tag">SaaS</span>
+    <div class="wrap header-row">
+      <a class="brand" href="#top" aria-label="Vagai Silambam">
+        <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="10" fill="#E8A317"/><path d="M9 31 31 9" stroke="#1F1B16" stroke-width="3.5" stroke-linecap="round"/><path d="M9 9 31 31" stroke="#B3261E" stroke-width="3.5" stroke-linecap="round"/><circle cx="20" cy="20" r="3" fill="#FBF6EC"/></svg>
+        <span class="brand-text"><strong>Vagai Silambam</strong><small lang="ta">வாகை சிலம்பம்</small></span>
       </a>
 
-      <!-- Mobile Toggle Button -->
-      <button class="mobile-toggle" id="mobileMenuToggle" aria-label="Toggle Navigation Menu" aria-expanded="false">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-          <line x1="3" y1="6" x2="21" y2="6"></line>
-          <line x1="3" y1="12" x2="21" y2="12"></line>
-          <line x1="3" y1="18" x2="21" y2="18"></line>
-        </svg>
-      </button>
-
-      <!-- Navigation Links & Actions -->
-      <nav class="site-nav" id="siteNavMenu">
-        <ul class="nav-links">
-          <li><a href="features.html">Features</a></li>
-          <li><a href="#attendance">Attendance</a></li>
-          <li><a href="#mobile-app">Mobile App</a></li>
-          <li><a href="pricing.html">Pricing</a></li>
-          <li><a href="faq.html">FAQ</a></li>
-          <li><a href="contact.html">Contact</a></li>
-        </ul>
-        <div class="nav-cta-group">
-          <a class="btn btn-ghost btn-sm" href="app/index.html">Sign In</a>
-          <a class="btn btn-primary btn-sm" href="app/index.html">Start Free Trial</a>
-        </div>
+      <nav class="nav" id="siteNav" aria-label="Main">
+        <a href="#features" data-i18n="nav.features">Features</a>
+        <a href="#pricing" data-i18n="nav.pricing">Pricing</a>
+        <a href="#faq" data-i18n="nav.faq">FAQ</a>
       </nav>
+
+      <div class="header-actions">
+        <button type="button" class="lang-btn" data-lang-toggle data-i18n-aria="lang.switchAria" aria-label="Switch to Tamil">
+          <svg class="icon" aria-hidden="true"><use href="#i-globe"/></svg>
+          <span data-i18n="lang.switch" lang="ta">தமிழ்</span>
+        </button>
+        <a class="btn btn-outline btn-sm header-wa" data-link="whatsapp" href="https://wa.me/910000000000?text=Hello%2C%20I%20would%20like%20to%20know%20more%20about%20Vagai%20Silambam." rel="noopener">
+          <svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg>
+          <span data-i18n="nav.whatsapp">WhatsApp</span>
+        </a>
+        <a class="btn btn-primary btn-sm header-trial" data-link="trial" href="https://wa.me/910000000000?text=Hello%2C%20I%20would%20like%20to%20start%20the%2014-day%20free%20trial%20of%20Vagai%20Silambam." data-i18n="nav.trial">Start Free Trial</a>
+        <button type="button" class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="siteNav" data-i18n-aria="nav.menu" aria-label="Menu">
+          <svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg>
+        </button>
+      </div>
     </div>
   </header>
 
-  <!-- =========================================================================
-       2. HERO SECTION with Silambam Motion Lines & Live SaaS Dashboard Preview
-       ========================================================================= -->
-  <section class="hero-section">
-    <!-- SVG Martial Arts Background Motion Lines -->
-    <div class="hero-bg-canvas" aria-hidden="true">
-      <div class="hero-glow-radial"></div>
-      <div class="hero-glow-secondary"></div>
-      <svg class="silambam-stick-svg" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <!-- Silambam Staff Rotation Paths -->
-        <circle cx="250" cy="250" r="180" stroke="url(#silambamGradient)" stroke-width="1.5" stroke-dasharray="8 8" opacity="0.4" />
-        <circle cx="250" cy="250" r="120" stroke="url(#silambamGradient)" stroke-width="1" opacity="0.3" />
-        <line x1="50" y1="250" x2="450" y2="250" stroke="url(#silambamGradient)" stroke-width="2" stroke-linecap="round" />
-        <line x1="100" y1="100" x2="400" y2="400" stroke="url(#silambamGradient)" stroke-width="3" stroke-linecap="round" />
-        <line x1="100" y1="400" x2="400" y2="100" stroke="url(#silambamGradient)" stroke-width="1.5" stroke-dasharray="4 4" />
-        <circle cx="250" cy="250" r="8" fill="#F59E0B" />
-        <defs>
-          <linearGradient id="silambamGradient" x1="0" y1="0" x2="500" y2="500" gradientUnits="userSpaceOnUse">
-            <stop stop-color="#2563EB" />
-            <stop offset="0.5" stop-color="#F59E0B" />
-            <stop offset="1" stop-color="#38BDF8" />
-          </linearGradient>
-        </defs>
-      </svg>
-    </div>
-
-    <div class="wrap">
-      <div class="hero-grid-layout">
-        <!-- Left: Hero Messaging -->
-        <div class="hero-content-col reveal-on-scroll">
-          <div class="hero-badge">
-            <span class="hero-badge-dot"></span>
-            Built Specifically for Silambam Academies
-          </div>
-          <h1 class="hero-title">
-            Run your Silambam academy,<br>
-            <span class="highlight">not a pile of registers.</span>
-          </h1>
-          <p class="hero-desc">
-            Vagai Silambam keeps your students, training attendance, events, fees, uniforms and certificates in one place — in English and தமிழ், on your phone or any browser.
-          </p>
-          <div class="hero-cta-wrap">
-            <a class="btn btn-saffron btn-lg" href="app/index.html">
-              <span>Start 14-Day Free Trial</span>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+  <main id="main">
+    <!-- 2. Hero -->
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow" data-i18n="hero.eyebrow">For Silambam masters and academy owners</p>
+          <h1 data-i18n="hero.title">Run your Silambam academy, not a pile of registers.</h1>
+          <p class="lead" data-i18n="hero.sub">Attendance, fees, certificates and tournaments, all in one phone app. It even works without internet.</p>
+          <div class="cta-row">
+            <a class="btn btn-primary btn-lg" data-link="trial" href="https://wa.me/910000000000?text=Hello%2C%20I%20would%20like%20to%20start%20the%2014-day%20free%20trial%20of%20Vagai%20Silambam.">
+              <span data-i18n="hero.ctaTrial">Start Free Trial</span>
+              <svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow"/></svg>
             </a>
-            <a class="btn btn-ghost-dark btn-lg" href="#showcase">Explore Features</a>
+            <a class="btn btn-outline btn-lg" data-link="whatsapp" href="https://wa.me/910000000000?text=Hello%2C%20I%20would%20like%20to%20know%20more%20about%20Vagai%20Silambam." rel="noopener">
+              <svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg>
+              <span data-i18n="hero.ctaWhatsapp">Chat on WhatsApp</span>
+            </a>
           </div>
-          <div class="hero-guarantee">
-            <div class="hero-guarantee-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              No credit card required
-            </div>
-            <div class="hero-guarantee-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              Offline Android App
-            </div>
-            <div class="hero-guarantee-item">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              English + தமிழ்
-            </div>
-          </div>
-        </div>
-
-        <!-- Right: Animated Live SaaS Dashboard Mockup -->
-        <div class="hero-mockup-wrapper reveal-on-scroll stagger-1">
-          <div class="hero-mockup-card">
-            <div class="hero-mockup-header">
-              <div class="mockup-window-controls">
-                <span class="mockup-dot red"></span>
-                <span class="mockup-dot yellow"></span>
-                <span class="mockup-dot green"></span>
-              </div>
-              <div class="mockup-window-title">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-                Vagai Academy Dashboard · Chennai Central Dojo
-              </div>
-              <div class="mockup-live-badge">
-                <span class="ticker-pulse"></span> LIVE
-              </div>
-            </div>
-
-            <div class="mockup-body">
-              <div class="mockup-kpi-grid">
-                <!-- KPI 1: Students -->
-                <div class="kpi-card">
-                  <div class="kpi-label">
-                    <span>Enrolled Students</span>
-                    <span style="color:var(--saffron);">🥋</span>
-                  </div>
-                  <div class="kpi-val" id="heroStudentCount">248</div>
-                  <div class="kpi-sub">↑ 12 new this month</div>
-                </div>
-
-                <!-- KPI 2: Attendance Rate -->
-                <div class="kpi-card">
-                  <div class="kpi-label">
-                    <span>Today's Attendance</span>
-                    <span style="color:var(--emerald);">✓</span>
-                  </div>
-                  <div class="kpi-val" id="heroAttendanceRate">92%</div>
-                  <div class="kpi-sub">Morning &amp; Evening Batches</div>
-                </div>
-
-                <!-- KPI 3: Upcoming Events -->
-                <div class="kpi-card">
-                  <div class="kpi-label">
-                    <span>Active Tournaments</span>
-                    <span style="color:#38BDF8;">🏆</span>
-                  </div>
-                  <div class="kpi-val">4</div>
-                  <div class="kpi-sub">State Camp on Oct 18</div>
-                </div>
-
-                <!-- KPI 4: Pending Fees -->
-                <div class="kpi-card">
-                  <div class="kpi-label">
-                    <span>Fee Collection</span>
-                    <span style="color:#A78BFA;">₹</span>
-                  </div>
-                  <div class="kpi-val">₹18,500</div>
-                  <div class="kpi-sub" style="color:#FBBF24;">88% Collected</div>
-                </div>
-              </div>
-
-              <!-- Real-time Live Activity Ticker -->
-              <div class="mockup-ticker" id="heroLiveTicker">
-                <span class="ticker-pulse"></span>
-                <span><span class="tamil-text">கவின் ராஜ்</span> marked <strong class="badge-present">Present ✓</strong> at 06:10 AM (Morning Batch)</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- =========================================================================
-       3. TRUST / FEATURE-ORIENTED QUICK STATS STRIP
-       ========================================================================= -->
-  <section class="trust-strip">
-    <div class="wrap">
-      <div class="trust-grid">
-        <div class="trust-item reveal-on-scroll">
-          <div class="trust-number">01</div>
-          <div class="trust-text">
-            <h4>Silambam-Focused</h4>
-            <p>Built for martial arts dojos, grading sashes, weapon kits &amp; tournament bouts.</p>
-          </div>
-        </div>
-
-        <div class="trust-item reveal-on-scroll stagger-1">
-          <div class="trust-number">02</div>
-          <div class="trust-text">
-            <h4>Cloud-Ready Architecture</h4>
-            <p>Secure multitenant database with role-based access for masters &amp; assistants.</p>
-          </div>
-        </div>
-
-        <div class="trust-item reveal-on-scroll stagger-2">
-          <div class="trust-number">03</div>
-          <div class="trust-text">
-            <h4>Offline Mobile Sync</h4>
-            <p>Mark attendance at open-ground dojos with zero signal; syncs automatically.</p>
-          </div>
-        </div>
-
-        <div class="trust-item reveal-on-scroll stagger-3">
-          <div class="trust-number">04</div>
-          <div class="trust-text">
-            <h4>English + தமிழ்</h4>
-            <p>Native bilingual names &amp; interface so instructors work comfortably.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- =========================================================================
-       4. PRODUCT SHOWCASE SECTION (Interactive SaaS Window)
-       ========================================================================= -->
-  <section class="section" id="showcase">
-    <div class="wrap">
-      <div class="section-header reveal-on-scroll">
-        <span class="section-tag">Product Tour</span>
-        <h2 class="section-title">Everything your academy needs.<br>Nothing your academy doesn't.</h2>
-        <p class="section-subtitle">A purpose-built SaaS suite that replaces messy registers, spreadsheets, and lost WhatsApp receipts with streamlined martial arts operations.</p>
-      </div>
-
-      <!-- Showcase Tabs -->
-      <div class="showcase-tab-bar reveal-on-scroll">
-        <button class="showcase-tab-btn active" data-target="panel-students">👥 Student Registry</button>
-        <button class="showcase-tab-btn" data-target="panel-attendance">✓ Fast Attendance</button>
-        <button class="showcase-tab-btn" data-target="panel-events">🏆 Events &amp; Medals</button>
-        <button class="showcase-tab-btn" data-target="panel-fees">₹ Fees &amp; Invoices</button>
-        <button class="showcase-tab-btn" data-target="panel-uniforms">🥋 Uniforms &amp; Gear</button>
-        <button class="showcase-tab-btn" data-target="panel-reports">📊 Reports &amp; Exports</button>
-      </div>
-
-      <!-- Showcase Panels -->
-      <div class="showcase-container reveal-on-scroll">
-        <!-- Panel 1: Students -->
-        <div class="showcase-panel active" id="panel-students">
-          <div class="showcase-split-grid">
-            <div class="showcase-info">
-              <h3>Comprehensive Student Registry</h3>
-              <p>Keep complete student records with bilingual names, photos, guardian contacts, martial arts levels, and medical notes.</p>
-              <ul class="showcase-feature-list">
-                <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Bilingual record storage (English &amp; தமிழ்)</li>
-                <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Sash rank &amp; weapon progression tracking</li>
-                <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Instant search by Student ID or Phone number</li>
-              </ul>
-            </div>
-            <div class="showcase-mockup-screen">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-                <strong style="font-size:16px;">Student Directory (248 Active)</strong>
-                <span style="font-size:12px;background:#E2E8F0;color:#334155;padding:4px 10px;border-radius:6px;">Batch: Morning Advanced</span>
-              </div>
-              <!-- These two rows simulate a real light-mode app screenshot, so their colors are
-                   fixed hex values rather than the page's dark-theme variables. -->
-              <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;color:#0F172A;">
-                <div style="display:flex;align-items:center;gap:12px;">
-                  <div style="width:36px;height:36px;border-radius:50%;background:#EBF2FF;color:#2563EB;display:grid;place-items:center;font-weight:700;">KR</div>
-                  <div>
-                    <div style="font-weight:700;font-size:14px;">Kavin Raj · <span class="tamil-text">கவின் ராஜ்</span></div>
-                    <div style="font-size:12px;color:#64748B;">VS-2026-0042 · Red Sash (Intermediate)</div>
-                  </div>
-                </div>
-                <span class="paid-stamp" style="font-size:11px;">Active</span>
-              </div>
-              <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;align-items:center;justify-content:space-between;color:#0F172A;">
-                <div style="display:flex;align-items:center;gap:12px;">
-                  <div style="width:36px;height:36px;border-radius:50%;background:#FEF3C7;color:#D97706;display:grid;place-items:center;font-weight:700;">SM</div>
-                  <div>
-                    <div style="font-weight:700;font-size:14px;">Selvi Meena · <span class="tamil-text">செல்வி மீனா</span></div>
-                    <div style="font-size:12px;color:#64748B;">VS-2026-0089 · Black Sash (Instructor)</div>
-                  </div>
-                </div>
-                <span class="paid-stamp" style="font-size:11px;">Active</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Panel 2: Attendance -->
-        <div class="showcase-panel" id="panel-attendance">
-          <div class="showcase-split-grid">
-            <div class="showcase-info">
-              <h3>Lightning Fast Batch Attendance</h3>
-              <p>Designed for real dojo environments. Mark a whole batch present in one click, then toggle only the exceptions.</p>
-              <ul class="showcase-feature-list">
-                <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Present, Late, Absent, and Leave status flags</li>
-                <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Automatic low-attendance warning alerts</li>
-                <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Direct sync to your personal Google Sheet</li>
-              </ul>
-            </div>
-            <div class="showcase-mockup-screen">
-              <div style="background:#ECFDF5;border:1px solid #A7F3D0;border-radius:10px;padding:16px;text-align:center;">
-                <div style="font-size:13px;color:#047857;font-weight:700;">Morning Training Session · 06:00 AM - 07:30 AM</div>
-                <div style="font-size:32px;font-weight:800;color:#065F46;margin:6px 0;">38 / 40 Present (95%)</div>
-                <div style="font-size:12px;color:#059669;">Synced to Dojo Master Sheet ✓</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Panel 3: Events -->
-        <div class="showcase-panel" id="panel-events">
-          <div class="showcase-split-grid">
-            <div class="showcase-info">
-              <h3>Tournaments, Gradings &amp; Camps</h3>
-              <p>Manage event registrations, category brackets, tournament fees, medals, and achievement certificates seamlessly.</p>
-              <ul class="showcase-feature-list">
-                <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Track state, district, and national competitions</li>
-                <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Winner, Runner-up &amp; Participation medals</li>
-                <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> PDF grading certificates stored in Google Drive</li>
-              </ul>
-            </div>
-            <div class="showcase-mockup-screen">
-              <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px;color:#0F172A;">
-                <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
-                  <strong style="color:var(--primary-navy);">Tamil Nadu State Silambam Championship 2026</strong>
-                  <span class="timeline-badge">🏆 12 Medals Won</span>
-                </div>
-                <p style="font-size:13px;color:#475569;margin:0 0 8px;">Category: Nedunkambu (Single Stick) &amp; Surul Vaal</p>
-                <div style="font-size:12px;color:#059669;font-weight:700;">✓ 18 Academy Students Participated</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Panel 4: Fees -->
-        <div class="showcase-panel" id="panel-fees">
-          <div class="showcase-split-grid">
-            <div class="showcase-info">
-              <h3>Fee Ledger &amp; Instant Digital Receipts</h3>
-              <p>Eliminate uncollected dues with automated tracking for monthly training, annual admission, gradings, and uniform payments.</p>
-              <ul class="showcase-feature-list">
-                <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Track paid, pending, overdue, and waived fees</li>
-                <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Automated digital PDF receipt generation</li>
-                <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Monthly collection revenue summary</li>
-              </ul>
-            </div>
-            <div class="showcase-mockup-screen">
-              <div class="fee-verification-box" style="margin-top:0;">
-                <div class="fee-row">
-                  <span>Student</span>
-                  <strong>Kavin Raj (VS-2026-0042)</strong>
-                </div>
-                <div class="fee-row">
-                  <span>Fee Category</span>
-                  <span>Monthly Training (October 2026)</span>
-                </div>
-                <div class="fee-row">
-                  <span>Amount Paid</span>
-                  <span style="color:#059669;">₹1,500</span>
-                </div>
-                <div class="fee-row">
-                  <span>Payment Status</span>
-                  <span class="paid-stamp">Payment Confirmed ✓</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Panel 5: Uniforms -->
-        <div class="showcase-panel" id="panel-uniforms">
-          <div class="showcase-split-grid">
-            <div class="showcase-info">
-              <h3>Silambam Uniforms &amp; Weapon Inventory</h3>
-              <p>Track traditional kurta &amp; dhoti sets, academy t-shirts, bamboo staves (Nedunkambu), sashes, and safety shields by size and allocation.</p>
-              <ul class="showcase-feature-list">
-                <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Weapon condition &amp; sizing management</li>
-                <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Sash color stock (White, Green, Red, Black)</li>
-                <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Uniform distribution history per student</li>
-              </ul>
-            </div>
-            <div class="showcase-mockup-screen">
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px;color:#0F172A;">
-                  <div style="font-weight:700;font-size:13px;">Kurta &amp; Dhoti Uniform</div>
-                  <div style="font-size:12px;color:#64748B;margin:4px 0;">Size: M · Quantity: 1</div>
-                  <span class="paid-stamp" style="font-size:11px;">Issued &amp; Paid ✓</span>
-                </div>
-                <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px;color:#0F172A;">
-                  <div style="font-weight:700;font-size:13px;">Bamboo Staff (5.5 ft)</div>
-                  <div style="font-size:12px;color:#64748B;margin:4px 0;">Polished Poramboke Wood</div>
-                  <span class="paid-stamp" style="font-size:11px;">Issued ✓</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Panel 6: Reports -->
-        <div class="showcase-panel" id="panel-reports">
-          <div class="showcase-split-grid">
-            <div class="showcase-info">
-              <h3>One-Click Audits &amp; Exportable Reports</h3>
-              <p>Export attendance registers, dues summaries, tournament records, and master student lists into clean CSV, Excel or print-ready PDF formats.</p>
-              <ul class="showcase-feature-list">
-                <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Low-attendance dropout prevention report</li>
-                <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Complete financial collection audit logs</li>
-                <li><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Multi-branch comparative analytics</li>
-              </ul>
-            </div>
-            <div class="showcase-mockup-screen">
-              <div style="background:#fff;border:1px solid var(--border);border-radius:10px;padding:16px;color:#0F172A;">
-                <div style="font-weight:700;font-size:14px;margin-bottom:8px;">Ready for Download &amp; Printing:</div>
-                <div style="display:flex;gap:10px;flex-wrap:wrap;">
-                  <span style="background:#EEF2F8;color:#334155;border:1px solid #E2E8F0;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;">📄 Monthly_Attendance_Oct2026.pdf</span>
-                  <span style="background:#EEF2F8;color:#334155;border:1px solid #E2E8F0;padding:6px 12px;border-radius:6px;font-size:12px;font-weight:700;">📊 Fee_Collection_Ledger.xlsx</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- =========================================================================
-       5. WHY VAGAI SILAMBAM (Martial Arts SaaS vs Generic ERP)
-       ========================================================================= -->
-  <section class="section section-alt">
-    <div class="wrap">
-      <div class="section-header reveal-on-scroll">
-        <span class="section-tag">Why Vagai Silambam</span>
-        <h2 class="section-title">Crafted for traditional Silambam academies,<br>not generic school classrooms.</h2>
-        <p class="section-subtitle">Most software on the market was built for academic schools with subjects and exam marks. Vagai Silambam was engineered from day one for martial arts dojos.</p>
-      </div>
-
-      <div class="features-grid">
-        <div class="feature-card reveal-on-scroll">
-          <div class="feature-icon-box">⚔️</div>
-          <h3>Batches, Not Grade 1-12</h3>
-          <p>Organize students by morning/evening batches, skill belts, and age divisions rather than rigid school classes.</p>
-        </div>
-
-        <div class="feature-card reveal-on-scroll stagger-1">
-          <div class="feature-icon-box">📶</div>
-          <h3>Dojo-Ready Offline Mode</h3>
-          <p>Training grounds rarely have steady 5G. Mark training attendance with zero signal; everything syncs when reconnected.</p>
-        </div>
-
-        <div class="feature-card reveal-on-scroll stagger-2">
-          <div class="feature-icon-box">📜</div>
-          <h3>Your Own Google Cloud</h3>
-          <p>Photos and certificates go straight into your own Google Drive and Sheets. You retain complete data ownership forever.</p>
-        </div>
-
-        <div class="feature-card reveal-on-scroll stagger-3">
-          <div class="feature-icon-box">🗣️</div>
-          <h3>Bilingual Tamil &amp; English</h3>
-          <p>Instant language toggling on every screen with bilingual student names so both masters and staff work effortlessly.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- =========================================================================
-       6. CORE FEATURES GRID
-       ========================================================================= -->
-  <section class="section">
-    <div class="wrap">
-      <div class="section-header reveal-on-scroll">
-        <span class="section-tag">Feature Suite</span>
-        <h2 class="section-title">Built for daily dojo operations</h2>
-        <p class="section-subtitle">Every tool necessary to manage a growing martial arts institution with hundreds of students across multiple branches.</p>
-      </div>
-
-      <div class="features-grid">
-        <div class="feature-card reveal-on-scroll">
-          <div class="feature-icon-box">👥</div>
-          <h3>Student Master Profile</h3>
-          <p>Photo ID, bilingual names, guardian emergency contacts, blood group, medical conditions, and historical sash promotions.</p>
-        </div>
-
-        <div class="feature-card reveal-on-scroll stagger-1">
-          <div class="feature-icon-box">⚡</div>
-          <h3>Single-Tap Attendance</h3>
-          <p>Mark 50 students present in one second. Adjust only absentees and late arrivals with custom remarks.</p>
-        </div>
-
-        <div class="feature-card reveal-on-scroll stagger-2">
-          <div class="feature-icon-box">🏆</div>
-          <h3>Tournaments &amp; Medals</h3>
-          <p>Track district, state, and national tournaments, registrations, match results, and medal tallies per student.</p>
-        </div>
-
-        <div class="feature-card reveal-on-scroll stagger-3">
-          <div class="feature-icon-box">💳</div>
-          <h3>Automated Fee Vault</h3>
-          <p>Monthly training, grading exams, and uniform invoices with automated receipt generation and overdue alerts.</p>
-        </div>
-
-        <div class="feature-card reveal-on-scroll stagger-1">
-          <div class="feature-icon-box">🥋</div>
-          <h3>Kit &amp; Weapon Inventory</h3>
-          <p>Track kurta-dhoti sets, bamboo staffs, metal weapons, chest guards, and sashes by size and condition.</p>
-        </div>
-
-        <div class="feature-card reveal-on-scroll stagger-2">
-          <div class="feature-icon-box">🏢</div>
-          <h3>Multi-Branch Management</h3>
-          <p>Manage multiple branch locations under one master academy with independent instructor permissions and pooled reporting.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- =========================================================================
-       7. ATTENDANCE SHOWCASE (Interactive Live Simulator)
-       ========================================================================= -->
-  <section class="section section-alt" id="attendance">
-    <div class="wrap">
-      <div class="section-header reveal-on-scroll">
-        <span class="section-tag">Attendance Engine</span>
-        <h2 class="section-title">Mark attendance in seconds,<br>not fifteen minutes.</h2>
-        <p class="section-subtitle">Experience how fast Vagai Silambam is. Try the interactive attendance simulator below.</p>
-      </div>
-
-      <div class="attendance-showcase-box reveal-on-scroll">
-        <div class="attendance-showcase-grid">
-          <!-- Left: Live Attendance KPI Counters -->
-          <div class="attendance-left-panel">
-            <h3 style="font-size:22px;margin-bottom:6px;">Today's Training Session</h3>
-            <p style="font-size:14px;color:var(--text-secondary);margin-bottom:20px;">Morning Batch · 06:00 AM - 07:30 AM</p>
-
-            <div class="attendance-stats-cards">
-              <div class="att-stat present">
-                <div class="att-stat-label">✓ Present</div>
-                <div class="att-stat-number counter" data-target="82" id="demoPresentCount">82</div>
-              </div>
-              <div class="att-stat late">
-                <div class="att-stat-label">! Late</div>
-                <div class="att-stat-number counter" data-target="5" id="demoLateCount">5</div>
-              </div>
-              <div class="att-stat absent">
-                <div class="att-stat-label">× Absent</div>
-                <div class="att-stat-number counter" data-target="7" id="demoAbsentCount">7</div>
-              </div>
-              <div class="att-stat leave">
-                <div class="att-stat-label">— Leave</div>
-                <div class="att-stat-number counter" data-target="3" id="demoLeaveCount">3</div>
-              </div>
-            </div>
-
-            <button class="btn btn-primary" id="markAllPresentBtn" style="width:100%;margin-top:10px;">
-              Mark Whole Batch Present (1-Tap)
-            </button>
-            <p style="font-size:12px;color:var(--text-muted);text-align:center;margin-top:10px;">
-              Instant sync with Google Sheets &amp; cloud database
-            </p>
-          </div>
-
-          <!-- Right: Interactive Student Rows -->
-          <div class="attendance-right-panel">
-            <div style="font-size:13px;font-weight:700;color:var(--text-secondary);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.04em;">
-              Interactive Batch Demo (Click status to change):
-            </div>
-            
-            <div class="demo-student-table">
-              <!-- Student 1 -->
-              <div class="demo-student-row" data-status="present">
-                <div class="demo-student-info">
-                  <div class="demo-avatar">KR</div>
-                  <div>
-                    <div class="demo-student-name">Kavin Raj · <span class="tamil-text">கவின் ராஜ்</span></div>
-                    <div class="demo-student-id">VS-2026-0042 · Advanced Red Sash</div>
-                  </div>
-                </div>
-                <div class="status-button-group">
-                  <button class="student-status-btn selected" data-set-status="present">✓ Present</button>
-                  <button class="student-status-btn" data-set-status="late">! Late</button>
-                  <button class="student-status-btn" data-set-status="absent">× Absent</button>
-                  <button class="student-status-btn" data-set-status="leave">— Leave</button>
-                </div>
-              </div>
-
-              <!-- Student 2 -->
-              <div class="demo-student-row" data-status="present">
-                <div class="demo-student-info">
-                  <div class="demo-avatar" style="background:#FEF3C7;color:#D97706;">SM</div>
-                  <div>
-                    <div class="demo-student-name">Selvi Meena · <span class="tamil-text">செல்வி மீனா</span></div>
-                    <div class="demo-student-id">VS-2026-0089 · Black Sash</div>
-                  </div>
-                </div>
-                <div class="status-button-group">
-                  <button class="student-status-btn selected" data-set-status="present">✓ Present</button>
-                  <button class="student-status-btn" data-set-status="late">! Late</button>
-                  <button class="student-status-btn" data-set-status="absent">× Absent</button>
-                  <button class="student-status-btn" data-set-status="leave">— Leave</button>
-                </div>
-              </div>
-
-              <!-- Student 3 -->
-              <div class="demo-student-row" data-status="late">
-                <div class="demo-student-info">
-                  <div class="demo-avatar" style="background:#FEE2E2;color:#DC2626;">AK</div>
-                  <div>
-                    <div class="demo-student-name">Ashwin Kumar · <span class="tamil-text">அஸ்வின் குமார்</span></div>
-                    <div class="demo-student-id">VS-2026-0114 · Green Sash</div>
-                  </div>
-                </div>
-                <div class="status-button-group">
-                  <button class="student-status-btn" data-set-status="present">✓ Present</button>
-                  <button class="student-status-btn selected" data-set-status="late">! Late</button>
-                  <button class="student-status-btn" data-set-status="absent">× Absent</button>
-                  <button class="student-status-btn" data-set-status="leave">— Leave</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- =========================================================================
-       8. STUDENT MANAGEMENT SHOWCASE
-       ========================================================================= -->
-  <section class="section">
-    <div class="wrap">
-      <div class="section-header reveal-on-scroll">
-        <span class="section-tag">Student Intelligence</span>
-        <h2 class="section-title">A complete 360° profile for every martial artist</h2>
-        <p class="section-subtitle">Track attendance percentage, tournament medals, grading certificates, and fee status on a unified digital card.</p>
-      </div>
-
-      <div class="student-card-mockup reveal-on-scroll">
-        <div class="student-card-badge-strip">Rank Verified</div>
-
-        <div class="student-profile-top">
-          <div class="student-avatar-lg">KR</div>
-          <div class="student-details">
-            <h3>Kavin Raj · <span class="tamil-text">கவின் ராஜ்</span></h3>
-            <span class="student-id-tag">VS-2026-0042</span>
-            <div style="font-size:13px;color:var(--text-secondary);margin-top:4px;">
-              Intermediate · Red Sash (Level 3) · Joined Jan 2025
-            </div>
-          </div>
-        </div>
-
-        <div class="student-metrics-row">
-          <div class="student-metric-item">
-            <div class="metric-title">Attendance</div>
-            <div class="metric-value" style="color:var(--emerald);">94%</div>
-          </div>
-          <div class="student-metric-item">
-            <div class="metric-title">Tournaments</div>
-            <div class="metric-value">8 Events</div>
-          </div>
-          <div class="student-metric-item">
-            <div class="metric-title">Certificates</div>
-            <div class="metric-value" style="color:var(--amber-text);">3 Issued</div>
-          </div>
-          <div class="student-metric-item">
-            <div class="metric-title">Monthly Fee</div>
-            <div class="metric-value" style="color:var(--emerald);">Paid ✓</div>
-          </div>
-        </div>
-
-        <div style="background:#F8FAFC;border:1px solid var(--border);border-radius:10px;padding:14px;font-size:13px;display:flex;justify-content:space-between;align-items:center;color:#0F172A;">
-          <div>
-            <div style="font-weight:700;color:var(--primary-navy);">Guardian: M. Rajendran</div>
-            <div style="color:#64748B;">+91 98401 23456 · Blood Group: O+</div>
-          </div>
-          <span style="background:#E0F2FE;color:#0369A1;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:700;">Google Drive Synced</span>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- =========================================================================
-       9. EVENTS & ACHIEVEMENTS TIMELINE
-       ========================================================================= -->
-  <section class="section section-alt">
-    <div class="wrap">
-      <div class="section-header reveal-on-scroll">
-        <span class="section-tag">Martial Arts Honors</span>
-        <h2 class="section-title">Record every victory, tournament &amp; grading camp</h2>
-        <p class="section-subtitle">A permanent historical record of your academy's championship triumphs, state tournaments, and student belt promotions.</p>
-      </div>
-
-      <div class="timeline-container">
-        <!-- Event 1 -->
-        <div class="timeline-item reveal-on-scroll">
-          <div class="timeline-node"></div>
-          <div class="timeline-card">
-            <div class="timeline-date">OCTOBER 2026</div>
-            <div class="timeline-title">Tamil Nadu State Silambam Championship</div>
-            <p style="font-size:14px;color:var(--text-secondary);margin:0 0 10px;">
-              State-level single stick (Nedunkambu) and double stick sparring bouts.
-            </p>
-            <span class="timeline-badge">🏆 Winner — Gold Medal (Kavin Raj)</span>
-          </div>
-        </div>
-
-        <!-- Event 2 -->
-        <div class="timeline-item reveal-on-scroll stagger-1">
-          <div class="timeline-node"></div>
-          <div class="timeline-card">
-            <div class="timeline-date">AUGUST 2026</div>
-            <div class="timeline-title">Annual Intensive Monsoon Training Camp</div>
-            <p style="font-size:14px;color:var(--text-secondary);margin:0 0 10px;">
-              3-day traditional weapon workshop covering Surul Vaal, Vaal Vechu, and Maankombu.
-            </p>
-            <span class="timeline-badge" style="background:#E0F2FE;color:#0369A1;">🏕️ 64 Academy Students Certified</span>
-          </div>
-        </div>
-
-        <!-- Event 3 -->
-        <div class="timeline-item reveal-on-scroll stagger-2">
-          <div class="timeline-node"></div>
-          <div class="timeline-card">
-            <div class="timeline-date">MAY 2026</div>
-            <div class="timeline-title">District Silambam Tournament — Madurai</div>
-            <p style="font-size:14px;color:var(--text-secondary);margin:0 0 10px;">
-              District level junior &amp; senior form demonstrations (Alankara Silambam).
-            </p>
-            <span class="timeline-badge" style="background:#FEF3C7;color:#D97706;">🥈 Runner-Up Trophy (Team Vagai)</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- =========================================================================
-       10. FEES & 11. UNIFORMS SHOWCASE
-       ========================================================================= -->
-  <section class="section">
-    <div class="wrap">
-      <div class="section-header reveal-on-scroll">
-        <span class="section-tag">Operations &amp; Gear</span>
-        <h2 class="section-title">Fee collections &amp; uniform kit distribution</h2>
-        <p class="section-subtitle">Track payments and physical gear with zero paperwork and instant digital receipts.</p>
-      </div>
-
-      <div class="two-column-showcase">
-        <!-- Fees Card -->
-        <div class="showcase-subcard reveal-on-scroll">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-            <div class="feature-icon-box" style="margin-bottom:0;">₹</div>
-            <div>
-              <h3 style="margin:0;font-size:20px;">Automated Fee Ledger</h3>
-              <span style="font-size:13px;color:var(--text-muted);">Instant verification &amp; digital receipts</span>
-            </div>
-          </div>
-
-          <div class="fee-verification-box">
-            <div class="fee-row">
-              <span>Monthly Training Fee</span>
-              <strong>₹1,500</strong>
-            </div>
-            <div class="fee-row">
-              <span>Student ID</span>
-              <span>VS-2026-0042</span>
-            </div>
-            <div class="fee-row">
-              <span>Due Date</span>
-              <span>05 Oct 2026</span>
-            </div>
-            <div class="fee-row">
-              <span>Verification</span>
-              <span class="paid-stamp">Paid &amp; Verified ✓</span>
-            </div>
-          </div>
-          <p style="font-size:13px;color:var(--text-secondary);margin-top:14px;">
-            Parents receive automated payment confirmations, while the academy ledger updates in real time.
-          </p>
-        </div>
-
-        <!-- Uniform & Equipment Card -->
-        <div class="showcase-subcard reveal-on-scroll stagger-1">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-            <div class="feature-icon-box" style="margin-bottom:0;">🥋</div>
-            <div>
-              <h3 style="margin:0;font-size:20px;">Uniform &amp; Weapon Kits</h3>
-              <span style="font-size:13px;color:var(--text-muted);">Traditional attire &amp; staff inventory</span>
-            </div>
-          </div>
-
-          <div style="display:flex;flex-direction:column;gap:12px;">
-            <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;justify-content:space-between;align-items:center;">
-              <div>
-                <strong style="font-size:14px;">Traditional Kurta &amp; Dhoti</strong>
-                <div style="font-size:12px;color:var(--text-muted);">Size: M · Quantity: 1 Set</div>
-              </div>
-              <span class="paid-stamp">Issued ✓</span>
-            </div>
-
-            <div style="background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:14px;display:flex;justify-content:space-between;align-items:center;">
-              <div>
-                <strong style="font-size:14px;">Bamboo Staff (Nedunkambu 5.5ft)</strong>
-                <div style="font-size:12px;color:var(--text-muted);">Hardwood Poramboke · Condition: New</div>
-              </div>
-              <span class="paid-stamp">Allocated ✓</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- =========================================================================
-       12. MOBILE APP & 13. OFFLINE SYNC ARCHITECTURE
-       ========================================================================= -->
-  <section class="section section-dark" id="mobile-app">
-    <div class="wrap">
-      <div class="section-header reveal-on-scroll">
-        <span class="section-tag">Dojo Technology</span>
-        <h2 class="section-title">Your academy in your pocket.<br>Works without internet.</h2>
-        <p class="section-subtitle">Training grounds and open fields often have poor cellular connectivity. Vagai Silambam is built with local SQLite caching so attendance is never interrupted.</p>
-      </div>
-
-      <div class="mobile-app-grid">
-        <!-- Left: Offline Architecture & Explanation -->
-        <div class="sync-diagram-card reveal-on-scroll">
-          <h3 style="font-size:24px;margin-bottom:12px;">Keep training even when the internet doesn't.</h3>
-          <p style="color:#CBD5E1;font-size:15px;line-height:1.6;margin-bottom:24px;">
-            Instructors take attendance right on the training mat. The native mobile engine saves data locally on the Android device and synchronizes smoothly with PostgreSQL cloud databases the moment a connection is established.
-          </p>
-
-          <!-- Sync Nodes Diagram -->
-          <div class="sync-nodes-row">
-            <div class="sync-node-box">
-              <div style="font-size:22px;">📱</div>
-              <h4>Offline Mobile</h4>
-              <p>SQLite Local DB<br>Instant 0ms latency</p>
-            </div>
-
-            <div class="sync-connection-indicator">
-              <span>AUTO SYNC</span>
-              <div class="sync-pulse-line" id="syncPulseLine"></div>
-              <span>RETRY PULSE</span>
-            </div>
-
-            <div class="sync-node-box">
-              <div style="font-size:22px;">☁️</div>
-              <h4>SaaS Cloud</h4>
-              <p>FastAPI + PostgreSQL<br>Encrypted Backup</p>
-            </div>
-          </div>
-
-          <div style="display:flex;gap:18px;flex-wrap:wrap;">
-            <div style="font-size:13px;color:#A7F3D0;display:flex;align-items:center;gap:6px;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Zero data loss guarantee
-            </div>
-            <div style="font-size:13px;color:#A7F3D0;display:flex;align-items:center;gap:6px;">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Background conflict resolution
-            </div>
-          </div>
-        </div>
-
-        <!-- Right: Smartphone Device Frame Mockup -->
-        <div class="phone-mockup-frame reveal-on-scroll stagger-1">
-          <div class="phone-speaker-notch"></div>
-          <div class="phone-inner-screen">
-            <div class="phone-app-header">
-              <div style="font-weight:800;font-size:13px;">🥋 VAGAI SILAMBAM</div>
-              <div class="offline-pill">
-                <span class="ticker-pulse" style="background:#34D399;"></span> OFFLINE READY
-              </div>
-            </div>
-
-            <div class="phone-app-card">
-              <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-                <strong>Morning Dojo Batch</strong>
-                <span style="color:#34D399;">06:00 AM</span>
-              </div>
-              <div style="font-size:11px;color:#94A3B8;">40 Students Registered</div>
-            </div>
-
-            <div class="phone-app-card" style="background:#0F254B;border:1px solid #2563EB;">
-              <div style="font-weight:700;font-size:12px;margin-bottom:6px;">Mark Attendance:</div>
-              <div style="display:flex;gap:4px;">
-                <span style="background:#059669;color:#fff;padding:4px 8px;border-radius:4px;font-size:10px;font-weight:700;">38 Present</span>
-                <span style="background:#D97706;color:#fff;padding:4px 8px;border-radius:4px;font-size:10px;font-weight:700;">1 Late</span>
-                <span style="background:#DC2626;color:#fff;padding:4px 8px;border-radius:4px;font-size:10px;font-weight:700;">1 Absent</span>
-              </div>
-            </div>
-
-            <div class="phone-app-card" style="margin-top:auto;">
-              <div style="font-size:11px;color:#94A3B8;text-align:center;">
-                ⚡ All records stored on phone memory.<br>Will sync upon network reconnect.
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- =========================================================================
-       14. GOOGLE DRIVE + GOOGLE SHEETS INTEGRATION & 15. MULTI-BRANCH SAAS
-       ========================================================================= -->
-  <section class="section">
-    <div class="wrap">
-      <div class="section-header reveal-on-scroll">
-        <span class="section-tag">Enterprise Ecosystem</span>
-        <h2 class="section-title">Connected to your tools &amp; multi-branch ready</h2>
-        <p class="section-subtitle">Your academy data stays in your personal Google account, while multi-branch architecture connects all your dojos together.</p>
-      </div>
-
-      <div class="two-column-showcase">
-        <!-- Google Integration Card -->
-        <div class="integration-card reveal-on-scroll">
-          <div>
-            <div class="section-tag" style="margin-bottom:8px;">Your Data Stays Yours</div>
-            <h3 style="font-size:22px;margin-bottom:10px;">Direct Google Drive &amp; Sheets Sync</h3>
-            <p style="color:var(--text-secondary);font-size:14.5px;line-height:1.6;margin-bottom:16px;">
-              Connect your Google account with a single click. Attendance logs are appended to your own Google Sheets, and student photos &amp; certificates are archived in your Google Drive.
-            </p>
-            <div style="display:flex;gap:12px;align-items:center;">
-              <span style="background:#EBF2FF;color:#1D4ED8;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;">📊 Google Sheets</span>
-              <span style="background:#FEF3C7;color:#B45309;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;">📁 Google Drive</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Multi-Branch Hierarchy Card -->
-        <div class="integration-card reveal-on-scroll stagger-1">
-          <div style="width:100%;">
-            <div class="section-tag" style="margin-bottom:8px;">Multi-Branch SaaS</div>
-            <h3 style="font-size:22px;margin-bottom:10px;">Manage Multiple Training Dojos</h3>
-            <p style="color:var(--text-secondary);font-size:14.5px;line-height:1.6;margin-bottom:16px;">
-              Centralized administrative visibility with isolated branch instructor logins.
-            </p>
-            <div class="branch-tree">
-              <div class="branch-root">Master Academy HQ</div>
-              <div class="branch-leaves">
-                <div class="branch-leaf"><strong>Branch 1</strong><br><span style="font-size:11px;color:var(--text-muted);">Chennai Central</span></div>
-                <div class="branch-leaf"><strong>Branch 2</strong><br><span style="font-size:11px;color:var(--text-muted);">Coimbatore Dojo</span></div>
-                <div class="branch-leaf"><strong>Branch 3</strong><br><span style="font-size:11px;color:var(--text-muted);">Madurai North</span></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- =========================================================================
-       16. SAAS PRICING WITH INTERACTIVE BILLING TOGGLE
-       ========================================================================= -->
-  <section class="section section-alt" id="pricing">
-    <div class="wrap">
-      <div class="section-header reveal-on-scroll">
-        <span class="section-tag">Predictable Plans</span>
-        <h2 class="section-title">Transparent pricing for academies of every size</h2>
-        <p class="section-subtitle">Start with a 14-day free trial. No credit card required. Cancel or upgrade anytime.</p>
-      </div>
-
-      <!-- Monthly / Annual Switcher -->
-      <div class="pricing-toggle-wrap reveal-on-scroll">
-        <span class="pricing-toggle-label">Monthly Billing</span>
-        <label class="switch-control" for="billingToggle">
-          <input type="checkbox" id="billingToggle" aria-label="Toggle between monthly and annual billing">
-          <span class="slider-round"></span>
-        </label>
-        <span class="pricing-toggle-label">Annual Billing</span>
-        <span class="plan-savings-tag" style="opacity:0;">Save ~17% (2 Months Free)</span>
-      </div>
-
-      <!-- Pricing Cards Grid -->
-      <div class="pricing-plans-grid">
-        <!-- Starter Plan -->
-        <div class="pricing-card reveal-on-scroll">
-          <h3>Starter</h3>
-          <p style="font-size:13.5px;color:var(--text-muted);margin:0;">For growing single dojos</p>
-          <div class="pricing-price-box">
-            <span class="price-amount" id="price-starter">₹499</span>
-            <span class="price-period" id="period-starter"> / month</span>
-          </div>
-          <ul class="pricing-features-list">
-            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Up to 50 active students</li>
-            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> 1 Training branch</li>
-            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> 5 Staff/Instructor logins</li>
-            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Attendance, fees &amp; events</li>
-            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Offline Android app</li>
+          <ul class="chips">
+            <li><svg class="icon" aria-hidden="true"><use href="#i-wifi-off"/></svg><span data-i18n="hero.chip1">Offline Android app</span></li>
+            <li><svg class="icon" aria-hidden="true"><use href="#i-globe"/></svg><span data-i18n="hero.chip2">English + தமிழ்</span></li>
+            <li><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg><span data-i18n="hero.chip3">No credit card</span></li>
           </ul>
-          <a class="btn btn-ghost" href="app/index.html">Start Free Trial</a>
         </div>
 
-        <!-- Standard Plan (Featured) -->
-        <div class="pricing-card featured reveal-on-scroll stagger-1">
-          <div class="featured-ribbon">Most Popular</div>
-          <h3>Standard</h3>
-          <p style="font-size:13.5px;color:var(--text-muted);margin:0;">For established academies</p>
-          <div class="pricing-price-box">
-            <span class="price-amount" id="price-standard">₹999</span>
-            <span class="price-period" id="period-standard"> / month</span>
+        <div class="hero-art" role="img" data-i18n-aria="hero.phoneAlt" aria-label="A phone showing today's attendance list in Tamil">
+          <!-- Staff (nedunkambu) line drawing. It spins once on load. Replace with a real illustration any time. -->
+          <svg class="staff" viewBox="0 0 400 400" aria-hidden="true" focusable="false">
+            <g class="staff-spin">
+              <rect x="190" y="14" width="20" height="372" rx="10" fill="#FCEBC0" stroke="#1F1B16" stroke-width="3"/>
+              <rect x="185" y="56" width="30" height="16" rx="3" fill="#B3261E" stroke="#1F1B16" stroke-width="3"/>
+              <rect x="185" y="328" width="30" height="16" rx="3" fill="#B3261E" stroke="#1F1B16" stroke-width="3"/>
+              <rect x="186" y="14" width="28" height="10" rx="4" fill="#1F1B16"/>
+              <rect x="186" y="376" width="28" height="10" rx="4" fill="#1F1B16"/>
+              <path d="M200 188 C246 166 286 198 336 170 L328 204 C288 228 246 198 200 214 Z" fill="#3F6B3A" stroke="#1F1B16" stroke-width="3" stroke-linejoin="round"/>
+              <path d="M200 188 C170 200 150 236 120 244 L132 214 C154 208 176 186 200 176" fill="#E8A317" stroke="#1F1B16" stroke-width="3" stroke-linejoin="round"/>
+            </g>
+          </svg>
+
+          <!-- Phone mock-up: always Tamil, because it shows the real Tamil attendance screen. -->
+          <div class="phone" lang="ta" aria-hidden="true">
+            <div class="phone-bar"></div>
+            <div class="phone-screen">
+              <div class="ph-head"><strong>இன்றைய வருகை</strong><span>காலை 6:00</span></div>
+              <ul class="ph-list">
+                <li><span class="ph-av">க</span><span class="ph-name">கவின் ராஜ்</span><span class="ph-chip ph-present"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>வந்தார்</span></li>
+                <li><span class="ph-av">செ</span><span class="ph-name">செல்வி மீனா</span><span class="ph-chip ph-present"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>வந்தார்</span></li>
+                <li><span class="ph-av">அ</span><span class="ph-name">அஸ்வின் குமார்</span><span class="ph-chip ph-late"><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg>தாமதம்</span></li>
+                <li><span class="ph-av">பி</span><span class="ph-name">பிரியா தேவி</span><span class="ph-chip ph-absent"><svg class="icon" aria-hidden="true"><use href="#i-x"/></svg>வரவில்லை</span></li>
+              </ul>
+              <div class="ph-btn">அனைவரும் வந்தனர்</div>
+            </div>
           </div>
-          <ul class="pricing-features-list">
-            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Up to 150 active students</li>
-            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> 1 Training branch</li>
-            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> 10 Staff/Instructor logins</li>
-            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Certificates &amp; achievements</li>
-            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Google Drive &amp; Sheets sync</li>
+        </div>
+      </div>
+    </section>
+
+    <div class="kolam" aria-hidden="true"></div>
+
+    <!-- 3. Pain to solution -->
+    <section class="section strip" aria-labelledby="pain-title">
+      <div class="wrap">
+        <h2 id="pain-title" class="section-title" data-i18n="pain.title">From paper to one tap</h2>
+        <ul class="pairs">
+          <li class="pair reveal">
+            <div class="pair-before"><span class="pair-tag" data-i18n="pain.before">Before</span><p data-i18n="pain.1.before">Paper register, 15 minutes every class</p></div>
+            <svg class="icon pair-arrow" aria-hidden="true"><use href="#i-arrow"/></svg>
+            <div class="pair-after"><span class="pair-tag" data-i18n="pain.after">With Vagai Silambam</span><p data-i18n="pain.1.after">One-tap attendance</p></div>
+          </li>
+          <li class="pair reveal">
+            <div class="pair-before"><span class="pair-tag" data-i18n="pain.before">Before</span><p data-i18n="pain.2.before">Lost fee receipts</p></div>
+            <svg class="icon pair-arrow" aria-hidden="true"><use href="#i-arrow"/></svg>
+            <div class="pair-after"><span class="pair-tag" data-i18n="pain.after">With Vagai Silambam</span><p data-i18n="pain.2.after">Instant PDF receipt</p></div>
+          </li>
+          <li class="pair reveal">
+            <div class="pair-before"><span class="pair-tag" data-i18n="pain.before">Before</span><p data-i18n="pain.3.before">Certificates scattered everywhere</p></div>
+            <svg class="icon pair-arrow" aria-hidden="true"><use href="#i-arrow"/></svg>
+            <div class="pair-after"><span class="pair-tag" data-i18n="pain.after">With Vagai Silambam</span><p data-i18n="pain.3.after">Safe in your Google Drive</p></div>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 4. Features -->
+    <section class="section section-sand" id="features" aria-labelledby="features-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="features-title" class="section-title" data-i18n="features.title">Everything your academy needs</h2>
+          <p class="section-sub" data-i18n="features.sub">Six simple parts. No long training needed.</p>
+        </div>
+        <ul class="cards">
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg></span><h3 data-i18n="f.students.t">Students</h3><p data-i18n="f.students.d">Every student's details, sash level and photo in one place.</p></li>
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-calendar-check"/></svg></span><h3 data-i18n="f.attendance.t">Attendance</h3><p data-i18n="f.attendance.d">Mark present, late or absent in one tap. See at once who missed class.</p></li>
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-receipt"/></svg></span><h3 data-i18n="f.fees.t">Fees and receipts</h3><p data-i18n="f.fees.d">Know who has paid and who is pending. Give a receipt on the spot.</p></li>
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-award"/></svg></span><h3 data-i18n="f.events.t">Events and medals</h3><p data-i18n="f.events.d">Register students for tournaments and keep every medal and result.</p></li>
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-bag"/></svg></span><h3 data-i18n="f.gear.t">Uniforms and gear</h3><p data-i18n="f.gear.d">Keep count of the uniforms, sashes and staffs given to each student.</p></li>
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-chart"/></svg></span><h3 data-i18n="f.reports.t">Reports</h3><p data-i18n="f.reports.d">Monthly attendance and fee reports for you and for parents.</p></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 5. Interactive attendance demo -->
+    <section class="section" id="demo" aria-labelledby="demo-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="demo-title" class="section-title" data-i18n="demo.title">Try it: attendance in seconds</h2>
+          <p class="section-sub" data-i18n="demo.sub">Tap a button next to each student.</p>
+        </div>
+        <div class="demo reveal">
+          <div class="demo-top">
+            <p class="demo-session"><svg class="icon" aria-hidden="true"><use href="#i-calendar-check"/></svg><span data-i18n="demo.session">Today's class · 6:00 AM</span></p>
+            <div class="demo-tools">
+              <button type="button" class="btn btn-secondary btn-sm" id="demoMarkAll" data-i18n="demo.markAll">Mark everyone present</button>
+              <button type="button" class="btn btn-link btn-sm" id="demoReset" data-i18n="demo.reset">Start again</button>
+            </div>
+          </div>
+          <div id="demoList" class="demo-list"></div>
+          <p class="demo-summary" id="demoSummary" role="status" aria-live="polite"></p>
+          <p class="demo-tip" data-i18n="demo.tip">In the real app, this is saved on your phone and in your Google Sheet.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="kolam" aria-hidden="true"></div>
+
+    <!-- 6. Offline -->
+    <section class="section section-ink on-dark" aria-labelledby="offline-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="offline-title" class="section-title" data-i18n="offline.title">Take attendance even with no signal</h2>
+          <p class="section-sub" data-i18n="offline.sub">No signal at the training ground? No problem.</p>
+        </div>
+        <ol class="steps">
+          <li class="step reveal"><span class="step-num">1</span><span class="step-icon"><svg class="icon" aria-hidden="true"><use href="#i-wifi-off"/></svg></span><h3 data-i18n="offline.s1.t">Mark with no signal</h3><p data-i18n="offline.s1.d">Take attendance and note fees as usual.</p></li>
+          <li class="step reveal"><span class="step-num">2</span><span class="step-icon"><svg class="icon" aria-hidden="true"><use href="#i-phone"/></svg></span><h3 data-i18n="offline.s2.t">Saved on your phone</h3><p data-i18n="offline.s2.d">Everything is kept safely on your phone.</p></li>
+          <li class="step reveal"><span class="step-num">3</span><span class="step-icon"><svg class="icon" aria-hidden="true"><use href="#i-sync"/></svg></span><h3 data-i18n="offline.s3.t">Updates by itself</h3><p data-i18n="offline.s3.d">When the internet comes back, it syncs on its own.</p></li>
+        </ol>
+        <p class="note-on-dark" data-i18n="offline.note">Connect to the internet at least once every 3 days to keep your account active.</p>
+      </div>
+    </section>
+
+    <!-- 7. Data stays yours -->
+    <section class="section" aria-labelledby="data-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="data-title" class="section-title" data-i18n="data.title">Your data stays yours</h2>
+          <p class="section-sub" data-i18n="data.sub">Your records and files are saved in your own Google account.</p>
+        </div>
+        <ul class="cards cards-3">
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-sheet"/></svg></span><h3 data-i18n="data.p1.t">Attendance: Google Sheets</h3><p data-i18n="data.p1.d">Every attendance is added to your own Google Sheet. Open it any time.</p></li>
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-folder"/></svg></span><h3 data-i18n="data.p2.t">Certificates and photos: Google Drive</h3><p data-i18n="data.p2.d">Certificates, photos and documents go into a folder in your own Drive.</p></li>
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg></span><h3 data-i18n="data.p3.t">Private by design</h3><p data-i18n="data.p3.d">Each academy sees only its own information.</p></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- 8. Multi-branch -->
+    <section class="section section-sand" aria-labelledby="branches-title">
+      <div class="wrap branches">
+        <div class="branches-copy">
+          <h2 id="branches-title" class="section-title" data-i18n="branches.title">Many branches, one view</h2>
+          <p class="section-sub" data-i18n="branches.sub">Add every branch and see them all from one place.</p>
+          <ul class="ticks">
+            <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span data-i18n="branches.p1">All students in one list</span></li>
+            <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span data-i18n="branches.p2">A separate login for each master</span></li>
+            <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span data-i18n="branches.p3">Attendance and fees branch by branch</span></li>
           </ul>
-          <a class="btn btn-primary" href="app/index.html">Start Free Trial</a>
         </div>
+        <svg class="tree" viewBox="0 0 360 220" role="img" data-i18n-aria="branches.diagramAlt" aria-label="Diagram: one main academy connected to three branches">
+          <path d="M180 62V100M60 100H300M60 100V140M180 100V140M300 100V140" fill="none" stroke="#1F1B16" stroke-width="3" stroke-linecap="round"/>
+          <rect x="105" y="14" width="150" height="48" rx="12" fill="#E8A317" stroke="#1F1B16" stroke-width="3"/>
+          <text x="180" y="44" text-anchor="middle" data-i18n="branches.hq">Main academy</text>
+          <rect x="10" y="140" width="100" height="46" rx="12" fill="#FFFDF8" stroke="#1F1B16" stroke-width="3"/>
+          <text x="60" y="169" text-anchor="middle" data-i18n="branches.b1">Branch 1</text>
+          <rect x="130" y="140" width="100" height="46" rx="12" fill="#FFFDF8" stroke="#1F1B16" stroke-width="3"/>
+          <text x="180" y="169" text-anchor="middle" data-i18n="branches.b2">Branch 2</text>
+          <rect x="250" y="140" width="100" height="46" rx="12" fill="#FFFDF8" stroke="#1F1B16" stroke-width="3"/>
+          <text x="300" y="169" text-anchor="middle" data-i18n="branches.b3">Branch 3</text>
+        </svg>
+      </div>
+    </section>
 
-        <!-- Professional Plan -->
-        <div class="pricing-card reveal-on-scroll stagger-2">
-          <h3>Professional</h3>
-          <p style="font-size:13.5px;color:var(--text-muted);margin:0;">For multi-centre academies</p>
-          <div class="pricing-price-box">
-            <span class="price-amount" id="price-pro">₹1,499</span>
-            <span class="price-period" id="period-pro"> / month</span>
-          </div>
-          <ul class="pricing-features-list">
-            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Up to 300 active students</li>
-            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> 2 Training branches</li>
-            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> 20 Staff/Instructor logins</li>
-            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Multi-branch reports</li>
-            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Priority email support</li>
-          </ul>
-          <a class="btn btn-ghost" href="app/index.html">Start Free Trial</a>
+    <!-- 9. Social proof. Everything in square brackets is placeholder content to replace. -->
+    <section class="section" aria-labelledby="proof-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="proof-title" class="section-title" data-i18n="proof.title">Masters like you</h2>
+          <p class="section-sub proof-count" id="proofCount" hidden></p>
         </div>
+        <ul class="quotes">
+          <li class="quote reveal">
+            <blockquote class="is-placeholder" data-i18n="proof.q">[Replace with a real quote from an academy master.]</blockquote>
+            <div class="quote-by">
+              <span class="avatar" role="img" data-i18n-aria="proof.photo" aria-label="Photo"><svg class="icon" aria-hidden="true"><use href="#i-user"/></svg></span>
+              <p><strong class="is-placeholder" data-i18n="proof.name">[Master's name]</strong><br><span class="is-placeholder" data-i18n="proof.academy">[Academy name]</span> · <span class="is-placeholder" data-i18n="proof.city">[City]</span></p>
+            </div>
+          </li>
+          <li class="quote reveal">
+            <blockquote class="is-placeholder" data-i18n="proof.q">[Replace with a real quote from an academy master.]</blockquote>
+            <div class="quote-by">
+              <span class="avatar" role="img" data-i18n-aria="proof.photo" aria-label="Photo"><svg class="icon" aria-hidden="true"><use href="#i-user"/></svg></span>
+              <p><strong class="is-placeholder" data-i18n="proof.name">[Master's name]</strong><br><span class="is-placeholder" data-i18n="proof.academy">[Academy name]</span> · <span class="is-placeholder" data-i18n="proof.city">[City]</span></p>
+            </div>
+          </li>
+          <li class="quote reveal">
+            <blockquote class="is-placeholder" data-i18n="proof.q">[Replace with a real quote from an academy master.]</blockquote>
+            <div class="quote-by">
+              <span class="avatar" role="img" data-i18n-aria="proof.photo" aria-label="Photo"><svg class="icon" aria-hidden="true"><use href="#i-user"/></svg></span>
+              <p><strong class="is-placeholder" data-i18n="proof.name">[Master's name]</strong><br><span class="is-placeholder" data-i18n="proof.academy">[Academy name]</span> · <span class="is-placeholder" data-i18n="proof.city">[City]</span></p>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </section>
 
-        <!-- Business Plan -->
-        <div class="pricing-card reveal-on-scroll stagger-3">
-          <h3>Business</h3>
-          <p style="font-size:13.5px;color:var(--text-muted);margin:0;">For regional associations</p>
-          <div class="pricing-price-box">
-            <span class="price-amount" id="price-biz">₹2,499</span>
-            <span class="price-period" id="period-biz"> / month</span>
-          </div>
-          <ul class="pricing-features-list">
-            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Up to 500 active students</li>
-            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> 5 Training branches</li>
-            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> 50 Staff logins</li>
-            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Advanced audit logs</li>
-            <li><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Dedicated phone &amp; WhatsApp support</li>
-          </ul>
-          <a class="btn btn-ghost" href="app/index.html">Start Free Trial</a>
+    <div class="kolam" aria-hidden="true"></div>
+
+    <!-- 10. Pricing -->
+    <section class="section section-sand" id="pricing" aria-labelledby="pricing-title">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 id="pricing-title" class="section-title" data-i18n="pricing.title">Simple prices, no hidden fees</h2>
+          <p class="section-sub" data-i18n="pricing.sub">Every plan starts with a 14-day free trial.</p>
+        </div>
+        <div class="toggle" role="group" aria-label="Billing period">
+          <button type="button" class="toggle-btn" id="billMonthly" aria-pressed="true" data-i18n="pricing.monthly">Monthly</button>
+          <button type="button" class="toggle-btn" id="billYearly" aria-pressed="false"><span data-i18n="pricing.yearly">Yearly</span> <span class="toggle-save" data-i18n="pricing.save">2 months free</span></button>
+        </div>
+        <div class="plans" id="pricingGrid"><p class="muted">Plans start at ₹499 a month, with a 14-day free trial.</p></div>
+        <p class="plans-note" data-i18n="pricing.includes">Every plan includes attendance, fees and receipts, certificates, events and medals, uniforms, reports, and the offline Android app in English and Tamil.</p>
+        <div class="enterprise">
+          <p data-i18n="pricing.enterprise">More than 500 students or more branches? Talk to us for a custom plan.</p>
+          <a class="btn btn-outline" data-link="whatsapp" href="https://wa.me/910000000000?text=Hello%2C%20I%20would%20like%20to%20know%20more%20about%20Vagai%20Silambam." rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg><span data-i18n="pricing.enterpriseCta">Talk on WhatsApp</span></a>
         </div>
       </div>
+    </section>
 
-      <div style="text-align:center;margin-top:40px;">
-        <p style="color:var(--text-secondary);font-size:15px;margin-bottom:8px;">
-          Need more than 500 students or customized migration assistance?
-        </p>
-        <a href="contact.html" style="font-weight:700;color:var(--primary-bright);">Talk to our Enterprise team →</a>
-      </div>
-    </div>
-  </section>
-
-  <!-- =========================================================================
-       17. FAQ ACCORDION
-       ========================================================================= -->
-  <section class="section" id="faq">
-    <div class="wrap">
-      <div class="section-header reveal-on-scroll">
-        <span class="section-tag">Got Questions?</span>
-        <h2 class="section-title">Frequently Asked Questions</h2>
-        <p class="section-subtitle">Everything you need to know about trials, offline functionality, Google integrations, and data privacy.</p>
-      </div>
-
-      <div class="faq-accordion reveal-on-scroll">
-        <details open>
-          <summary>
-            <span>Do I need a credit card for the 14-day free trial?</span>
-            <span class="faq-icon-cross"></span>
-          </summary>
-          <p>No. You can create your academy account and start exploring all features immediately. We never ask for payment details until you decide to subscribe to a plan.</p>
-        </details>
-
-        <details>
-          <summary>
-            <span>Does attendance tracking work completely offline?</span>
-            <span class="faq-icon-cross"></span>
-          </summary>
-          <p>Yes. The native Android app is engineered specifically for open-ground training camps and dojos with zero signal. Records are saved locally in SQLite and automatically sync with the cloud database once you regain internet access.</p>
-        </details>
-
-        <details>
-          <summary>
-            <span>Where is our academy data stored?</span>
-            <span class="faq-icon-cross"></span>
-          </summary>
-          <p>Your tenant database is securely hosted in encrypted PostgreSQL. Photos, certificates, and student documents go directly to <strong>your personal Google Drive</strong>, and attendance logs are appended to <strong>your own Google Sheet</strong>. You retain full ownership even if you ever cancel.</p>
-        </details>
-
-        <details>
-          <summary>
-            <span>Can other academies see our student or fee records?</span>
-            <span class="faq-icon-cross"></span>
-          </summary>
-          <p>Absolutely not. Vagai Silambam enforces strict tenant isolation at both the application router and database layer. No academy can ever access another dojo's students, financial transactions, or reports.</p>
-        </details>
-
-        <details>
-          <summary>
-            <span>Can we switch the interface between English and தமிழ்?</span>
-            <span class="faq-icon-cross"></span>
-          </summary>
-          <p>Yes! Every screen in both the web portal and Android app supports instant bilingual switching. Student names are also natively stored in both English and தமிழ் scripts.</p>
-        </details>
-
-        <details>
-          <summary>
-            <span>Can we import our existing student Excel or paper registers?</span>
-            <span class="faq-icon-cross"></span>
-          </summary>
-          <p>Yes. You can import existing spreadsheets via CSV in Settings, or backup files from earlier versions of the Vagai Silambam Android app. For larger dojos, our team assists with full data onboarding.</p>
-        </details>
-      </div>
-    </div>
-  </section>
-
-  <!-- =========================================================================
-       18. FINAL HIGH-CONVERTING CALL TO ACTION
-       ========================================================================= -->
-  <section class="final-cta-section">
-    <div class="wrap">
-      <div class="final-cta-box reveal-on-scroll">
-        <div class="hero-badge" style="margin-bottom:16px;">
-          <span class="hero-badge-dot"></span> Get Started in 2 Minutes
+    <!-- 11. FAQ -->
+    <section class="section" id="faq" aria-labelledby="faq-title">
+      <div class="wrap wrap-narrow">
+        <div class="section-head">
+          <h2 id="faq-title" class="section-title" data-i18n="faq.title">Questions, answered simply</h2>
         </div>
-        <h2>Ready to run your academy without the registers?</h2>
-        <p>Join Silambam masters and academies simplifying attendance, event records, fees, and certificates today.</p>
-        <div class="hero-cta-wrap" style="justify-content:center;">
-          <a class="btn btn-saffron btn-lg" href="app/index.html">
-            <span>Start 14-Day Free Trial</span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </a>
-          <a class="btn btn-ghost-dark btn-lg" href="contact.html">Talk to Us</a>
-        </div>
-        <div class="hero-guarantee" style="justify-content:center;margin-top:20px;">
-          <div class="hero-guarantee-item">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> No Credit Card Required
-          </div>
-          <div class="hero-guarantee-item">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg> Instant Academy Setup
-          </div>
+        <div class="faq" id="faqList">
+          <details class="faq-item"><summary><span data-i18n="faq.q1">How much does it cost?</span><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary><p data-i18n="faq.a1">Plans start at ₹499 a month. You can try everything free for 14 days first.</p></details>
+          <details class="faq-item"><summary><span data-i18n="faq.q2">Do I need a credit card for the trial?</span><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary><p data-i18n="faq.a2">No. You can start the trial without a card or any payment.</p></details>
+          <details class="faq-item"><summary><span data-i18n="faq.q3">Does it work without internet?</span><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary><p data-i18n="faq.a3">Yes. Mark attendance and fees with no signal. It updates by itself when the internet returns. Connect to the internet at least once every 3 days.</p></details>
+          <details class="faq-item"><summary><span data-i18n="faq.q4">Is my data safe?</span><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary><p data-i18n="faq.a4">Your attendance goes to your own Google Sheet and your files to your own Drive. Each academy sees only its own information.</p></details>
+          <details class="faq-item"><summary><span data-i18n="faq.q5">Can I bring my student list from Excel?</span><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary><p data-i18n="faq.a5">Yes. Send us your Excel list on WhatsApp and we will help you add it.</p></details>
+          <details class="faq-item"><summary><span data-i18n="faq.q6">Is it available in Tamil?</span><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary><p data-i18n="faq.a6">Yes. The app and this website work in English and Tamil. Switch any time.</p></details>
+          <details class="faq-item"><summary><span data-i18n="faq.q7">How do my masters and staff log in?</span><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary><p data-i18n="faq.a7">You add each person with a username and password on the website. You can remove their access any time.</p></details>
+          <details class="faq-item"><summary><span data-i18n="faq.q8">What if I stop paying?</span><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary><p data-i18n="faq.a8">Your data is kept safe. Renew any time to continue using the app.</p></details>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- =========================================================================
-       19. COMPREHENSIVE FOOTER
-       ========================================================================= -->
+    <!-- 12. Final call to action -->
+    <section class="final-cta on-dark" aria-labelledby="cta-title">
+      <div class="wrap final-inner">
+        <h2 id="cta-title" data-i18n="cta.title">Start your 14-day free trial today</h2>
+        <p data-i18n="cta.sub">No credit card. No long forms.</p>
+        <div class="cta-row cta-center">
+          <a class="btn btn-primary btn-lg" data-link="trial" href="https://wa.me/910000000000?text=Hello%2C%20I%20would%20like%20to%20start%20the%2014-day%20free%20trial%20of%20Vagai%20Silambam."><span data-i18n="hero.ctaTrial">Start Free Trial</span><svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          <a class="btn btn-light btn-lg" data-link="whatsapp" href="https://wa.me/910000000000?text=Hello%2C%20I%20would%20like%20to%20know%20more%20about%20Vagai%20Silambam." rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg><span data-i18n="hero.ctaWhatsapp">Chat on WhatsApp</span></a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 13. Footer -->
   <footer class="site-footer">
-    <div class="wrap">
-      <div class="footer-grid">
-        <!-- Brand Summary -->
-        <div class="footer-brand">
-          <h4>
-            <span style="background:linear-gradient(135deg,#F59E0B,#2563EB);width:26px;height:26px;border-radius:8px;display:inline-grid;place-items:center;color:#fff;font-size:14px;">🥋</span>
-            Vagai Silambam
-          </h4>
-          <p>
-            The dedicated SaaS operating platform built specifically for traditional Silambam martial arts academies across Tamil Nadu and worldwide.
-          </p>
-          <div style="font-size:13px;color:#CBD5E1;">
-            Support: <a href="mailto:sasikumar23125@gmail.com" style="color:#60A5FA;">sasikumar23125@gmail.com</a>
-          </div>
-        </div>
-
-        <!-- Product Col -->
-        <div class="footer-col">
-          <h5>Product</h5>
-          <ul class="footer-links">
-            <li><a href="features.html">All Features</a></li>
-            <li><a href="index.html#attendance">Fast Attendance</a></li>
-            <li><a href="index.html#mobile-app">Offline Mobile App</a></li>
-            <li><a href="pricing.html">Pricing Plans</a></li>
-            <li><a href="app/index.html">Sign In to Dojo</a></li>
-          </ul>
-        </div>
-
-        <!-- Company Col -->
-        <div class="footer-col">
-          <h5>Company</h5>
-          <ul class="footer-links">
-            <li><a href="about.html">About Vagai</a></li>
-            <li><a href="contact.html">Contact Us</a></li>
-            <li><a href="faq.html">FAQ &amp; Help</a></li>
-          </ul>
-        </div>
-
-        <!-- Legal Col -->
-        <div class="footer-col">
-          <h5>Legal &amp; Policy</h5>
-          <ul class="footer-links">
-            <li><a href="terms.html">Terms of Service</a></li>
-            <li><a href="privacy.html">Privacy Policy</a></li>
-            <li><a href="refund.html">Refund Policy</a></li>
-          </ul>
-        </div>
+    <div class="wrap footer-grid">
+      <div class="footer-brand">
+        <a class="brand" href="#top" aria-label="Vagai Silambam">
+          <svg class="brand-mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="10" fill="#E8A317"/><path d="M9 31 31 9" stroke="#1F1B16" stroke-width="3.5" stroke-linecap="round"/><path d="M9 9 31 31" stroke="#B3261E" stroke-width="3.5" stroke-linecap="round"/><circle cx="20" cy="20" r="3" fill="#FBF6EC"/></svg>
+          <span class="brand-text"><strong>Vagai Silambam</strong><small lang="ta">வாகை சிலம்பம்</small></span>
+        </a>
+        <p data-i18n="footer.tagline">Simple academy management for Silambam masters.</p>
+        <button type="button" class="lang-btn" data-lang-toggle data-i18n-aria="lang.switchAria" aria-label="Switch to Tamil">
+          <svg class="icon" aria-hidden="true"><use href="#i-globe"/></svg>
+          <span data-i18n="lang.switch" lang="ta">தமிழ்</span>
+        </button>
       </div>
-
-      <div class="footer-bottom">
-        <div>
-          © 2026 Vagai Silambam Academy. Tamil Nadu, India. All rights reserved.
-        </div>
-        <div style="display:flex;gap:18px;align-items:center;">
-          <span>Language: <strong>English</strong> · <strong class="tamil-text">தமிழ்</strong></span>
-          <a href="privacy.html">Privacy</a>
-          <a href="terms.html">Terms</a>
-        </div>
+      <div>
+        <h3 data-i18n="footer.product">Product</h3>
+        <ul>
+          <li><a href="#features" data-i18n="nav.features">Features</a></li>
+          <li><a href="#pricing" data-i18n="nav.pricing">Pricing</a></li>
+          <li><a href="#faq" data-i18n="nav.faq">FAQ</a></li>
+          <li><a data-link="login" href="https://silambam.dodoxtechs.in/login.html" data-i18n="footer.login">Academy login</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 data-i18n="footer.legal">Legal</h3>
+        <ul>
+          <li><a href="privacy.html" data-i18n="footer.privacy">Privacy</a></li>
+          <li><a href="terms.html" data-i18n="footer.terms">Terms</a></li>
+          <li><a href="refund.html" data-i18n="footer.refunds">Refunds</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3 data-i18n="footer.contact">Contact</h3>
+        <ul>
+          <li><a data-link="email" data-text="email" href="mailto:hello@your-domain.in">hello@your-domain.in</a></li>
+          <li><a data-link="phone" data-text="phone" href="tel:+910000000000">+91 00000 00000</a></li>
+          <li><a data-link="whatsapp" href="https://wa.me/910000000000?text=Hello%2C%20I%20would%20like%20to%20know%20more%20about%20Vagai%20Silambam." rel="noopener" data-i18n="nav.whatsapp">WhatsApp</a></li>
+          <li data-i18n="footer.location">Tamil Nadu, India</li>
+        </ul>
       </div>
     </div>
+    <p class="wrap footer-rights" data-i18n="footer.rights">© 2026 Vagai Silambam. All rights reserved.</p>
   </footer>
 
-  <!-- Scripts -->
-  <script src="assets/js/main.js"></script>
+  <!-- Mobile only: always-visible trial and WhatsApp buttons. -->
+  <div class="sticky-cta">
+    <a class="btn btn-primary" data-link="trial" href="https://wa.me/910000000000?text=Hello%2C%20I%20would%20like%20to%20start%20the%2014-day%20free%20trial%20of%20Vagai%20Silambam." data-i18n="nav.trial">Start Free Trial</a>
+    <a class="btn btn-outline btn-icon" data-link="whatsapp" href="https://wa.me/910000000000?text=Hello%2C%20I%20would%20like%20to%20know%20more%20about%20Vagai%20Silambam." rel="noopener" data-i18n-aria="sticky.whatsapp" aria-label="Chat on WhatsApp"><svg class="icon" aria-hidden="true"><use href="#i-chat"/></svg></a>
+  </div>
+
+  <script src="assets/js/content.js"></script>
+  <script src="assets/js/home.js"></script>
 </body>
 </html>
