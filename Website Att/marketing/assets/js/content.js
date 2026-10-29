@@ -85,7 +85,7 @@ const SITE_CONTENT = {
     'pain.1.before': 'Paper register, 15 minutes every class',
     'pain.1.after': 'One-tap attendance',
     'pain.2.before': 'Lost fee receipts',
-    'pain.2.after': 'Instant PDF receipt',
+    'pain.2.after': 'Instant receipt on your phone',
     'pain.3.before': 'Certificates scattered everywhere',
     'pain.3.after': 'Safe in your Google Drive',
 
@@ -248,7 +248,7 @@ const SITE_CONTENT = {
     'pain.1.before': 'காகிதப் பதிவேடு, ஒவ்வொரு வகுப்புக்கும் 15 நிமிடம்',
     'pain.1.after': 'ஒரே தொடுதலில் வருகை',
     'pain.2.before': 'தொலைந்து போகும் கட்டண ரசீதுகள்',
-    'pain.2.after': 'உடனே PDF ரசீது',
+    'pain.2.after': 'உடனே போனிலேயே ரசீது',
     'pain.3.before': 'எங்கெங்கோ சிதறிக் கிடக்கும் சான்றிதழ்கள்',
     'pain.3.after': 'உங்கள் Google Drive-இல் பத்திரமாக',
 
