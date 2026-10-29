@@ -71,13 +71,15 @@
     .modal-backdrop[hidden] { display:none; }
     /* .btn and other classes set display, which would otherwise override the hidden attribute */
     [hidden] { display:none !important; }
-    .modal-card { width:100%; max-width:480px; background:var(--surface); border-radius:var(--radius-xl); border:1px solid var(--border); box-shadow:0 24px 60px rgba(10,19,36,0.25); overflow:hidden; animation:slideUp 0.3s cubic-bezier(0.16,1,0.3,1); }
+    /* The card never outgrows the screen: header and footer stay put and only the body scrolls. */
+    .modal-card { width:100%; max-width:480px; max-height:calc(100vh - 40px); max-height:calc(100dvh - 40px); display:flex; flex-direction:column; background:var(--surface); border-radius:var(--radius-xl); border:1px solid var(--border); box-shadow:0 24px 60px rgba(10,19,36,0.25); overflow:hidden; animation:slideUp 0.3s cubic-bezier(0.16,1,0.3,1); }
+    .modal-head, .modal-footer { flex-shrink:0; }
     @keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
     .modal-head { padding:18px 24px; background:var(--surface-subtle); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
     .modal-head h3 { font-size:16px; font-weight:800; }
     .modal-close { border:none; background:none; cursor:pointer; color:var(--text-muted); padding:4px; border-radius:8px; }
     .modal-close:hover { background:var(--border); }
-    .modal-body { padding:24px; }
+    .modal-body { padding:24px; flex:1 1 auto; min-height:0; overflow-y:auto; }
     .modal-footer { padding:16px 24px; border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
     .field { margin-bottom:16px; }
     .field label { display:block; font-size:13px; font-weight:600; color:var(--text); margin-bottom:6px; }
@@ -276,6 +278,9 @@
   let memberMode = 'add';
   let memberRowId = null;
 
+  // Modals live on <body> so the backdrop covers the sidebar and top bar too, not just the page content.
+  ['gen-modal', 'member-modal'].forEach(id => document.body.append(document.getElementById(id)));
+
   let plans = [];
   if (superAdmin) {
     document.getElementById('add-member-btn').hidden = true;
@@ -452,6 +457,7 @@
     document.getElementById('new-lic-text').textContent = key;
     document.getElementById('new-lic-reveal').hidden = false;
     document.getElementById('gen-modal').hidden = false;
+    document.querySelector('#gen-modal .modal-body').scrollTop = 0;
   }
 
   // Member modal: "add" creates a member with a role; "role" changes an existing member's role.
