@@ -74,7 +74,7 @@ export function mountShell({ titleKey, title }) {
       <div class="sidebar-scrim" id="sb-scrim" hidden></div>
       <aside class="sidebar" id="sidebar">
         <div class="brand">
-          <div class="brand-icon">🥋</div>
+          <img class="brand-icon" src="assets/img/logo.svg" alt="" width="40" height="40">
           <div class="brand-text">
             <span class="brand-name">Vagai Silambam</span>
             <span class="brand-sub">Management Portal</span>

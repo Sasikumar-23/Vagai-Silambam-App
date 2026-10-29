@@ -85,17 +85,7 @@
       margin-bottom: 32px;
     }
 
-    .brand-logo {
-      width: 56px;
-      height: 56px;
-      background: var(--primary);
-      border-radius: 16px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 28px;
-      margin-bottom: 14px;
-      box-shadow: 0 8px 24px var(--primary-glow);
+    \1display: inline-block;\n      margin-bottom: 14px;\n      filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.5));
     }
 
     .brand h1 {
@@ -347,11 +337,14 @@
     .btn-primary-sm:hover { background: var(--primary-hover); }
     .btn-primary-sm:disabled { opacity: 0.6; cursor: not-allowed; }
   </style>
+  <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
+  <link rel="icon" type="image/png" sizes="96x96" href="assets/img/favicon.png">
+  <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
 </head>
 <body>
   <div class="login-card">
     <div class="brand">
-      <div class="brand-logo">🥋</div>
+      <img class="brand-logo" src="assets/img/logo.svg" alt="" width="56" height="56">
       <h1>Vagai Silambam</h1>
       <p>Academy Management Portal</p>
     </div>

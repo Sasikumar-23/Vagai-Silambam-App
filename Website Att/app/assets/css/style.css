@@ -278,6 +278,8 @@ select option:checked {
   background: linear-gradient(135deg, var(--navy-800), var(--primary));
   border-radius: 12px; flex-shrink: 0;
 }
+/* The logo image carries its own rounded shape and colours. */
+img.brand-icon { background: none; border-radius: 0; display: block; }
 
 /* ═══════════════════════════════════════════════════
    MAIN CONTENT & TOPBAR

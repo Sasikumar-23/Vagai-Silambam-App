@@ -2158,3 +2158,6 @@ input:checked + .slider-round:before {
     transform: none !important;
   }
 }
+
+/* The logo image carries its own rounded shape and colours. */
+img.brand-icon { background: none; box-shadow: none; border-radius: 0; display: block; }
