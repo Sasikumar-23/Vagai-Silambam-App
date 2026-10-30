@@ -1,0 +1,191 @@
+/* Vagai Silambam motion. Loaded after home.css.
+
+   Feel: a spinning staff, quick strikes, graceful footwork, then stillness.
+   Rules: transform and opacity only (so low-end Android phones stay smooth), with three
+   deliberate exceptions the design asks for: the kolam stroke draw, the FAQ height and the
+   number counters. Everything is behind the `motion` class, which the page only sets when the
+   visitor has not asked for reduced motion. Without it (or without JavaScript) the page is simply
+   shown in its final state. */
+
+:root {
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);      /* reveals */
+  --strike: cubic-bezier(0.12, 0.9, 0.2, 1);   /* fast start, soft settle */
+}
+
+[hidden] { display: none !important; }
+
+/* ───────────── Scroll reveal (reusable: add class="reveal", optional style="--d: 120ms") ───────────── */
+.motion .reveal {
+  opacity: 0; transform: translateY(24px);
+  transition: opacity 0.6s var(--ease), transform 0.6s var(--ease);
+  transition-delay: var(--d, 0ms);
+}
+.motion .reveal.is-visible { opacity: 1; transform: none; }
+/* Cards strike in: quick start, soft landing. */
+.motion .cards .reveal, .motion .terms .reveal, .motion .steps .reveal, .motion .quotes .reveal {
+  transition-duration: 0.7s; transition-timing-function: var(--strike);
+}
+/* Dividers draw outward from the centre. */
+.motion .kolam.reveal { transform: scaleX(0.15); transform-origin: center; transition-duration: 0.8s; }
+.motion .kolam.reveal.is-visible { transform: none; }
+
+.reveal-all .reveal, .reveal-all .w, .reveal-all .hero-staff, .reveal-all .hero-fade { opacity: 1 !important; transform: none !important; animation: none !important; }
+
+/* ───────────── Hero sequence (under 3 s in total) ───────────── */
+.hero-copy { position: relative; }
+.hero-copy > *:not(.hero-staff) { position: relative; z-index: 1; }
+
+/* The staff: spins across in an arc, then rests faintly behind the headline. */
+.hero-staff { position: absolute; left: -10%; top: 16%; z-index: 0; width: 125%; pointer-events: none; opacity: 0.3; }
+.hero-staff-svg { display: block; width: 100%; height: auto; transform: rotate(-14deg); }
+.motion .hero-staff { opacity: 0; }
+html.motion:not(.is-loading) .hero-staff { animation: staff-arc 1.7s var(--ease) both; }
+html.motion:not(.is-loading) .hero-staff-svg { animation: staff-spin-in 1.7s var(--ease) both; }
+@keyframes staff-arc {
+  0%   { opacity: 0; transform: translate3d(55vw, 34vh, 0); }
+  14%  { opacity: 0.9; }
+  45%  { transform: translate3d(22vw, -16vh, 0); }
+  78%  { opacity: 0.6; transform: translate3d(-4vw, 6vh, 0); }
+  100% { opacity: 0.3; transform: translate3d(0, 0, 0); }
+}
+@keyframes staff-spin-in { from { transform: rotate(-734deg); } to { transform: rotate(-14deg); } }
+
+/* Headline: word by word, 80 ms apart. The words are wrapped by motion.js. */
+.w { display: inline-block; }
+.motion .w { opacity: 0; transform: translateY(0.5em); }
+.motion .w.w-static { opacity: 1; transform: none; }
+html.motion:not(.is-loading) .w:not(.w-static) { animation: word-in 0.6s var(--ease) both; animation-delay: calc(0.2s + var(--i, 0) * 80ms); }
+@keyframes word-in { from { opacity: 0; transform: translateY(0.5em); } to { opacity: 1; transform: none; } }
+
+/* The lines under the headline follow, in order. */
+.motion .hero-fade { opacity: 0; }
+html.motion:not(.is-loading) .hero-fade { animation: fade-up 0.6s var(--ease) both; animation-delay: var(--d, 0.8s); }
+@keyframes fade-up { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+/* The kolam draws itself in about 2 s. */
+.kolam-line { stroke-dasharray: 1; stroke-dashoffset: 0; animation: none; }
+.kolam-dots { opacity: 1; animation: none; }
+.motion .kolam-line { stroke-dashoffset: 1; }
+.motion .kolam-dots { opacity: 0; }
+html.motion:not(.is-loading) .kolam-line { animation: kolam-draw 1.1s ease-in-out both; }
+html.motion:not(.is-loading) .kolam-line.k1 { animation-delay: 0s; }
+html.motion:not(.is-loading) .kolam-line.k2 { animation-delay: 0.45s; }
+html.motion:not(.is-loading) .kolam-line.k3 { animation-delay: 0.9s; }
+html.motion:not(.is-loading) .kolam-dots { animation: kolam-fade 0.9s ease-out both; }
+@keyframes kolam-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes kolam-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* The phone floats: 4 px up and down over 6 s. */
+.motion .phone { animation: phone-float 6s ease-in-out 1.6s infinite; }
+@keyframes phone-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+/* ───────────── Page loader (first visit only, under a second) ───────────── */
+.loader { transition: opacity 0.3s ease, visibility 0.3s; }
+
+/* ───────────── Parallax (max 20 px; motion.js sets --py) ───────────── */
+.toranam { transform: translate3d(0, var(--py, 0px), 0); }
+.gopuram { transform: translate3d(-50%, var(--py, 0px), 0); }
+.final-cta::before { transform: translate3d(0, var(--py, 0px), 0); }
+
+/* ───────────── Buttons: a turmeric fill sweeps across on hover, a quick press on tap ───────────── */
+.btn { position: relative; overflow: hidden; isolation: isolate; transition: transform 0.15s var(--ease), color 0.2s ease 0.1s, box-shadow 0.2s ease; }
+.btn::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; background: var(--sweep, var(--turmeric));
+  transform: scaleX(0); transform-origin: left center; transition: transform 0.45s var(--ease);
+}
+.btn-link::before { display: none; }
+.btn:active { transform: scale(0.97); }
+.final-cta .btn-primary { --sweep: #FFD36B; }
+@media (hover: hover) {
+  .btn:hover::before { transform: scaleX(1); }
+  .btn-primary:hover { background: var(--kumkum); color: var(--ink); }
+  .btn-outline:hover { background: transparent; color: var(--ink); }
+  .btn-secondary:hover { background: var(--bamboo-deep); color: var(--ink); }
+  .btn-light:hover { background: var(--cream); color: var(--ink); }
+  .final-cta .btn-primary:hover { background: var(--turmeric); }
+}
+
+/* ───────────── Attendance demo: a pop and a colour morph ───────────── */
+.seg-opt span { transition: background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease; }
+.seg-opt.pop span { animation: pop 0.42s var(--strike); }
+@keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+/* ───────────── Pricing toggle: the pill slides, the prices roll ───────────── */
+.toggle { position: relative; display: inline-grid; grid-template-columns: 1fr 1fr; }
+.toggle::before {
+  content: ''; position: absolute; top: 4px; bottom: 4px; left: 4px; width: calc(50% - 4px);
+  border-radius: 999px; background: var(--ink); transition: transform 0.4s var(--ease);
+}
+.toggle[data-billing="yearly"]::before { transform: translateX(100%); }
+.toggle-btn { position: relative; z-index: 1; white-space: nowrap; transition: color 0.3s ease; }
+.toggle-btn[aria-pressed="true"] { background: transparent; color: var(--cream); }
+.plan-price { font-variant-numeric: tabular-nums; }
+
+/* ───────────── FAQ: smooth open, turning arrow ───────────── */
+.faq-item summary .icon { transition: transform 0.35s var(--ease); }
+.faq-item[data-open] summary .icon, html:not(.js) .faq-item[open] summary .icon { transform: rotate(180deg); }
+
+/* ───────────── Language switch: text cross-fades, nothing jumps ───────────── */
+.motion :is(main, .site-footer, .nav, .header-actions .btn, .sticky-cta .btn) { transition: opacity 0.28s ease; }
+.motion body.is-swapping :is(main, .site-footer, .nav, .header-actions .btn, .sticky-cta .btn) { opacity: 0; transition-duration: 0.18s; }
+
+/* ───────────── Counters ───────────── */
+.stats { padding: 8px 0 40px; }
+.stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 18px; text-align: center; }
+.stats-row li { padding: 18px 10px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); }
+.count { display: block; font-family: var(--font-heading); font-weight: 400; font-size: clamp(2rem, 8vw, 3rem); line-height: 1.1; color: var(--kumkum-dark); font-variant-numeric: tabular-nums; }
+.stats-row span { display: block; margin-top: 4px; color: var(--ink-2); font-weight: 600; }
+
+/* ───────────── Offline-sync story: a slow 10 s loop ───────────── */
+.sync-story { display: grid; justify-items: center; gap: 14px; margin: 0 auto 30px; max-width: 520px; }
+.sync-art { width: 100%; height: auto; overflow: visible; }
+.sync-art g, .sync-art circle, .sync-art path { transform-box: fill-box; transform-origin: center; }
+.sync-caps { display: grid; justify-items: center; min-height: 3em; text-align: center; }
+.sync-cap { grid-area: 1 / 1; opacity: 0; font-weight: 700; font-size: 1.05rem; color: var(--cream); }
+.sy-tick, .sy-off, .sy-on, .sy-dot { opacity: 0; }
+
+.motion .sy-tick { animation: sy-tick 10s ease-in-out infinite; }
+.motion .sy-tick.t2 { animation-delay: 0.5s; }
+.motion .sy-tick.t3 { animation-delay: 1s; }
+.motion .sy-off { animation: sy-off 10s ease-in-out infinite; }
+.motion .sy-dot { animation: sy-dot 10s ease-in-out infinite; }
+.motion .sy-dot.d2 { animation-delay: 0.3s; }
+.motion .sy-dot.d3 { animation-delay: 0.6s; }
+.motion .sy-on { animation: sy-on 10s ease-in-out infinite; }
+.motion .sync-cap.c1 { animation: sy-c1 10s ease-in-out infinite; }
+.motion .sync-cap.c2 { animation: sy-c2 10s ease-in-out infinite; }
+.motion .sync-cap.c3 { animation: sy-c3 10s ease-in-out infinite; }
+.motion .sync-cap.c4 { animation: sy-c4 10s ease-in-out infinite; }
+
+@keyframes sy-tick { 0%, 4% { opacity: 0; transform: scale(0.4); } 10%, 90% { opacity: 1; transform: scale(1); } 96%, 100% { opacity: 0; transform: scale(1); } }
+@keyframes sy-off { 0%, 14% { opacity: 0; } 20%, 40% { opacity: 1; } 46%, 100% { opacity: 0; } }
+@keyframes sy-dot { 0%, 46% { opacity: 0; transform: translateX(0); } 50% { opacity: 1; } 68% { opacity: 1; transform: translateX(132px); } 72%, 100% { opacity: 0; transform: translateX(132px); } }
+@keyframes sy-on { 0%, 68% { opacity: 0; transform: scale(0.85); } 76%, 92% { opacity: 1; transform: scale(1); } 98%, 100% { opacity: 0; transform: scale(1); } }
+@keyframes sy-c1 { 0%, 2% { opacity: 0; } 6%, 18% { opacity: 1; } 22%, 100% { opacity: 0; } }
+@keyframes sy-c2 { 0%, 20% { opacity: 0; } 25%, 42% { opacity: 1; } 46%, 100% { opacity: 0; } }
+@keyframes sy-c3 { 0%, 44% { opacity: 0; } 49%, 66% { opacity: 1; } 70%, 100% { opacity: 0; } }
+@keyframes sy-c4 { 0%, 68% { opacity: 0; } 74%, 92% { opacity: 1; } 97%, 100% { opacity: 0; } }
+
+/* ───────────── Lamp in the final call to action ───────────── */
+.lamp { display: block; width: 54px; height: auto; margin: 0 auto 12px; overflow: visible; }
+.lamp path, .lamp circle { transform-box: fill-box; }
+.lamp-glow { opacity: 0.2; transform-origin: center; }
+.lamp-flame { transform-origin: 50% 100%; }
+.motion .lamp-flame { animation: flame 2.6s ease-in-out infinite; }
+.motion .lamp-core { animation-duration: 2.1s; animation-delay: -0.6s; }
+.motion .lamp-glow { animation: glow 2.6s ease-in-out infinite; }
+@keyframes flame {
+  0%, 100% { transform: scale(1, 1) rotate(0deg); }
+  22% { transform: scale(0.94, 1.07) rotate(-1.6deg); }
+  48% { transform: scale(1.05, 0.95) rotate(1.3deg); }
+  74% { transform: scale(0.97, 1.04) rotate(-0.8deg); }
+}
+@keyframes glow { 0%, 100% { opacity: 0.2; transform: scale(1); } 40% { opacity: 0.32; transform: scale(1.06); } 70% { opacity: 0.24; transform: scale(0.98); } }
+
+/* ───────────── Reduced motion: nothing moves, everything is shown at once ───────────── */
+@media (prefers-reduced-motion: reduce) {
+  .loader, .hero-staff { display: none; }
+  .reveal, .w, .hero-fade { opacity: 1 !important; transform: none !important; }
+  .sy-tick, .sy-on { opacity: 1; }
+  .sync-cap.c4 { opacity: 1; }
+}

@@ -49,6 +49,13 @@ html = html.replace(/(<(\w+)\b[^>]*\bdata-i18n="([^"]+)"[^>]*>)([\s\S]*?)(<\/\2>
   return text === null ? whole : `${open}${escapeText(text)}${close}`;
 });
 
+// Quiet second line: data-i18n-other="key" shows the Tamil text under the English page.
+html = html.replace(/(<(\w+)\b[^>]*\bdata-i18n-other="([^"]+)"[^>]*>)([\s\S]*?)(<\/\2>)/g, (whole, open, tag, key, inner, close) => {
+  usedKeys.add(key);
+  if (!(key in content.ta)) { problems.push(`index.html uses unknown key "${key}"`); return whole; }
+  return `${open}${escapeText(content.ta[key])}${close}`;
+});
+
 // Accessible labels: data-i18n-aria="key" sets aria-label.
 html = html.replace(/<(\w+)\b[^>]*\bdata-i18n-aria="([^"]+)"[^>]*>/g, (tag, name, key) => {
   const text = english(key);

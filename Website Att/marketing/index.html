@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Vagai Silambam: run your Silambam academy without paper registers</title>
   <meta name="description" content="Attendance, fees, certificates and tournaments for Silambam academies in one phone app that works without internet. English and Tamil. 14-day free trial, no credit card.">
-  <meta name="theme-color" content="#FBF6EC">
+  <meta name="theme-color" content="#FBF3E4">
   <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
   <link rel="icon" type="image/png" sizes="96x96" href="assets/img/favicon.png">
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
@@ -14,11 +14,41 @@
   <meta property="og:type" content="website">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,800&family=Noto+Sans+Tamil:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Yatra+One&family=Catamaran:wght@700;800&family=Noto+Sans+Tamil:wght@400;600;700&family=Inter:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="assets/css/home.css">
-  <script>document.documentElement.classList.add('js');</script>
+  <link rel="stylesheet" href="assets/css/motion.css">
+  <script>
+    /* Marks the page as scripted and decides how much motion to use. Reduced-motion visitors get none.
+       The staff-spin loader shows on the first visit only, for under a second. If the page script
+       has not started after 4 s, everything is shown as is, so content is never left hidden. */
+    (function (root) {
+      root.classList.add('js');
+      if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      root.classList.add('motion');
+      setTimeout(function () { if (!window.__vsReady) root.classList.add('reveal-all'); }, 4000);
+      var seen = true;
+      try { seen = !!localStorage.getItem('vs_seen'); localStorage.setItem('vs_seen', '1'); } catch (e) { /* storage blocked: skip the loader */ }
+      if (seen) return;
+      root.classList.add('is-loading');
+      var t0 = Date.now();
+      var done = function () { root.classList.remove('is-loading'); };
+      window.addEventListener('load', function () { setTimeout(done, Math.max(0, 600 - (Date.now() - t0))); });
+      setTimeout(done, 900);
+    })(document.documentElement);
+  </script>
 </head>
 <body id="top">
+  <div class="loader" aria-hidden="true">
+    <svg viewBox="0 0 120 120" width="96" height="96" focusable="false">
+      <circle class="loader-ring" cx="60" cy="60" r="52" fill="none" stroke="#F2A900" stroke-width="3" stroke-dasharray="2 9" stroke-linecap="round"/>
+      <g class="loader-staff">
+        <rect x="55" y="10" width="10" height="100" rx="5" fill="#F8E7B4" stroke="#1E1B2E" stroke-width="2.5"/>
+        <rect x="52" y="26" width="16" height="9" rx="2" fill="#B3261E" stroke="#1E1B2E" stroke-width="2"/>
+        <rect x="52" y="85" width="16" height="9" rx="2" fill="#B3261E" stroke="#1E1B2E" stroke-width="2"/>
+      </g>
+    </svg>
+  </div>
+
   <a class="skip-link" href="#main" data-i18n="skip">Skip to content</a>
 
   <!-- Icons: one small sprite, reused everywhere. -->
@@ -48,6 +78,12 @@
     <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></symbol>
     <symbol id="i-branch" viewBox="0 0 24 24"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></symbol>
     <symbol id="i-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="i-staves" viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="4"/><line x1="4" y1="4" x2="20" y2="20"/><circle cx="12" cy="12" r="2.2"/></symbol>
+    <symbol id="i-staff" viewBox="0 0 24 24"><line x1="5" y1="19" x2="19" y2="5"/><line x1="3.5" y1="20.5" x2="6.5" y2="17.5"/><line x1="17.5" y1="6.5" x2="20.5" y2="3.5"/><line x1="10" y1="14" x2="12" y2="16"/></symbol>
+    <symbol id="i-coil" viewBox="0 0 24 24"><path d="M12 12a1.5 1.5 0 1 1 3 0 4 4 0 1 1-8 0 6.5 6.5 0 1 1 13 0c0 3-1 5-3 6.5"/><line x1="17" y1="18.5" x2="21" y2="21"/></symbol>
+    <symbol id="i-horns" viewBox="0 0 24 24"><path d="M12 21v-8"/><path d="M12 13c-4 0-6-3-6-9"/><path d="M12 13c4 0 6-3 6-9"/><path d="M6.5 8C5 7 3.8 7 3 7"/><path d="M17.5 8C19 7 20.2 7 21 7"/></symbol>
+    <symbol id="i-forms" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.2"/><circle cx="5" cy="18" r="2.2"/><circle cx="19" cy="18" r="2.2"/><path d="M10.9 7 6 16M13.1 7 18 16M7.4 18h9.2"/></symbol>
+    <symbol id="i-lamp" viewBox="0 0 24 24"><path d="M12 2.5c2.6 3 2.6 5.2 0 7.2-2.6-2-2.6-4.2 0-7.2z"/><path d="M8 11.5h8l-1.2 3H9.2z"/><line x1="12" y1="14.5" x2="12" y2="19"/><path d="M7.5 21.5h9M9 19h6"/></symbol>
   </svg>
 
   <header class="site-header">
@@ -83,12 +119,25 @@
   <main id="main">
     <!-- 2. Hero -->
     <section class="hero">
+      <div class="toranam" data-parallax="-16" aria-hidden="true"></div>
       <div class="wrap hero-grid">
         <div class="hero-copy">
-          <p class="eyebrow" data-i18n="hero.eyebrow">For Silambam masters and academy owners</p>
-          <h1 data-i18n="hero.title">Run your Silambam academy, not a pile of registers.</h1>
-          <p class="lead" data-i18n="hero.sub">Attendance, fees, certificates and tournaments, all in one phone app. It even works without internet.</p>
-          <div class="cta-row">
+          <!-- Nedunkambu: spins across the hero in an arc and settles behind the headline. Decorative. -->
+          <div class="hero-staff" aria-hidden="true">
+            <svg class="hero-staff-svg" viewBox="0 0 640 56" focusable="false">
+              <rect x="6" y="14" width="628" height="28" rx="14" fill="#F2D98A" stroke="#8A5B00" stroke-width="3"/>
+              <path d="M60 28H580" stroke="#C99A2E" stroke-width="2" stroke-dasharray="2 14" stroke-linecap="round"/>
+              <rect x="116" y="9" width="26" height="38" rx="5" fill="#B3261E" stroke="#8E1D17" stroke-width="2.5"/>
+              <rect x="498" y="9" width="26" height="38" rx="5" fill="#B3261E" stroke="#8E1D17" stroke-width="2.5"/>
+              <rect x="2" y="8" width="38" height="40" rx="10" fill="#F2A900" stroke="#8A5B00" stroke-width="2.5"/>
+              <rect x="600" y="8" width="38" height="40" rx="10" fill="#F2A900" stroke="#8A5B00" stroke-width="2.5"/>
+            </svg>
+          </div>
+          <p class="eyebrow hero-fade" style="--d: .1s" data-i18n="hero.eyebrow">For Silambam masters and academy owners</p>
+          <h1 data-i18n="hero.title" data-split>Run your Silambam academy, not a pile of registers.</h1>
+          <p class="hero-alt hero-fade" style="--d: .9s" lang="ta" data-i18n-other="hero.title">பதிவேட்டுக் குவியல் இல்லாமல், உங்கள் சிலம்பப் பள்ளியை எளிதாக நடத்துங்கள்.</p>
+          <p class="lead hero-fade" style="--d: 1s" data-i18n="hero.sub">Attendance, fees, certificates and tournaments, all in one phone app. It even works without internet.</p>
+          <div class="cta-row hero-fade" style="--d: 1.1s">
             <a class="btn btn-primary btn-lg" data-link="trial" href="https://wa.me/910000000000?text=Hello%2C%20I%20would%20like%20to%20start%20the%2014-day%20free%20trial%20of%20Vagai%20Silambam.">
               <span data-i18n="hero.ctaTrial">Start Free Trial</span>
               <svg class="icon icon-arrow" aria-hidden="true"><use href="#i-arrow"/></svg>
@@ -98,7 +147,7 @@
               <span data-i18n="hero.ctaWhatsapp">Chat on WhatsApp</span>
             </a>
           </div>
-          <ul class="chips">
+          <ul class="chips hero-fade" style="--d: 1.2s">
             <li><svg class="icon" aria-hidden="true"><use href="#i-wifi-off"/></svg><span data-i18n="hero.chip1">Offline Android app</span></li>
             <li><svg class="icon" aria-hidden="true"><use href="#i-globe"/></svg><span data-i18n="hero.chip2">English + தமிழ்</span></li>
             <li><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg><span data-i18n="hero.chip3">No credit card</span></li>
@@ -106,17 +155,16 @@
         </div>
 
         <div class="hero-art" role="img" data-i18n-aria="hero.phoneAlt" aria-label="A phone showing today's attendance list in Tamil">
-          <!-- Staff (nedunkambu) line drawing. It spins once on load. Replace with a real illustration any time. -->
-          <svg class="staff" viewBox="0 0 400 400" aria-hidden="true" focusable="false">
-            <g class="staff-spin">
-              <rect x="190" y="14" width="20" height="372" rx="10" fill="#FCEBC0" stroke="#1F1B16" stroke-width="3"/>
-              <rect x="185" y="56" width="30" height="16" rx="3" fill="#B3261E" stroke="#1F1B16" stroke-width="3"/>
-              <rect x="185" y="328" width="30" height="16" rx="3" fill="#B3261E" stroke="#1F1B16" stroke-width="3"/>
-              <rect x="186" y="14" width="28" height="10" rx="4" fill="#1F1B16"/>
-              <rect x="186" y="376" width="28" height="10" rx="4" fill="#1F1B16"/>
-              <path d="M200 188 C246 166 286 198 336 170 L328 204 C288 228 246 198 200 214 Z" fill="#3F6B3A" stroke="#1F1B16" stroke-width="3" stroke-linejoin="round"/>
-              <path d="M200 188 C170 200 150 236 120 244 L132 214 C154 208 176 186 200 176" fill="#E8A317" stroke="#1F1B16" stroke-width="3" stroke-linejoin="round"/>
+          <!-- A pulli kolam that draws itself around the phone. Decorative only. -->
+          <svg class="kolam-ring" viewBox="0 0 400 400" aria-hidden="true" focusable="false">
+            <g class="kolam-dots">
+              <circle cx="200" cy="22" r="4"/><circle cx="378" cy="200" r="4"/><circle cx="200" cy="378" r="4"/><circle cx="22" cy="200" r="4"/>
+              <circle cx="96" cy="96" r="3.2"/><circle cx="304" cy="96" r="3.2"/><circle cx="304" cy="304" r="3.2"/><circle cx="96" cy="304" r="3.2"/>
+              <circle cx="200" cy="64" r="2.6"/><circle cx="336" cy="200" r="2.6"/><circle cx="200" cy="336" r="2.6"/><circle cx="64" cy="200" r="2.6"/>
             </g>
+            <path class="kolam-line k1" pathLength="1" d="M200 22C268 92 308 132 378 200C308 268 268 308 200 378C132 308 92 268 22 200C92 132 132 92 200 22Z"/>
+            <path class="kolam-line k2" pathLength="1" d="M200 64C246 64 336 154 336 200C336 246 246 336 200 336C154 336 64 246 64 200C64 154 154 64 200 64Z"/>
+            <path class="kolam-line k3" pathLength="1" d="M96 96C150 150 150 150 200 200C250 250 250 250 304 304M304 96C250 150 250 150 200 200C150 250 150 250 96 304"/>
           </svg>
 
           <!-- Phone mock-up: always Tamil, because it shows the real Tamil attendance screen. -->
@@ -137,28 +185,34 @@
       </div>
     </section>
 
+    <!-- 3. Heritage strip -->
+    <section class="section heritage" id="heritage" aria-labelledby="heritage-title">
+      <div class="wrap">
+        <div class="olai reveal">
+          <span class="olai-hole" aria-hidden="true"></span>
+          <span class="olai-hole olai-hole-r" aria-hidden="true"></span>
+          <svg class="icon olai-mark" aria-hidden="true"><use href="#i-lamp"/></svg>
+          <h2 id="heritage-title" class="section-title" data-i18n="heritage.title">Silambam, a Tamil art older than 2,000 years</h2>
+          <p data-i18n="heritage.body">Passed from master to student for generations, on village grounds and under old trees. Tamil writing has spoken of the staff art since the Sangam age. Today's masters carry it forward, and Vagai Silambam gives them more time to teach.</p>
+        </div>
+        <ul class="terms">
+          <li class="term reveal"><span class="term-icon"><svg class="icon" aria-hidden="true"><use href="#i-staff"/></svg></span><strong lang="ta" data-i18n="heritage.t1.name">நெடுங்கம்பு</strong><span data-i18n="heritage.t1.gloss">Long staff</span></li>
+          <li class="term reveal"><span class="term-icon"><svg class="icon" aria-hidden="true"><use href="#i-coil"/></svg></span><strong lang="ta" data-i18n="heritage.t2.name">சுருள் வாள்</strong><span data-i18n="heritage.t2.gloss">Coiling sword</span></li>
+          <li class="term reveal"><span class="term-icon"><svg class="icon" aria-hidden="true"><use href="#i-horns"/></svg></span><strong lang="ta" data-i18n="heritage.t3.name">மான்கொம்பு</strong><span data-i18n="heritage.t3.gloss">Buck horns</span></li>
+          <li class="term reveal"><span class="term-icon"><svg class="icon" aria-hidden="true"><use href="#i-forms"/></svg></span><strong lang="ta" data-i18n="heritage.t4.name">வரிசை</strong><span data-i18n="heritage.t4.gloss">Forms</span></li>
+        </ul>
+      </div>
+    </section>
+
     <div class="kolam" aria-hidden="true"></div>
 
-    <!-- 3. Pain to solution -->
-    <section class="section strip" aria-labelledby="pain-title">
+    <!-- Counters: hidden until real numbers are set in content.js (config.stats). -->
+    <section class="stats" id="stats" data-i18n-aria="stats.aria" aria-label="Our numbers so far" hidden>
       <div class="wrap">
-        <h2 id="pain-title" class="section-title" data-i18n="pain.title">From paper to one tap</h2>
-        <ul class="pairs">
-          <li class="pair reveal">
-            <div class="pair-before"><span class="pair-tag" data-i18n="pain.before">Before</span><p data-i18n="pain.1.before">Paper register, 15 minutes every class</p></div>
-            <svg class="icon pair-arrow" aria-hidden="true"><use href="#i-arrow"/></svg>
-            <div class="pair-after"><span class="pair-tag" data-i18n="pain.after">With Vagai Silambam</span><p data-i18n="pain.1.after">One-tap attendance</p></div>
-          </li>
-          <li class="pair reveal">
-            <div class="pair-before"><span class="pair-tag" data-i18n="pain.before">Before</span><p data-i18n="pain.2.before">Lost fee receipts</p></div>
-            <svg class="icon pair-arrow" aria-hidden="true"><use href="#i-arrow"/></svg>
-            <div class="pair-after"><span class="pair-tag" data-i18n="pain.after">With Vagai Silambam</span><p data-i18n="pain.2.after">Instant receipt on your phone</p></div>
-          </li>
-          <li class="pair reveal">
-            <div class="pair-before"><span class="pair-tag" data-i18n="pain.before">Before</span><p data-i18n="pain.3.before">Certificates scattered everywhere</p></div>
-            <svg class="icon pair-arrow" aria-hidden="true"><use href="#i-arrow"/></svg>
-            <div class="pair-after"><span class="pair-tag" data-i18n="pain.after">With Vagai Silambam</span><p data-i18n="pain.3.after">Safe in your Google Drive</p></div>
-          </li>
+        <ul class="stats-row">
+          <li data-stat="students" hidden><strong class="count" data-count>0</strong><span data-i18n="stats.students">Students on the register</span></li>
+          <li data-stat="academies" hidden><strong class="count" data-count>0</strong><span data-i18n="stats.academies">Academies</span></li>
+          <li data-stat="medals" hidden><strong class="count" data-count>0</strong><span data-i18n="stats.medals">Medals recorded</span></li>
         </ul>
       </div>
     </section>
@@ -174,8 +228,8 @@
           <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg></span><h3 data-i18n="f.students.t">Students</h3><p data-i18n="f.students.d">Every student's details, sash level and photo in one place.</p></li>
           <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-calendar-check"/></svg></span><h3 data-i18n="f.attendance.t">Attendance</h3><p data-i18n="f.attendance.d">Mark present, late or absent in one tap. See at once who missed class.</p></li>
           <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-receipt"/></svg></span><h3 data-i18n="f.fees.t">Fees and receipts</h3><p data-i18n="f.fees.d">Know who has paid and who is pending. Give a receipt on the spot.</p></li>
-          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-award"/></svg></span><h3 data-i18n="f.events.t">Events and medals</h3><p data-i18n="f.events.d">Register students for tournaments and keep every medal and result.</p></li>
-          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-bag"/></svg></span><h3 data-i18n="f.gear.t">Uniforms and gear</h3><p data-i18n="f.gear.d">Keep count of the uniforms, sashes and staffs given to each student.</p></li>
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-award"/></svg></span><h3 data-i18n="f.events.t">Tournaments and medals</h3><p data-i18n="f.events.d">Register students for tournaments and keep every medal and result.</p></li>
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-bag"/></svg></span><h3 data-i18n="f.gear.t">Uniforms and weapons</h3><p data-i18n="f.gear.d">Keep count of the uniforms, sashes and staffs given to each student.</p></li>
           <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-chart"/></svg></span><h3 data-i18n="f.reports.t">Reports</h3><p data-i18n="f.reports.d">Monthly attendance and fee reports for you and for parents.</p></li>
         </ul>
       </div>
@@ -212,6 +266,38 @@
           <h2 id="offline-title" class="section-title" data-i18n="offline.title">Take attendance even with no signal</h2>
           <p class="section-sub" data-i18n="offline.sub">No signal at the training ground? No problem.</p>
         </div>
+        <div class="sync-story reveal">
+          <svg class="sync-art" viewBox="0 0 480 190" role="img" data-i18n-aria="sync.alt" aria-label="A phone marks attendance with no signal, then sends it to the cloud when the signal returns and shows a green tick.">
+            <g>
+              <rect x="30" y="14" width="96" height="162" rx="16" fill="#2A2740" stroke="#6D6791" stroke-width="2"/>
+              <rect x="40" y="30" width="76" height="134" rx="8" fill="#FBF3E4"/>
+              <circle cx="54" cy="52" r="8" fill="#FBE9B5"/><rect x="66" y="49" width="26" height="6" rx="3" fill="#CFC3A8"/><path class="sy-tick t1" d="M97 52l4 4 8-9" fill="none" stroke="#3F5A18" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="54" cy="84" r="8" fill="#FBE9B5"/><rect x="66" y="81" width="26" height="6" rx="3" fill="#CFC3A8"/><path class="sy-tick t2" d="M97 84l4 4 8-9" fill="none" stroke="#3F5A18" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="54" cy="116" r="8" fill="#FBE9B5"/><rect x="66" y="113" width="26" height="6" rx="3" fill="#CFC3A8"/><path class="sy-tick t3" d="M97 116l4 4 8-9" fill="none" stroke="#3F5A18" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+              <rect x="50" y="140" width="56" height="14" rx="7" fill="#B3261E"/>
+            </g>
+            <line x1="142" y1="95" x2="290" y2="95" stroke="#8A83A3" stroke-width="3" stroke-dasharray="1 10" stroke-linecap="round"/>
+            <circle class="sy-dot d1" cx="146" cy="95" r="5" fill="#F2A900"/>
+            <circle class="sy-dot d2" cx="146" cy="95" r="5" fill="#F2A900"/>
+            <circle class="sy-dot d3" cx="146" cy="95" r="5" fill="#F2A900"/>
+            <g transform="translate(372 96)">
+              <path d="M-56 30H48a30 30 0 0 0 4-59 42 42 0 0 0-80-12 34 34 0 0 0-28 71z" fill="none" stroke="#C9C2D8" stroke-width="4" stroke-linejoin="round"/>
+              <g class="sy-off">
+                <line x1="-42" y1="-46" x2="42" y2="46" stroke="#F4695F" stroke-width="6" stroke-linecap="round"/>
+              </g>
+              <g class="sy-on">
+                <path d="M-56 30H48a30 30 0 0 0 4-59 42 42 0 0 0-80-12 34 34 0 0 0-28 71z" fill="#E5EDD3" stroke="#A9C468" stroke-width="4" stroke-linejoin="round"/>
+                <path d="M-20 -2l14 14 28-30" fill="none" stroke="#3F5A18" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+              </g>
+            </g>
+          </svg>
+          <div class="sync-caps" aria-hidden="true">
+            <p class="sync-cap c1" data-i18n="sync.c1">Mark attendance</p>
+            <p class="sync-cap c2" data-i18n="sync.c2">No signal? It is still saved on your phone</p>
+            <p class="sync-cap c3" data-i18n="sync.c3">Signal is back: sending…</p>
+            <p class="sync-cap c4" data-i18n="sync.c4">Saved safely in your Google Sheet</p>
+          </div>
+        </div>
         <ol class="steps">
           <li class="step reveal"><span class="step-num">1</span><span class="step-icon"><svg class="icon" aria-hidden="true"><use href="#i-wifi-off"/></svg></span><h3 data-i18n="offline.s1.t">Mark with no signal</h3><p data-i18n="offline.s1.d">Take attendance and note fees as usual.</p></li>
           <li class="step reveal"><span class="step-num">2</span><span class="step-icon"><svg class="icon" aria-hidden="true"><use href="#i-phone"/></svg></span><h3 data-i18n="offline.s2.t">Saved on your phone</h3><p data-i18n="offline.s2.d">Everything is kept safely on your phone.</p></li>
@@ -236,32 +322,6 @@
       </div>
     </section>
 
-    <!-- 8. Multi-branch -->
-    <section class="section section-sand" aria-labelledby="branches-title">
-      <div class="wrap branches">
-        <div class="branches-copy">
-          <h2 id="branches-title" class="section-title" data-i18n="branches.title">Many branches, one view</h2>
-          <p class="section-sub" data-i18n="branches.sub">Add every branch and see them all from one place.</p>
-          <ul class="ticks">
-            <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span data-i18n="branches.p1">All students in one list</span></li>
-            <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span data-i18n="branches.p2">A separate login for each master</span></li>
-            <li><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg><span data-i18n="branches.p3">Attendance and fees branch by branch</span></li>
-          </ul>
-        </div>
-        <svg class="tree" viewBox="0 0 360 220" role="img" data-i18n-aria="branches.diagramAlt" aria-label="Diagram: one main academy connected to three branches">
-          <path d="M180 62V100M60 100H300M60 100V140M180 100V140M300 100V140" fill="none" stroke="#1F1B16" stroke-width="3" stroke-linecap="round"/>
-          <rect x="105" y="14" width="150" height="48" rx="12" fill="#E8A317" stroke="#1F1B16" stroke-width="3"/>
-          <text x="180" y="44" text-anchor="middle" data-i18n="branches.hq">Main academy</text>
-          <rect x="10" y="140" width="100" height="46" rx="12" fill="#FFFDF8" stroke="#1F1B16" stroke-width="3"/>
-          <text x="60" y="169" text-anchor="middle" data-i18n="branches.b1">Branch 1</text>
-          <rect x="130" y="140" width="100" height="46" rx="12" fill="#FFFDF8" stroke="#1F1B16" stroke-width="3"/>
-          <text x="180" y="169" text-anchor="middle" data-i18n="branches.b2">Branch 2</text>
-          <rect x="250" y="140" width="100" height="46" rx="12" fill="#FFFDF8" stroke="#1F1B16" stroke-width="3"/>
-          <text x="300" y="169" text-anchor="middle" data-i18n="branches.b3">Branch 3</text>
-        </svg>
-      </div>
-    </section>
-
     <!-- 9. Social proof. Everything in square brackets is placeholder content to replace. -->
     <section class="section" aria-labelledby="proof-title">
       <div class="wrap">
@@ -273,21 +333,21 @@
           <li class="quote reveal">
             <blockquote class="is-placeholder" data-i18n="proof.q">[Replace with a real quote from an academy master.]</blockquote>
             <div class="quote-by">
-              <span class="avatar" role="img" data-i18n-aria="proof.photo" aria-label="Photo"><svg class="icon" aria-hidden="true"><use href="#i-user"/></svg></span>
+              <span class="photo-frame" role="img" data-i18n-aria="proof.photo" aria-label="Photo"><span class="photo-slot"><svg class="icon" aria-hidden="true"><use href="#i-user"/></svg></span></span>
               <p><strong class="is-placeholder" data-i18n="proof.name">[Master's name]</strong><br><span class="is-placeholder" data-i18n="proof.academy">[Academy name]</span> · <span class="is-placeholder" data-i18n="proof.city">[City]</span></p>
             </div>
           </li>
           <li class="quote reveal">
             <blockquote class="is-placeholder" data-i18n="proof.q">[Replace with a real quote from an academy master.]</blockquote>
             <div class="quote-by">
-              <span class="avatar" role="img" data-i18n-aria="proof.photo" aria-label="Photo"><svg class="icon" aria-hidden="true"><use href="#i-user"/></svg></span>
+              <span class="photo-frame" role="img" data-i18n-aria="proof.photo" aria-label="Photo"><span class="photo-slot"><svg class="icon" aria-hidden="true"><use href="#i-user"/></svg></span></span>
               <p><strong class="is-placeholder" data-i18n="proof.name">[Master's name]</strong><br><span class="is-placeholder" data-i18n="proof.academy">[Academy name]</span> · <span class="is-placeholder" data-i18n="proof.city">[City]</span></p>
             </div>
           </li>
           <li class="quote reveal">
             <blockquote class="is-placeholder" data-i18n="proof.q">[Replace with a real quote from an academy master.]</blockquote>
             <div class="quote-by">
-              <span class="avatar" role="img" data-i18n-aria="proof.photo" aria-label="Photo"><svg class="icon" aria-hidden="true"><use href="#i-user"/></svg></span>
+              <span class="photo-frame" role="img" data-i18n-aria="proof.photo" aria-label="Photo"><span class="photo-slot"><svg class="icon" aria-hidden="true"><use href="#i-user"/></svg></span></span>
               <p><strong class="is-placeholder" data-i18n="proof.name">[Master's name]</strong><br><span class="is-placeholder" data-i18n="proof.academy">[Academy name]</span> · <span class="is-placeholder" data-i18n="proof.city">[City]</span></p>
             </div>
           </li>
@@ -304,7 +364,7 @@
           <h2 id="pricing-title" class="section-title" data-i18n="pricing.title">Simple prices, no hidden fees</h2>
           <p class="section-sub" data-i18n="pricing.sub">Every plan starts with a 14-day free trial.</p>
         </div>
-        <div class="toggle" role="group" aria-label="Billing period">
+        <div class="toggle" id="billToggle" data-billing="monthly" role="group" aria-label="Billing period">
           <button type="button" class="toggle-btn" id="billMonthly" aria-pressed="true" data-i18n="pricing.monthly">Monthly</button>
           <button type="button" class="toggle-btn" id="billYearly" aria-pressed="false"><span data-i18n="pricing.yearly">Yearly</span> <span class="toggle-save" data-i18n="pricing.save">2 months free</span></button>
         </div>
@@ -337,8 +397,36 @@
     </section>
 
     <!-- 12. Final call to action -->
-    <section class="final-cta on-dark" aria-labelledby="cta-title">
+    <section class="final-cta on-dark" data-parallax="12" aria-labelledby="cta-title">
+      <!-- Gopuram silhouette: decorative background, sits behind the text. -->
+      <svg class="gopuram" data-parallax="20" viewBox="0 0 400 230" aria-hidden="true" focusable="false">
+        <g fill="currentColor">
+          <rect x="196" y="6" width="8" height="12" rx="3"/><rect x="178" y="14" width="8" height="10" rx="3"/><rect x="214" y="14" width="8" height="10" rx="3"/>
+          <path d="M146 52C146 36 168 26 200 26S254 36 254 52Z"/>
+          <rect x="140" y="52" width="120" height="8"/>
+          <path d="M150 60h100l8 26H142z"/><rect x="134" y="86" width="132" height="8"/>
+          <path d="M142 94h116l10 30H132z"/><rect x="124" y="124" width="152" height="9"/>
+          <path d="M132 133h136l12 34H120z"/><rect x="112" y="167" width="176" height="9"/>
+          <path d="M120 176h160l14 38H106z"/><rect x="74" y="214" width="252" height="16"/>
+        </g>
+        <g fill="#6B1D2A">
+          <rect x="188" y="186" width="24" height="28" rx="12"/>
+          <rect x="190" y="141" width="8" height="16" rx="4"/><rect x="202" y="141" width="8" height="16" rx="4"/>
+          <rect x="190" y="102" width="8" height="14" rx="4"/><rect x="202" y="102" width="8" height="14" rx="4"/>
+          <rect x="192" y="68" width="16" height="12" rx="6"/>
+        </g>
+      </svg>
       <div class="wrap final-inner">
+        <!-- Kuthuvilakku: the flame flickers softly. Decorative. -->
+        <svg class="lamp" viewBox="0 0 64 92" aria-hidden="true" focusable="false">
+          <circle class="lamp-glow" cx="32" cy="24" r="26" fill="#F2A900"/>
+          <path class="lamp-flame" d="M32 4C41 15 43 24 32 36 21 24 23 15 32 4Z" fill="#FFC233"/>
+          <path class="lamp-flame lamp-core" d="M32 17c4.5 5.5 4.5 10 0 15.5-4.5-5.5-4.5-10 0-15.5z" fill="#FFF1B8"/>
+          <path d="M15 40h34l-4 10H19z" fill="#F2A900"/>
+          <rect x="29" y="50" width="6" height="22" fill="#C98A00"/>
+          <rect x="23" y="68" width="18" height="6" rx="3" fill="#F2A900"/>
+          <path d="M17 80h30l4 9H13z" fill="#F2A900"/>
+        </svg>
         <h2 id="cta-title" data-i18n="cta.title">Start your 14-day free trial today</h2>
         <p data-i18n="cta.sub">No credit card. No long forms.</p>
         <div class="cta-row cta-center">
@@ -400,6 +488,7 @@
   </div>
 
   <script src="assets/js/content.js"></script>
+  <script src="assets/js/motion.js"></script>
   <script src="assets/js/home.js"></script>
 </body>
 </html>
