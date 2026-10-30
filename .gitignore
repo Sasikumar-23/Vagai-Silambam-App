@@ -55,3 +55,6 @@ __pycache__/
 backend/*.db
 backend/**/*.db
 
+
+# Generated icon list (scripts/lucide-shim.js)
+src/lucide-icons.generated.js

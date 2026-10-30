@@ -1,4 +1,5 @@
 import React from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import {
@@ -114,7 +115,13 @@ function RoleAwareBottomTabs() {
 export default function RootNavigator() {
   const { currentUser, isLoading } = useAuth();
 
-  if (isLoading) return null;
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: theme.colors.background }}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+      </View>
+    );
+  }
 
   // The app screens are not registered until someone is signed in, so there is no
   // route that reaches student data without authentication.

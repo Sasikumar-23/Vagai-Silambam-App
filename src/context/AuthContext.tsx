@@ -126,39 +126,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  // Asks the server whether the stored session is still good and refreshes the local user.
+  const verifyWithServer = async (): Promise<'online' | 'rejected' | 'unreachable'> => {
+    try {
+      const apiUser = await api.me();
+      const localUser = await UserRepository.findOrCreateFromApi(apiUser);
+      setCurrentUser(localUser);
+      setConnectionMode('online');
+      await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify({ id: localUser.id }));
+      await markOnlineVerified();
+      return 'online';
+    } catch (e) {
+      if (e instanceof ApiError && !e.isNetworkError) {
+        // The server answered and refused: revoked, disabled or session ended.
+        await forgetOfflineAccess();
+        await TokenStore.clear();
+        await AsyncStorage.removeItem(AUTH_USER_KEY);
+        setCurrentUser(null);
+        return 'rejected';
+      }
+      return 'unreachable';
+    }
+  };
+
   const initSession = async () => {
     try {
       // 1. Check if we have a stored access token
       const hasToken = await TokenStore.hasSession();
 
       if (hasToken) {
-        // 2. Try to verify it against the API (also checks connectivity)
-        try {
-          const apiUser = await api.me();
-          const localUser = await UserRepository.findOrCreateFromApi(apiUser);
+        const stored = await AsyncStorage.getItem(AUTH_USER_KEY);
+        const storedId: string | null = stored ? JSON.parse(stored).id : null;
+        const graceValid = await offlineGraceValid();
+        const localUser = storedId ? await UserRepository.findById(storedId) : null;
+
+        if (localUser && graceValid) {
+          // Checked with the server recently: open the app straight away and confirm in the
+          // background, instead of holding a blank screen for the length of a network round trip.
           setCurrentUser(localUser);
-          setConnectionMode('online');
-          await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify({ id: localUser.id }));
-          await markOnlineVerified();
-        } catch (e) {
-          if (e instanceof ApiError && !e.isNetworkError) {
-            // The server answered and refused: revoked, disabled or session ended.
-            await forgetOfflineAccess();
-            await TokenStore.clear();
-            await AsyncStorage.removeItem(AUTH_USER_KEY);
-            setCurrentUser(null);
-            return;
-          }
-          // Server unreachable: allow the local session only within the grace window.
-          const stored = await AsyncStorage.getItem(AUTH_USER_KEY);
-          if (stored && (await offlineGraceValid())) {
-            const localUser = await UserRepository.findById(JSON.parse(stored).id);
-            if (localUser) {
-              setCurrentUser(localUser);
-              setConnectionMode('offline');
-            }
-          }
+          setIsLoading(false);
+          void verifyWithServer();
+          return;
         }
+
+        // 2. No recent check to rely on: the server has to vouch for this session first, and
+        // offline access has run out if it can't be reached.
+        await verifyWithServer();
       } else {
         // No token — try local SQLite session (legacy or offline-registered)
         const stored = await AsyncStorage.getItem(AUTH_USER_KEY);
