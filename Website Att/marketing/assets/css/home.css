@@ -134,7 +134,7 @@ a { color: inherit; }
 .nav a:last-child { border-bottom: 0; }
 
 .header-actions { display: flex; align-items: center; gap: 8px; }
-.header-wa, .header-trial { display: none; }
+.header-contact, .header-trial { display: none; }
 
 .lang-btn {
   display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px;
@@ -393,7 +393,7 @@ html[lang="ta"] .plan h3 { font-family: var(--font-tamil-heading); font-weight: 
   .nav { display: flex; position: static; flex-direction: row; gap: 28px; padding: 0; background: none; border: 0; }
   .nav a { padding: 8px 0; border: 0; }
   .menu-btn { display: none; }
-  .header-wa, .header-trial { display: inline-flex; }
+  .header-contact, .header-trial { display: inline-flex; }
   .hero { padding: 0 0 72px; }
   .hero-grid { padding-top: 12px; }
   .hero-grid { grid-template-columns: 1.15fr 1fr; align-items: center; }

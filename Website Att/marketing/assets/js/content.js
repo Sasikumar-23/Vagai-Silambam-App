@@ -1,7 +1,7 @@
 /**
  * Vagai Silambam marketing page: all copy and settings in one place.
  *
- * - `config` holds contact details, links and plan prices. Search for REPLACE.
+ * - `config` holds the contact email, links and plan prices. Search for REPLACE.
  * - `en` and `ta` hold every visible string, keyed the same way in both languages.
  *   `{n}`-style tokens are filled in by home.js.
  * - After editing English copy, run `node tools/stamp-english.mjs` so index.html
@@ -9,16 +9,11 @@
  */
 const SITE_CONTENT = {
   config: {
-    // REPLACE: WhatsApp number with country code, digits only (for example 919876543210).
-    whatsapp: '910000000000',
-    // REPLACE: business email and phone shown in the footer.
-    email: 'hello@your-domain.in',
-    phone: '+91 00000 00000',
-    // REPLACE: where "Start Free Trial" should go. While this is null, the button opens
-    // WhatsApp with a ready-made message, because there is no web sign-up page yet.
+    // Contact: shown in the footer and used by every "Email us" and "Start Free Trial" button.
+    email: 'sasikumar23125@gmail.com',
+    // Where "Start Free Trial" should go. While this is null, the button opens an email to the address
+    // above with a ready-made request, because there is no web sign-up page yet.
     trialUrl: null,
-    // Academy owners and staff sign in here.
-    portalUrl: 'https://silambam.dodoxtechs.in/login.html',
     // REPLACE: set to a real number to show "Trusted by N academies". Leave null to hide it.
     academyCount: null,
     // REPLACE: real numbers for the count-up strip. Each stays hidden while it is null, and the
@@ -31,14 +26,15 @@ const SITE_CONTENT = {
       { code: 'PROFESSIONAL', students: 300, branches: 2, users: 20, monthly: 1499, yearly: 14999 },
       { code: 'BUSINESS', students: 500, branches: 5, users: 50, monthly: 2499, yearly: 24999 },
     ],
-    whatsappMessage: {
-      chat: {
-        en: 'Hello, I would like to know more about Vagai Silambam.',
-        ta: 'வணக்கம், வாகை சிலம்பம் பற்றி மேலும் தெரிந்து கொள்ள விரும்புகிறேன்.',
+    // Subject and body of the ready-made emails.
+    mail: {
+      contact: {
+        en: { subject: 'Question about Vagai Silambam', body: 'Hello,\n\nI would like to know more about Vagai Silambam.\n\nAcademy name:\nTown:\nPhone:' },
+        ta: { subject: 'வாகை சிலம்பம் பற்றிய கேள்வி', body: 'வணக்கம்,\n\nவாகை சிலம்பம் பற்றி மேலும் தெரிந்து கொள்ள விரும்புகிறேன்.\n\nபள்ளியின் பெயர்:\nஊர்:\nதொலைபேசி:' },
       },
       trial: {
-        en: 'Hello, I would like to start the 14-day free trial of Vagai Silambam.',
-        ta: 'வணக்கம், வாகை சிலம்பத்தின் 14 நாள் இலவச சோதனையைத் தொடங்க விரும்புகிறேன்.',
+        en: { subject: 'Free trial request', body: 'Hello,\n\nI would like to start the 14-day free trial of Vagai Silambam.\n\nAcademy name:\nTown:\nPhone:' },
+        ta: { subject: 'இலவச சோதனைக்கான கோரிக்கை', body: 'வணக்கம்,\n\nவாகை சிலம்பத்தின் 14 நாள் இலவச சோதனையைத் தொடங்க விரும்புகிறேன்.\n\nபள்ளியின் பெயர்:\nஊர்:\nதொலைபேசி:' },
       },
     },
   },
@@ -46,14 +42,14 @@ const SITE_CONTENT = {
   /** Builds the href for every data-link="…" element. */
   link(name, lang) {
     const c = this.config;
-    const wa = (kind) => `https://wa.me/${c.whatsapp}?text=${encodeURIComponent(c.whatsappMessage[kind][lang])}`;
+    const mail = (kind) => {
+      const m = c.mail[kind][lang];
+      return `mailto:${c.email}?subject=${encodeURIComponent(m.subject)}&body=${encodeURIComponent(m.body)}`;
+    };
     switch (name) {
-      case 'whatsapp': return wa('chat');
-      case 'whatsapp-trial': return wa('trial');
-      case 'trial': return c.trialUrl || wa('trial');
+      case 'contact': return mail('contact');
+      case 'trial': return c.trialUrl || mail('trial');
       case 'email': return `mailto:${c.email}`;
-      case 'phone': return `tel:${c.phone.replace(/[^+\d]/g, '')}`;
-      case 'login': return c.portalUrl;
       default: return '#';
     }
   },
@@ -65,8 +61,9 @@ const SITE_CONTENT = {
     'skip': 'Skip to content',
     'nav.features': 'Features',
     'nav.pricing': 'Pricing',
+    'nav.about': 'About',
     'nav.faq': 'FAQ',
-    'nav.whatsapp': 'WhatsApp',
+    'nav.email': 'Email us',
     'nav.trial': 'Start Free Trial',
     'nav.menu': 'Menu',
     'lang.switch': 'தமிழ்',
@@ -76,7 +73,7 @@ const SITE_CONTENT = {
     'hero.title': 'Run your Silambam academy, not a pile of registers.',
     'hero.sub': 'Attendance, fees, certificates and tournaments, all in one phone app. It even works without internet.',
     'hero.ctaTrial': 'Start Free Trial',
-    'hero.ctaWhatsapp': 'Chat on WhatsApp',
+    'hero.ctaEmail': 'Email us',
     'hero.chip1': 'Offline Android app',
     'hero.chip2': 'English + தமிழ்',
     'hero.chip3': 'No credit card',
@@ -182,7 +179,7 @@ const SITE_CONTENT = {
     'pricing.users': 'Staff logins: {n}',
     'pricing.includes': 'Every plan includes attendance, fees and receipts, certificates, events and medals, uniforms, reports, and the offline Android app in English and Tamil.',
     'pricing.enterprise': 'More than 500 students or more branches? Talk to us for a custom plan.',
-    'pricing.enterpriseCta': 'Talk on WhatsApp',
+    'pricing.enterpriseCta': 'Email us',
     'plan.STARTER': 'Starter',
     'plan.STANDARD': 'Standard',
     'plan.PROFESSIONAL': 'Professional',
@@ -198,7 +195,7 @@ const SITE_CONTENT = {
     'faq.q4': 'Is my data safe?',
     'faq.a4': 'Your attendance goes to your own Google Sheet and your files to your own Drive. Each academy sees only its own information.',
     'faq.q5': 'Can I bring my student list from Excel?',
-    'faq.a5': 'Yes. Send us your Excel list on WhatsApp and we will help you add it.',
+    'faq.a5': 'Yes. Email us your Excel list and we will help you add it.',
     'faq.q6': 'Is it available in Tamil?',
     'faq.a6': 'Yes. The app and this website work in English and Tamil. Switch any time.',
     'faq.q7': 'How do my masters and staff log in?',
@@ -216,11 +213,11 @@ const SITE_CONTENT = {
     'footer.privacy': 'Privacy',
     'footer.terms': 'Terms',
     'footer.refunds': 'Refunds',
-    'footer.login': 'Academy login',
+    'footer.contactPage': 'Contact page',
     'footer.location': 'Tamil Nadu, India',
     'footer.rights': '© 2026 Vagai Silambam. All rights reserved.',
 
-    'sticky.whatsapp': 'Chat on WhatsApp',
+    'sticky.email': 'Email us',
   },
 
   ta: {
@@ -230,8 +227,9 @@ const SITE_CONTENT = {
     'skip': 'முதன்மைப் பகுதிக்குச் செல்',
     'nav.features': 'அம்சங்கள்',
     'nav.pricing': 'விலை',
+    'nav.about': 'எங்களைப் பற்றி',
     'nav.faq': 'கேள்விகள்',
-    'nav.whatsapp': 'வாட்ஸ்அப்',
+    'nav.email': 'மின்னஞ்சல்',
     'nav.trial': 'இலவச சோதனை',
     'nav.menu': 'பட்டி',
     'lang.switch': 'English',
@@ -241,7 +239,7 @@ const SITE_CONTENT = {
     'hero.title': 'பதிவேட்டுக் குவியல் இல்லாமல், உங்கள் சிலம்பப் பள்ளியை எளிதாக நடத்துங்கள்.',
     'hero.sub': 'வருகை, கட்டணம், சான்றிதழ், போட்டிகள் — எல்லாம் ஒரே மொபைல் செயலியில். இணையம் இல்லாவிட்டாலும் வேலை செய்யும்.',
     'hero.ctaTrial': '14 நாள் இலவச சோதனை',
-    'hero.ctaWhatsapp': 'வாட்ஸ்அப்பில் பேசுங்கள்',
+    'hero.ctaEmail': 'மின்னஞ்சல் அனுப்புங்கள்',
     'hero.chip1': 'ஆஃப்லைன் ஆண்ட்ராய்டு செயலி',
     'hero.chip2': 'English + தமிழ்',
     'hero.chip3': 'கடன் அட்டை தேவையில்லை',
@@ -347,7 +345,7 @@ const SITE_CONTENT = {
     'pricing.users': 'ஊழியர் உள்நுழைவு: {n}',
     'pricing.includes': 'எல்லாத் திட்டங்களிலும்: வருகை, கட்டணம் & ரசீது, சான்றிதழ், போட்டிகள் & பதக்கங்கள், சீருடை, அறிக்கைகள், ஆஃப்லைன் ஆண்ட்ராய்டு செயலி — தமிழிலும் ஆங்கிலத்திலும்.',
     'pricing.enterprise': '500-க்கு மேல் மாணவர்களோ, அதிகக் கிளைகளோ உள்ளதா? தனிப்பட்ட திட்டத்திற்கு எங்களிடம் பேசுங்கள்.',
-    'pricing.enterpriseCta': 'வாட்ஸ்அப்பில் பேசுங்கள்',
+    'pricing.enterpriseCta': 'மின்னஞ்சல் அனுப்புங்கள்',
     'plan.STARTER': 'ஸ்டார்ட்டர்',
     'plan.STANDARD': 'ஸ்டாண்டர்ட்',
     'plan.PROFESSIONAL': 'புரொஃபஷனல்',
@@ -363,7 +361,7 @@ const SITE_CONTENT = {
     'faq.q4': 'என் தரவு பாதுகாப்பாக இருக்குமா?',
     'faq.a4': 'உங்கள் வருகை உங்கள் சொந்த Google Sheet-இலும், கோப்புகள் உங்கள் Drive-இலும் சேரும். ஒவ்வொரு பள்ளியும் தன் தகவலை மட்டுமே பார்க்கும்.',
     'faq.q5': 'எக்செல் பட்டியலிலிருந்து மாணவர்களைச் சேர்க்க முடியுமா?',
-    'faq.a5': 'முடியும். உங்கள் எக்செல் பட்டியலை வாட்ஸ்அப்பில் அனுப்புங்கள்; சேர்க்க நாங்கள் உதவுவோம்.',
+    'faq.a5': 'முடியும். உங்கள் எக்செல் பட்டியலை எங்களுக்கு மின்னஞ்சலில் அனுப்புங்கள்; சேர்க்க நாங்கள் உதவுவோம்.',
     'faq.q6': 'தமிழில் கிடைக்குமா?',
     'faq.a6': 'ஆம். செயலியும் இந்த இணையதளமும் தமிழிலும் ஆங்கிலத்திலும் உள்ளன. எப்போது வேண்டுமானாலும் மாற்றலாம்.',
     'faq.q7': 'என் ஆசான்களும் ஊழியர்களும் எப்படி உள்நுழைவார்கள்?',
@@ -381,11 +379,11 @@ const SITE_CONTENT = {
     'footer.privacy': 'தனியுரிமை',
     'footer.terms': 'விதிமுறைகள்',
     'footer.refunds': 'பணத் திருப்பம்',
-    'footer.login': 'பள்ளி உள்நுழைவு',
+    'footer.contactPage': 'தொடர்புப் பக்கம்',
     'footer.location': 'தமிழ்நாடு, இந்தியா',
     'footer.rights': '© 2026 வாகை சிலம்பம். அனைத்து உரிமைகளும் பாதுகாக்கப்பட்டவை.',
 
-    'sticky.whatsapp': 'வாட்ஸ்அப்பில் பேசுங்கள்',
+    'sticky.email': 'மின்னஞ்சல் அனுப்புங்கள்',
   },
 };
 

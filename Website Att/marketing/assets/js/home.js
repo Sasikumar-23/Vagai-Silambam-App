@@ -7,7 +7,7 @@
   'use strict';
 
   const C = window.SITE_CONTENT;
-  const M = window.VSMotion || { enabled: false, tween: (a, b, ms, cb) => cb(b), counters() {}, splitWords() {}, parallax() {}, initReveal() {}, reveal() {}, format: (n) => String(n) };
+  const M = window.VSMotion || { enabled: false, tween: (a, b, ms, cb) => cb(b), counters() {}, splitWords() {}, parallax() {}, accordion() {}, initReveal() {}, reveal() {}, format: (n) => String(n) };
   const LANG_KEY = 'vs_lang';
   const DEMO_START = ['present', 'present', 'late', 'absent'];
   const DEMO_STATUSES = [
@@ -75,7 +75,7 @@
     $$('[data-text]').forEach((el) => {
       const value = C.config[el.dataset.text];
       el.textContent = value;
-      el.classList.toggle('is-placeholder', /your-domain|00000/.test(value));
+      el.classList.toggle('is-placeholder', /your-domain/.test(value));
     });
 
     const count = $('#proofCount');
@@ -237,34 +237,7 @@
   /* ───────────── FAQ: one open at a time, height eases open and closed ───────────── */
 
   function initFaq() {
-    const items = $$('#faqList details');
-
-    const animate = (item, opening) => {
-      const body = $('p', item);
-      body.getAnimations().forEach((a) => a.cancel());
-      if (!M.enabled) { item.open = opening; return; }
-      item.open = true; // keep it rendered while it animates
-      const pad = getComputedStyle(body).paddingBottom;
-      const full = body.scrollHeight;
-      const shut = { height: '0px', paddingBottom: '0px', opacity: 0 };
-      const wide = { height: `${full}px`, paddingBottom: pad, opacity: 1 };
-      body.style.overflow = 'hidden';
-      const run = body.animate(opening ? [shut, wide] : [wide, shut], { duration: 380, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' });
-      run.onfinish = () => { body.style.overflow = ''; if (!opening) item.open = false; };
-      run.oncancel = () => { body.style.overflow = ''; };
-    };
-
-    const close = (item) => { item.removeAttribute('data-open'); animate(item, false); };
-    const open = (item) => { item.setAttribute('data-open', ''); animate(item, true); };
-
-    items.forEach((item) => {
-      $('summary', item).addEventListener('click', (event) => {
-        event.preventDefault();
-        if (item.hasAttribute('data-open')) { close(item); return; }
-        items.forEach((other) => { if (other !== item && other.hasAttribute('data-open')) close(other); });
-        open(item);
-      });
-    });
+    M.accordion($$('#faqList details'));
   }
 
   /* ───────────── Mobile menu ───────────── */
@@ -319,8 +292,8 @@
     M.initReveal();
     M.parallax();
 
-    if (/^91?0+$/.test(C.config.whatsapp)) {
-      console.warn('Vagai Silambam: replace the placeholder WhatsApp number in assets/js/content.js.');
+    if (/your-domain/.test(C.config.email)) {
+      console.warn('Vagai Silambam: set the contact email in assets/js/content.js.');
     }
   });
 })();

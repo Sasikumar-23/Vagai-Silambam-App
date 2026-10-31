@@ -7,6 +7,7 @@
  *   VSMotion.tween(from, to, ms, onStep)  eased number animation (counters, rolling prices)
  *   VSMotion.counters(root)               count up every [data-count][data-target] when visible
  *   VSMotion.parallax()                   nudge [data-parallax="px"] elements by at most 20 px
+ *   VSMotion.accordion(details)           one-open-at-a-time <details> whose height eases open and closed
  *
  * Only transform and opacity are animated here, apart from the number text itself.
  */
@@ -122,6 +123,39 @@
     update();
   }
 
-  window.VSMotion = { enabled, reveal, initReveal, splitWords, tween, counters, parallax, format };
+  /* ───────────── Accordion: one open at a time, height eases open and closed ───────────── */
+
+  function accordion(items) {
+    items = Array.from(items);
+
+    const animate = (item, opening) => {
+      const body = item.querySelector('p');
+      body.getAnimations().forEach((a) => a.cancel());
+      if (!enabled) { item.open = opening; return; }
+      item.open = true; // keep it rendered while it animates
+      const pad = getComputedStyle(body).paddingBottom;
+      const full = body.scrollHeight;
+      const shut = { height: '0px', paddingBottom: '0px', opacity: 0 };
+      const wide = { height: `${full}px`, paddingBottom: pad, opacity: 1 };
+      body.style.overflow = 'hidden';
+      const run = body.animate(opening ? [shut, wide] : [wide, shut], { duration: 380, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' });
+      run.onfinish = () => { body.style.overflow = ''; if (!opening) item.open = false; };
+      run.oncancel = () => { body.style.overflow = ''; };
+    };
+    const close = (item) => { item.removeAttribute('data-open'); animate(item, false); };
+    const open = (item) => { item.setAttribute('data-open', ''); animate(item, true); };
+
+    items.forEach((item) => {
+      if (item.open) item.setAttribute('data-open', '');
+      item.querySelector('summary').addEventListener('click', (event) => {
+        event.preventDefault();
+        if (item.hasAttribute('data-open')) { close(item); return; }
+        items.forEach((other) => { if (other !== item && other.hasAttribute('data-open')) close(other); });
+        open(item);
+      });
+    });
+  }
+
+  window.VSMotion = { enabled, reveal, initReveal, splitWords, tween, counters, parallax, accordion, format };
   window.__vsReady = true;
 })();

@@ -5,223 +5,209 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Features · Vagai Silambam</title>
   <meta name="description" content="Students, attendance, events, fees, uniforms, achievements, certificates and reports — built for Silambam academies, in English and Tamil.">
-  <link rel="stylesheet" href="assets/css/site.css">
+  <meta name="theme-color" content="#FBF3E4">
   <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
   <link rel="icon" type="image/png" sizes="96x96" href="assets/img/favicon.png">
   <link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Yatra+One&family=Catamaran:wght@700;800&family=Noto+Sans+Tamil:wght@400;600;700&family=Inter:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="assets/css/home.css">
+  <link rel="stylesheet" href="assets/css/motion.css">
+  <link rel="stylesheet" href="assets/css/pages.css">
+  <script>
+    /* Scripted page; reveals are skipped for visitors who prefer reduced motion. If the page
+       script has not started after 4 s, everything is shown as it is. */
+    (function (root) {
+      root.classList.add('js');
+      if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+      root.classList.add('motion');
+      setTimeout(function () { if (!window.__vsReady) root.classList.add('reveal-all'); }, 4000);
+    })(document.documentElement);
+  </script>
 </head>
-<body>
+<body class="inner-page">
+  <a class="skip-link" href="#main">Skip to content</a>
 
-  <!-- Top Scroll Progress Indicator -->
-  <div class="scroll-progress-bar" id="scrollProgressBar"></div>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-calendar-check" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/></symbol>
+    <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2V2z"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/></symbol>
+    <symbol id="i-award" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.48 12.89 17 22l-5-3-5 3 1.52-9.11"/></symbol>
+    <symbol id="i-bag" viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></symbol>
+    <symbol id="i-wifi-off" viewBox="0 0 24 24"><line x1="1" y1="1" x2="23" y2="23"/><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"/><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"/><path d="M10.71 5.05A16 16 0 0 1 22.58 9"/><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></symbol>
+    <symbol id="i-sync" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></symbol>
+    <symbol id="i-sheet" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></symbol>
+    <symbol id="i-folder" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></symbol>
+    <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><polyline points="3 7 12 13 21 7"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></symbol>
+    <symbol id="i-branch" viewBox="0 0 24 24"><line x1="6" y1="3" x2="6" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+    <symbol id="i-staves" viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="4"/><line x1="4" y1="4" x2="20" y2="20"/><circle cx="12" cy="12" r="2.2"/></symbol>
+    <symbol id="i-staff" viewBox="0 0 24 24"><line x1="5" y1="19" x2="19" y2="5"/><line x1="3.5" y1="20.5" x2="6.5" y2="17.5"/><line x1="17.5" y1="6.5" x2="20.5" y2="3.5"/><line x1="10" y1="14" x2="12" y2="16"/></symbol>
+    <symbol id="i-coil" viewBox="0 0 24 24"><path d="M12 12a1.5 1.5 0 1 1 3 0 4 4 0 1 1-8 0 6.5 6.5 0 1 1 13 0c0 3-1 5-3 6.5"/><line x1="17" y1="18.5" x2="21" y2="21"/></symbol>
+    <symbol id="i-horns" viewBox="0 0 24 24"><path d="M12 21v-8"/><path d="M12 13c-4 0-6-3-6-9"/><path d="M12 13c4 0 6-3 6-9"/><path d="M6.5 8C5 7 3.8 7 3 7"/><path d="M17.5 8C19 7 20.2 7 21 7"/></symbol>
+    <symbol id="i-forms" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.2"/><circle cx="5" cy="18" r="2.2"/><circle cx="19" cy="18" r="2.2"/><path d="M10.9 7 6 16M13.1 7 18 16M7.4 18h9.2"/></symbol>
+    <symbol id="i-lamp" viewBox="0 0 24 24"><path d="M12 2.5c2.6 3 2.6 5.2 0 7.2-2.6-2-2.6-4.2 0-7.2z"/><path d="M8 11.5h8l-1.2 3H9.2z"/><line x1="12" y1="14.5" x2="12" y2="19"/><path d="M7.5 21.5h9M9 19h6"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-6.1 7-11a7 7 0 0 0-14 0c0 4.9 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+  </svg>
 
-  <!-- Sticky Navbar -->
   <header class="site-header">
-    <div class="wrap">
-      <a class="brand-logo" href="index.html" aria-label="Vagai Silambam Home">
-        <img class="brand-icon" src="assets/img/logo.svg" alt="" width="40" height="40">
-        <span>Vagai Silambam</span>
-        <span class="brand-tag">SaaS</span>
+    <div class="wrap header-row">
+      <a class="brand" href="index.html" aria-label="Vagai Silambam, home">
+        <img class="brand-mark" src="assets/img/logo.svg" alt="" width="38" height="38">
+        <span class="brand-text"><strong>Vagai Silambam</strong><small lang="ta">வாகை சிலம்பம்</small></span>
       </a>
 
-      <button class="mobile-toggle" id="mobileMenuToggle" aria-label="Toggle Navigation Menu" aria-expanded="false">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-          <line x1="3" y1="6" x2="21" y2="6"></line>
-          <line x1="3" y1="12" x2="21" y2="12"></line>
-          <line x1="3" y1="18" x2="21" y2="18"></line>
-        </svg>
-      </button>
-
-      <nav class="site-nav" id="siteNavMenu">
-        <ul class="nav-links">
-          <li><a href="features.html" class="active">Features</a></li>
-          <li><a href="index.html#attendance">Attendance</a></li>
-          <li><a href="index.html#mobile-app">Mobile App</a></li>
-          <li><a href="pricing.html">Pricing</a></li>
-          <li><a href="faq.html">FAQ</a></li>
-          <li><a href="contact.html">Contact</a></li>
-        </ul>
-        <div class="nav-cta-group">
-          <a class="btn btn-ghost btn-sm" href="app/index.html">Sign In</a>
-          <a class="btn btn-primary btn-sm" href="app/index.html">Start Free Trial</a>
-        </div>
+      <nav class="nav" id="siteNav" aria-label="Main">
+        <a href="features.html" aria-current="page">Features</a>
+        <a href="pricing.html">Pricing</a>
+        <a href="faq.html">FAQ</a>
+        <a href="about.html">About</a>
+        <a href="contact.html">Contact</a>
       </nav>
+
+      <div class="header-actions">
+        <a class="btn btn-primary btn-sm header-trial" href="mailto:sasikumar23125@gmail.com?subject=Free%20trial%20request&amp;body=Hello%2C%0A%0AI%20would%20like%20to%20start%20the%2014-day%20free%20trial%20of%20Vagai%20Silambam.%0A%0AAcademy%20name%3A%0ATown%3A%0APhone%3A"><span><span class="hide-sm">Start </span>Free Trial</span></a>
+        <button type="button" class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="siteNav" aria-label="Menu">
+          <svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg>
+        </button>
+      </div>
     </div>
   </header>
 
-  <!-- Page Header -->
-  <section class="section" style="padding-bottom:20px;">
-    <div class="wrap">
-      <div class="section-header reveal-on-scroll">
-        <span class="section-tag">Complete SaaS Architecture</span>
-        <h1 class="section-title">Built around how a Silambam academy runs</h1>
-        <p class="section-subtitle">Not a generic school ERP with labels swapped. No classes, no subjects, no exam marks — just pure martial arts training, gradings, weapons, and tournaments.</p>
+  <main id="main">
+    <div class="toranam" data-parallax="-16" aria-hidden="true"></div>
+    <section class="legal-hero wide">
+      <div class="wrap">
+        <p class="eyebrow">Complete SaaS Architecture</p>
+        <h1>Built around how a Silambam academy runs</h1>
+        <p class="lead">Not a generic school ERP with labels swapped. No classes, no subjects, no exam marks — just pure martial arts training, gradings, weapons, and tournaments.</p>
       </div>
-
-      <!-- Core Modules Grid -->
-      <div class="features-grid">
-        <div class="feature-card reveal-on-scroll">
-          <div class="feature-icon-box">👥</div>
-          <h3>Student Master Registry</h3>
-          <p>Student ID and roll numbers, dual English &amp; தமிழ் names, photo avatars, date of birth, emergency contacts, joining date, training rank sash, dojo branch, instructor, and medical notes.</p>
-        </div>
-
-        <div class="feature-card reveal-on-scroll stagger-1">
-          <div class="feature-icon-box">✓</div>
-          <h3>Session Training Attendance</h3>
-          <p>Recorded per training session rather than school day. Mark 50 students present in one click, then modify exceptions: Present, Absent, Late, and Leave with custom remarks.</p>
-        </div>
-
-        <div class="feature-card reveal-on-scroll stagger-2">
-          <div class="feature-icon-box">📈</div>
-          <h3>Retention &amp; Attendance Insights</h3>
-          <p>Real-time attendance percentage per student, monthly summaries, absent lists, and an automated low-attendance report so no martial artist quietly drifts away.</p>
-        </div>
-
-        <div class="feature-card reveal-on-scroll stagger-3">
-          <div class="feature-icon-box">★</div>
-          <h3>Tournaments &amp; Form Demonstrations</h3>
-          <p>District, state and national level championships, intensive weapon camps, and public demonstrations. Track registration deadlines, participant brackets, fees, and bout results.</p>
-        </div>
-
-        <div class="feature-card reveal-on-scroll">
-          <div class="feature-icon-box">🏅</div>
-          <h3>Medals &amp; Belt Achievements</h3>
-          <p>Winner, Runner-up, Third Place and Participation honors — with permanent medal tallies and belt promotion dates stored against each student's profile.</p>
-        </div>
-
-        <div class="feature-card reveal-on-scroll stagger-1">
-          <div class="feature-icon-box">₹</div>
-          <h3>Fee Ledger &amp; Digital Receipts</h3>
-          <p>Monthly training, admission, event, camp, uniform and certificate fees. Track paid, pending, overdue, partial and waived dues with automated digital PDF receipts.</p>
-        </div>
-
-        <div class="feature-card reveal-on-scroll stagger-2">
-          <div class="feature-icon-box">🥋</div>
-          <h3>Uniforms &amp; Weapon Inventory</h3>
-          <p>Kurta &amp; dhoti sets, dojo t-shirts, track pants, grading sashes, and bamboo staffs (Nedunkambu) — tracked by size, quantity, payment status, and condition.</p>
-        </div>
-
-        <div class="feature-card reveal-on-scroll stagger-3">
-          <div class="feature-icon-box">📜</div>
-          <h3>Grading Certificates</h3>
-          <p>Issue belt grading and tournament achievement certificates, attach them to the student record, and automatically archive copies in your own Google Drive.</p>
-        </div>
-
-        <div class="feature-card reveal-on-scroll">
-          <div class="feature-icon-box">📊</div>
-          <h3>Exportable Audits &amp; Reports</h3>
-          <p>Master student rosters, session registers, monthly fee collections, pending dues, tournament participation logs — exported to CSV, Excel, or PDF.</p>
-        </div>
+    </section>
+    <section class="page-section">
+      <div class="wrap">
+        <ul class="cards cards-wide">
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-users"/></svg></span><h3>Student Master Registry</h3><p>Student ID and roll numbers, dual English &amp; தமிழ் names, photo avatars, date of birth, emergency contacts, joining date, training rank sash, dojo branch, instructor, and medical notes.</p></li>
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-calendar-check"/></svg></span><h3>Session Training Attendance</h3><p>Recorded per training session rather than school day. Mark 50 students present in one click, then modify exceptions: Present, Absent, Late, and Leave with custom remarks.</p></li>
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-chart"/></svg></span><h3>Retention &amp; Attendance Insights</h3><p>Real-time attendance percentage per student, monthly summaries, absent lists, and an automated low-attendance report so no martial artist quietly drifts away.</p></li>
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-staves"/></svg></span><h3>Tournaments &amp; Form Demonstrations</h3><p>District, state and national level championships, intensive weapon camps, and public demonstrations. Track registration deadlines, participant brackets, fees, and bout results.</p></li>
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-award"/></svg></span><h3>Medals &amp; Belt Achievements</h3><p>Winner, Runner-up, Third Place and Participation honors — with permanent medal tallies and belt promotion dates stored against each student's profile.</p></li>
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-receipt"/></svg></span><h3>Fee Ledger &amp; Digital Receipts</h3><p>Monthly training, admission, event, camp, uniform and certificate fees. Track paid, pending, overdue, partial and waived dues with automated digital PDF receipts.</p></li>
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-bag"/></svg></span><h3>Uniforms &amp; Weapon Inventory</h3><p>Kurta &amp; dhoti sets, dojo t-shirts, track pants, grading sashes, and bamboo staffs (Nedunkambu) — tracked by size, quantity, payment status, and condition.</p></li>
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-file"/></svg></span><h3>Grading Certificates</h3><p>Issue belt grading and tournament achievement certificates, attach them to the student record, and automatically archive copies in your own Google Drive.</p></li>
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-sheet"/></svg></span><h3>Exportable Audits &amp; Reports</h3><p>Master student rosters, session registers, monthly fee collections, pending dues, tournament participation logs — exported to CSV, Excel, or PDF.</p></li>
+        </ul>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- How It Fits Your Day -->
-  <section class="section section-alt">
-    <div class="wrap">
-      <div class="section-header reveal-on-scroll">
-        <span class="section-tag">Daily Workflow</span>
-        <h2 class="section-title">How Vagai Silambam fits your day</h2>
+    <section class="page-section alt">
+      <div class="wrap">
+        <div class="section-head">
+          <p class="eyebrow">Daily Workflow</p>
+          <h2 class="section-title">How Vagai Silambam fits your day</h2>
+        </div>
+        <ul class="cards cards-wide">
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-phone"/></svg></span><h3>Phone at the dojo, browser at the desk</h3><p>Instructors take attendance on Android, including with zero signal. Office staff manage billing and reports on a laptop. Both sync seamlessly.</p></li>
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-folder"/></svg></span><h3>Your Google account, not ours</h3><p>Connect your own Google account once. Photos and certificates go to your Drive; attendance is written to your Sheet. You keep access even if you leave.</p></li>
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-globe"/></svg></span><h3>English and தமிழ்</h3><p>Switch language from any screen. Student names are stored in both scripts, so records read naturally either way.</p></li>
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-branch"/></svg></span><h3>Multiple branches</h3><p>Run several training centres under one academy, with per-branch students and reporting on the higher plans.</p></li>
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-user"/></svg></span><h3>Roles that make sense</h3><p>Admin, instructor and accounts staff each see what they need. Permissions are enforced on the server, not just hidden in the interface.</p></li>
+          <li class="card reveal"><span class="card-icon"><svg class="icon" aria-hidden="true"><use href="#i-shield"/></svg></span><h3>Separated by design</h3><p>Every academy's data is isolated. One academy can never read another's students, fees or attendance.</p></li>
+        </ul>
       </div>
+    </section>
 
-      <div class="features-grid">
-        <div class="feature-card reveal-on-scroll">
-          <div class="feature-icon-box">📱</div>
-          <h3>Phone at the dojo, browser at the desk</h3>
-          <p>Instructors take attendance on Android, including with zero signal. Office staff manage billing and reports on a laptop. Both sync seamlessly.</p>
-        </div>
-
-        <div class="feature-card reveal-on-scroll stagger-1">
-          <div class="feature-icon-box">☁️</div>
-          <h3>Your Google account, not ours</h3>
-          <p>Connect your own Google account once. Photos and certificates go to your Drive; attendance is written to your Sheet. You keep access even if you leave.</p>
-        </div>
-
-        <div class="feature-card reveal-on-scroll stagger-2">
-          <div class="feature-icon-box">அ</div>
-          <h3>English and தமிழ்</h3>
-          <p>Switch language from any screen. Student names are stored in both scripts, so records read naturally either way.</p>
-        </div>
-
-        <div class="feature-card reveal-on-scroll stagger-3">
-          <div class="feature-icon-box">🏢</div>
-          <h3>Multiple branches</h3>
-          <p>Run several training centres under one academy, with per-branch students and reporting on the higher plans.</p>
-        </div>
-
-        <div class="feature-card reveal-on-scroll">
-          <div class="feature-icon-box">👤</div>
-          <h3>Roles that make sense</h3>
-          <p>Admin, instructor and accounts staff each see what they need. Permissions are enforced on the server, not just hidden in the interface.</p>
-        </div>
-
-        <div class="feature-card reveal-on-scroll stagger-1">
-          <div class="feature-icon-box">🔒</div>
-          <h3>Separated by design</h3>
-          <p>Every academy's data is isolated. One academy can never read another's students, fees or attendance.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Final CTA -->
-  <section class="final-cta-section">
-    <div class="wrap">
-      <div class="final-cta-box reveal-on-scroll">
-        <h2>Try it with your own students</h2>
+    <section class="final-cta on-dark" data-parallax="12" aria-labelledby="cta-title">
+      <svg class="gopuram" data-parallax="20" viewBox="0 0 400 230" aria-hidden="true" focusable="false">
+        <g fill="currentColor">
+          <rect x="196" y="6" width="8" height="12" rx="3"/><rect x="178" y="14" width="8" height="10" rx="3"/><rect x="214" y="14" width="8" height="10" rx="3"/>
+          <path d="M146 52C146 36 168 26 200 26S254 36 254 52Z"/>
+          <rect x="140" y="52" width="120" height="8"/>
+          <path d="M150 60h100l8 26H142z"/><rect x="134" y="86" width="132" height="8"/>
+          <path d="M142 94h116l10 30H132z"/><rect x="124" y="124" width="152" height="9"/>
+          <path d="M132 133h136l12 34H120z"/><rect x="112" y="167" width="176" height="9"/>
+          <path d="M120 176h160l14 38H106z"/><rect x="74" y="214" width="252" height="16"/>
+        </g>
+        <g fill="#6B1D2A">
+          <rect x="188" y="186" width="24" height="28" rx="12"/>
+          <rect x="190" y="141" width="8" height="16" rx="4"/><rect x="202" y="141" width="8" height="16" rx="4"/>
+          <rect x="190" y="102" width="8" height="14" rx="4"/><rect x="202" y="102" width="8" height="14" rx="4"/>
+          <rect x="192" y="68" width="16" height="12" rx="6"/>
+        </g>
+      </svg>
+      <div class="wrap final-inner">
+        <svg class="lamp" viewBox="0 0 64 92" aria-hidden="true" focusable="false">
+          <circle class="lamp-glow" cx="32" cy="24" r="26" fill="#F2A900"/>
+          <path class="lamp-flame" d="M32 4C41 15 43 24 32 36 21 24 23 15 32 4Z" fill="#FFC233"/>
+          <path class="lamp-flame lamp-core" d="M32 17c4.5 5.5 4.5 10 0 15.5-4.5-5.5-4.5-10 0-15.5z" fill="#FFF1B8"/>
+          <path d="M15 40h34l-4 10H19z" fill="#F2A900"/>
+          <rect x="29" y="50" width="6" height="22" fill="#C98A00"/>
+          <rect x="23" y="68" width="18" height="6" rx="3" fill="#F2A900"/>
+          <path d="M17 80h30l4 9H13z" fill="#F2A900"/>
+        </svg>
+        <h2 id="cta-title">Try it with your own students</h2>
         <p>14 days free. No credit card required. Set up your academy in 2 minutes.</p>
-        <div class="hero-cta-wrap" style="justify-content:center;">
-          <a class="btn btn-saffron btn-lg" href="app/index.html">Start Free Trial</a>
-          <a class="btn btn-ghost-dark btn-lg" href="pricing.html">View Pricing Plans</a>
+        <div class="cta-row cta-center">
+          <a class="btn btn-primary btn-lg" href="mailto:sasikumar23125@gmail.com?subject=Free%20trial%20request&amp;body=Hello%2C%0A%0AI%20would%20like%20to%20start%20the%2014-day%20free%20trial%20of%20Vagai%20Silambam.%0A%0AAcademy%20name%3A%0ATown%3A%0APhone%3A"><span>Start Free Trial</span><svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          <a class="btn btn-light btn-lg" href="pricing.html">View Pricing Plans</a>
         </div>
       </div>
-    </div>
-  </section>
+    </section>
+  </main>
 
-  <!-- Footer -->
   <footer class="site-footer">
-    <div class="wrap">
-      <div class="footer-grid">
-        <div class="footer-brand">
-          <h4>
-            <img src="assets/img/logo.svg" alt="" width="26" height="26" style="vertical-align:middle">
-            Vagai Silambam
-          </h4>
-          <p>Academy management for traditional Silambam martial arts schools in Tamil Nadu and beyond.</p>
-        </div>
-        <div class="footer-col">
-          <h5>Product</h5>
-          <ul class="footer-links">
-            <li><a href="features.html">Features</a></li>
-            <li><a href="pricing.html">Pricing</a></li>
-            <li><a href="app/index.html">Sign in</a></li>
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h5>Company</h5>
-          <ul class="footer-links">
-            <li><a href="about.html">About</a></li>
-            <li><a href="contact.html">Contact</a></li>
-            <li><a href="faq.html">FAQ</a></li>
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h5>Legal</h5>
-          <ul class="footer-links">
-            <li><a href="terms.html">Terms</a></li>
-            <li><a href="privacy.html">Privacy</a></li>
-            <li><a href="refund.html">Refunds</a></li>
-          </ul>
-        </div>
+    <div class="wrap footer-grid">
+      <div class="footer-brand">
+        <a class="brand" href="index.html" aria-label="Vagai Silambam, home">
+          <img class="brand-mark" src="assets/img/logo.svg" alt="" width="38" height="38">
+          <span class="brand-text"><strong>Vagai Silambam</strong><small lang="ta">வாகை சிலம்பம்</small></span>
+        </a>
+        <p>Simple academy management for Silambam masters.</p>
       </div>
-      <div class="footer-bottom">
-        <div>© 2026 Vagai Silambam Academy. Tamil Nadu, India.</div>
-        <div><a href="mailto:sasikumar23125@gmail.com">sasikumar23125@gmail.com</a></div>
+      <div>
+        <h3>Product</h3>
+        <ul>
+          <li><a href="features.html">Features</a></li>
+          <li><a href="pricing.html">Pricing</a></li>
+          <li><a href="faq.html">FAQ</a></li>
+          <li><a href="about.html">About</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Legal</h3>
+        <ul>
+          <li><a href="privacy.html">Privacy</a></li>
+          <li><a href="terms.html">Terms</a></li>
+          <li><a href="refund.html">Refunds</a></li>
+        </ul>
+      </div>
+      <div>
+        <h3>Contact</h3>
+        <ul>
+          <li><a href="mailto:sasikumar23125@gmail.com">sasikumar23125@gmail.com</a></li>
+          <li><a href="contact.html">Contact page</a></li>
+          <li>Tamil Nadu, India</li>
+        </ul>
       </div>
     </div>
+    <p class="wrap footer-rights">© 2026 Vagai Silambam. All rights reserved.</p>
   </footer>
 
-  <script src="assets/js/main.js"></script>
+  <script src="assets/js/motion.js"></script>
+  <script src="assets/js/pages.js"></script>
 </body>
 </html>

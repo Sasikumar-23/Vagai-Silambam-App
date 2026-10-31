@@ -1,0 +1,82 @@
+/* Inner pages: About, Contact, FAQ, Features, Pricing, Privacy, Terms and Refunds.
+   Built on home.css (palette, header, footer, cards, plans, FAQ) and motion.css. */
+
+.wrap-narrow-legal { width: min(100% - 32px, 1000px); margin-inline: auto; }
+
+.legal-hero { padding: 8px 0 20px; }
+.legal-hero h1 { margin-top: 4px; font-size: clamp(2rem, 6.5vw, 3.1rem); line-height: 1.15; }
+.legal-hero .lead { margin-top: 14px; max-width: 42em; font-size: 1.08rem; }
+
+.legal-grid { display: grid; gap: 24px; padding-bottom: 72px; }
+.legal-list { display: grid; gap: 16px; min-width: 0; }
+
+.legal-card {
+  padding: 22px 22px 20px; background: var(--card); border: 1px solid var(--line);
+  border-top: 4px solid var(--turmeric); border-radius: var(--radius);
+  scroll-margin-top: calc(var(--header-h) + 22px);
+}
+.legal-card h2 { display: flex; align-items: center; gap: 12px; font-size: 1.3rem; line-height: 1.3; }
+.legal-num {
+  flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%;
+  background: var(--maroon); color: var(--cream); font: 700 0.95rem/1 var(--font-body);
+}
+.legal-card p { margin-top: 12px; color: var(--ink-2); }
+.legal-card strong { color: var(--ink); }
+.legal-card a { color: var(--kumkum-dark); font-weight: 600; text-underline-offset: 3px; }
+
+/* The contents list sits beside the text on wide screens and is hidden on phones. */
+.toc { display: none; }
+.toc-title { margin-bottom: 10px; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--turmeric-deep); }
+.toc ol { display: grid; gap: 2px; border-left: 2px solid var(--line); }
+.toc a { display: block; padding: 7px 0 7px 14px; margin-left: -2px; border-left: 2px solid transparent; color: var(--ink-2); text-decoration: none; font-size: 0.95rem; }
+.toc a:hover { color: var(--kumkum-dark); border-left-color: var(--kumkum); }
+
+.inner-page .site-footer { padding-bottom: 48px; }
+/* Keeps the header's mail button and menu button on one line at 360px. */
+.inner-page .header-trial { display: inline-flex; padding-inline: 0.8rem; font-size: 0.88rem; white-space: nowrap; }
+@media (max-width: 400px) { .inner-page .site-header .brand-text small, .inner-page .hide-sm { display: none; } }
+
+@media (min-width: 960px) {
+  .legal-grid { grid-template-columns: 230px minmax(0, 1fr); gap: 44px; align-items: start; }
+  .toc { display: block; position: sticky; top: calc(var(--header-h) + 28px); }
+  .legal-card { padding: 28px 30px 26px; }
+}
+
+/* ───────────── Shared by every inner page ───────────── */
+.nav a[aria-current="page"] { color: var(--kumkum-dark); }
+@media (min-width: 960px) { .nav a[aria-current="page"] { box-shadow: 0 2px 0 var(--turmeric); } }
+
+.legal-hero.wide .wrap { width: min(100% - 32px, 1120px); }
+.legal-hero.narrow .wrap { width: min(100% - 32px, 780px); }
+.page-section { padding: 8px 0 56px; }
+.page-section.alt { padding: 56px 0; background: var(--sand); }
+.page-section .section-head { margin-bottom: 26px; }
+
+/* Single-column pages (About, Contact, FAQ): no contents list, a comfortable reading width. */
+.legal-grid.single { grid-template-columns: minmax(0, 1fr); max-width: 780px; }
+.legal-card .legal-num + span, .legal-card h2 > span:last-child { min-width: 0; }
+.legal-card.plain h2 { display: block; }
+
+.contact-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
+.contact-actions .btn { flex: 0 1 auto; }
+
+/* FAQ page: the same accordion as the home page, a little wider. */
+.faq-page { width: min(100% - 32px, 820px); margin-inline: auto; padding-bottom: 72px; }
+.faq-item p strong { color: var(--ink); }
+.faq-item p a { color: var(--kumkum-dark); font-weight: 600; }
+
+/* Pricing page */
+.plans-5 { grid-template-columns: repeat(auto-fit, minmax(205px, 1fr)); }
+.plan-tagline { margin-top: 2px; min-height: 2.9em; color: var(--muted); font-size: 0.92rem; }
+.plan-note { margin-top: 28px; text-align: center; color: var(--ink-2); }
+.toggle-row { display: flex; justify-content: flex-start; }
+
+/* Features page */
+.cards-wide { grid-template-columns: 1fr; }
+@media (min-width: 640px) { .cards-wide { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 960px) { .cards-wide { grid-template-columns: repeat(3, 1fr); } }
+.final-cta .cta-row { margin-top: 24px; }
+.final-cta .btn-outline { color: var(--cream); border-color: var(--cream); }
+.final-cta .btn-outline:hover { color: var(--ink); }
+
+.card a { color: var(--kumkum-dark); font-weight: 600; text-underline-offset: 3px; }
