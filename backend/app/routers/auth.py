@@ -79,19 +79,24 @@ def register(payload: RegisterRequest, request: Request, db: Session = Depends(g
 @router.post("/login", response_model=SessionResponse)
 def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)):
     identifier = payload.username.strip().lower()
-    user = (
+    # A username is only unique within its academy, so more than one account can match. The
+    # password decides which one is meant, instead of whichever row the database returns first.
+    candidates = (
         db.query(User)
         .filter((func.lower(User.username) == identifier) | (func.lower(User.email) == identifier))
-        .first()
+        .order_by(User.created_at)
+        .all()
     )
+    user = next((u for u in candidates if verify_password(payload.password, u.password_hash)), None)
 
     # Same message either way so the endpoint cannot be used to enumerate accounts.
-    if user is None or not verify_password(payload.password, user.password_hash):
+    if user is None:
+        known = candidates[0] if len(candidates) == 1 else None
         audit.record(
             db,
             action="LOGIN_FAILED",
-            organization_id=user.organization_id if user else None,
-            user_id=user.id if user else None,
+            organization_id=known.organization_id if known else None,
+            user_id=known.id if known else None,
             meta={"username": identifier},
             request=request,
         )
