@@ -129,6 +129,7 @@ export default function StudentsScreen({ navigation }: any) {
             attendancePercentage={attendanceRates[item.id]}
             onPress={() => navigation.navigate('StudentDetail', { studentId: item.id })}
             onCall={() => handleCall(item.contact_number)}
+            onHistoryCard={() => navigation.navigate('StudentHistoryCard', { studentId: item.id })}
           />
         )}
         ListEmptyComponent={

@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
-import { User, Phone, Award, ChevronRight } from 'lucide-react-native';
+import { User, Phone, Award, ChevronRight, IdCard } from 'lucide-react-native';
 import { Student } from '../models/types';
 import { theme } from '../theme';
 import { StatusBadge } from './StatusBadge';
@@ -11,6 +11,7 @@ interface StudentCardProps {
   attendancePercentage?: number;
   onPress: () => void;
   onCall?: () => void;
+  onHistoryCard?: () => void;
 }
 
 const StudentCardComponent: React.FC<StudentCardProps> = ({
@@ -18,6 +19,7 @@ const StudentCardComponent: React.FC<StudentCardProps> = ({
   attendancePercentage,
   onPress,
   onCall,
+  onHistoryCard,
 }) => {
   const { language } = useI18n();
 
@@ -122,6 +124,15 @@ const StudentCardComponent: React.FC<StudentCardProps> = ({
 
         {/* Right Arrow / Phone action */}
         <View style={styles.actionContainer}>
+          {onHistoryCard && (
+            <TouchableOpacity
+              style={styles.callButton}
+              onPress={onHistoryCard}
+              accessibilityLabel={`History card for ${student.name_en}`}
+            >
+              <IdCard size={16} color={theme.colors.primary} />
+            </TouchableOpacity>
+          )}
           {student.contact_number ? (
             <TouchableOpacity
               style={styles.callButton}

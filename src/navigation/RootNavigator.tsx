@@ -16,6 +16,7 @@ import DashboardScreen from '../screens/DashboardScreen';
 import StudentsScreen from '../screens/StudentsScreen';
 import AddStudentWizardScreen from '../screens/AddStudentWizardScreen';
 import StudentProfileScreen from '../screens/StudentProfileScreen';
+import StudentHistoryCardScreen from '../screens/StudentHistoryCardScreen';
 import TakeAttendanceScreen from '../screens/TakeAttendanceScreen';
 import AttendanceHistoryScreen from '../screens/AttendanceHistoryScreen';
 import EventsScreen from '../screens/EventsScreen';
@@ -146,6 +147,7 @@ export default function RootNavigator() {
       {/* Core Sub-screens */}
       <Stack.Screen name="AddStudent" component={AddStudentWizardScreen} />
       <Stack.Screen name="StudentDetail" component={StudentProfileScreen} />
+      <Stack.Screen name="StudentHistoryCard" component={StudentHistoryCardScreen} />
       <Stack.Screen name="TakeAttendance" component={TakeAttendanceScreen} />
       <Stack.Screen name="AttendanceHistory" component={AttendanceHistoryScreen} />
       <Stack.Screen name="Events" component={EventsScreen} />
