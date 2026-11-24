@@ -153,7 +153,10 @@ export const api = {
     const query = new URLSearchParams(Object.entries(params).filter(([, v]) => v != null && v !== ''));
     return request(`/api/v1/attendance/student/${studentId}?${query}`);
   },
-  googleConnectStatus: () => request('/api/v1/google/connect-status'),
+  googleConnectStatus: () => request('/api/v1/google/status'),
+  // Returns { authorization_url } for the browser to open; Google sends it back to the dashboard.
+  googleConnect: () => request('/api/v1/google/connect'),
+  googleDisconnect: () => request('/api/v1/google/disconnect', { method: 'POST' }),
 
   // Reports
   reportsSummary: () => request('/api/v1/reports/summary'),

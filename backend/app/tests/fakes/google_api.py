@@ -145,10 +145,24 @@ class FakeSheetsValues:
 
         def _append():
             grid = self.sheets.setdefault(spreadsheetId, {}).setdefault(sheet_name, [])
-            grid.append(list(body["values"][0]))
-            return {"updates": {"updatedRows": 1}}
+            for row in body["values"]:
+                grid.append(list(row))
+            return {"updates": {"updatedRows": len(body["values"])}}
 
         return FakeExecutable(_append)
+
+    def batchUpdate(self, spreadsheetId: str, body: dict):
+        def _batch_update():
+            for item in body["data"]:
+                sheet_name, cell = item["range"].split("!")
+                row_number = int("".join(ch for ch in cell.split(":")[0] if ch.isdigit()))
+                grid = self.sheets.setdefault(spreadsheetId, {}).setdefault(sheet_name, [])
+                while len(grid) < row_number:
+                    grid.append([])
+                grid[row_number - 1] = list(item["values"][0])
+            return {"totalUpdatedRows": len(body["data"])}
+
+        return FakeExecutable(_batch_update)
 
 
 class FakeSpreadsheets:

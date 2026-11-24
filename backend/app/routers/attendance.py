@@ -4,7 +4,13 @@ from sqlalchemy.orm import Session
 from ..auth.deps import get_current_organization, require_active_subscription, require_role
 from ..database import get_db
 from ..models import Organization, Subscription, User
-from ..schemas import AttendanceMarkRequest, AttendanceMarkResponse, StudentAttendanceSummary
+from ..schemas import (
+    AttendanceBatchRequest,
+    AttendanceBatchResponse,
+    AttendanceMarkRequest,
+    AttendanceMarkResponse,
+    StudentAttendanceSummary,
+)
 from ..services import attendance, audit
 
 router = APIRouter(prefix="/api/v1/attendance", tags=["attendance"])
@@ -41,6 +47,28 @@ def mark(
     )
     db.commit()
     return result
+
+
+@router.post("/batch", response_model=AttendanceBatchResponse)
+def mark_batch(
+    payload: AttendanceBatchRequest,
+    request: Request,
+    organization: Organization = Depends(get_current_organization),
+    _: Subscription = Depends(require_active_subscription),
+    user: User = Depends(require_role("ADMIN", "INSTRUCTOR")),
+    db: Session = Depends(get_db),
+):
+    """The app's Take Attendance screen: one request per session, not one per student."""
+    saved = attendance.mark_attendance_batch(
+        db, organization, records=[r.model_dump() for r in payload.records], marked_by=user.full_name_en
+    )
+    dates = sorted({r.date for r in payload.records})
+    audit.record(
+        db, action="ATTENDANCE_BATCH_MARKED", organization_id=organization.id, user_id=user.id,
+        entity_type="attendance", meta={"count": saved, "dates": dates[:10]}, request=request,
+    )
+    db.commit()
+    return {"saved": saved}
 
 
 @router.get("/date/{date}")

@@ -61,6 +61,25 @@ def mark_attendance(
     return {"attendance_id": attendance_id, "student_id": student.id, "date": date, "status": status}
 
 
+def mark_attendance_batch(
+    db: Session, organization: Organization, *, records: list[dict], marked_by: str
+) -> int:
+    """A whole session from the phone, written to the academy's own Sheet in one go."""
+    connection = google_connection.require_connection(db, organization.id)
+    if not connection.attendance_spreadsheet_id:
+        raise errors.bad_request(
+            "ATTENDANCE_SHEET_NOT_CONFIGURED", "No attendance spreadsheet is configured yet"
+        )
+    client = _sheets_client(db, connection)
+    return client.mark_attendance_batch(
+        connection.attendance_spreadsheet_id,
+        connection.attendance_sheet_name,
+        organization_id=organization.id,
+        marked_by=marked_by,
+        records=records,
+    )
+
+
 def _read_rows(db: Session, organization: Organization) -> list[dict]:
     connection = google_connection.require_connection(db, organization.id)
     if not connection.attendance_spreadsheet_id:

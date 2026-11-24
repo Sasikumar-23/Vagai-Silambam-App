@@ -113,6 +113,62 @@ class SheetsClient:
             body={"values": [values]},
         ).execute()
 
+    @with_backoff()
+    def _write_rows(self, spreadsheet_id: str, sheet_name: str, updates: list[tuple[int, list[str]]]) -> None:
+        self._sheets.spreadsheets().values().batchUpdate(
+            spreadsheetId=spreadsheet_id,
+            body={
+                "valueInputOption": "RAW",
+                "data": [
+                    {"range": f"{sheet_name}!A{row}:J{row}", "values": [values]} for row, values in updates
+                ],
+            },
+        ).execute()
+
+    @with_backoff()
+    def _append_rows(self, spreadsheet_id: str, sheet_name: str, rows: list[list[str]]) -> None:
+        self._sheets.spreadsheets().values().append(
+            spreadsheetId=spreadsheet_id,
+            range=f"{sheet_name}!A:J",
+            valueInputOption="RAW",
+            insertDataOption="INSERT_ROWS",
+            body={"values": rows},
+        ).execute()
+
+    def mark_attendance_batch(
+        self, spreadsheet_id: str, sheet_name: str, *, organization_id: str, marked_by: str, records: list[dict]
+    ) -> int:
+        """Upserts a whole session: one read, then at most one update call and one append call,
+        so a batch of students never runs into the Sheets per-minute write quota."""
+        rows = self.read_all_rows(spreadsheet_id, sheet_name)
+        now = datetime.now(timezone.utc).isoformat()
+        existing = {
+            (row["organization_id"], row["date"], row["student_id"], row["session_name"]): (offset + 2, row)
+            for offset, row in enumerate(rows)
+        }
+        updates: list[tuple[int, list[str]]] = []
+        appends: list[list[str]] = []
+        pending_new: dict[tuple, int] = {}  # the same student twice in one batch: last mark wins
+        for rec in records:
+            key = (organization_id, rec["date"], rec["student_id"], rec["session_name"])
+            found = existing.get(key)
+            attendance_id = found[1]["attendance_id"] if found else new_id("att")
+            values = [attendance_id, rec["date"], rec["student_id"], rec["student_name"], rec["session_name"],
+                      rec["status"], rec.get("remarks") or "", marked_by, now, organization_id]
+            if found is not None:
+                updates.append((found[0], values))
+            elif key in pending_new:
+                values[0] = appends[pending_new[key]][0]
+                appends[pending_new[key]] = values
+            else:
+                pending_new[key] = len(appends)
+                appends.append(values)
+        if updates:
+            self._write_rows(spreadsheet_id, sheet_name, updates)
+        if appends:
+            self._append_rows(spreadsheet_id, sheet_name, appends)
+        return len(records)
+
     def mark_attendance(
         self,
         spreadsheet_id: str,

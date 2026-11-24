@@ -191,6 +191,25 @@ class AttendanceMarkRequest(BaseModel):
     remarks: str | None = Field(default=None, max_length=500)
 
 
+class AttendanceBatchItem(BaseModel):
+    # The phone keeps students on the device, so a row is identified by the app's student code
+    # and carries the name to show in the Sheet.
+    student_id: str = Field(min_length=1, max_length=60)
+    student_name: str = Field(min_length=1, max_length=200)
+    date: str = Field(pattern=r"^\d{4}-\d{2}-\d{2}$")
+    session_name: str = Field(default="Daily Training", min_length=1, max_length=120)
+    status: str = Field(pattern="^(Present|Absent|Late|Leave)$")
+    remarks: str | None = Field(default=None, max_length=500)
+
+
+class AttendanceBatchRequest(BaseModel):
+    records: list[AttendanceBatchItem] = Field(min_length=1, max_length=1000)
+
+
+class AttendanceBatchResponse(BaseModel):
+    saved: int
+
+
 class AttendanceMarkResponse(BaseModel):
     attendance_id: str
     student_id: str

@@ -40,7 +40,7 @@ def callback(code: str | None = None, state: str | None = None, error: str | Non
 
     def redirect(status: str, detail: str = "") -> RedirectResponse:
         query = f"google={status}" + (f"&detail={detail}" if detail else "")
-        return RedirectResponse(f"{settings.frontend_url}/settings.html?{query}")
+        return RedirectResponse(f"{settings.frontend_url}/dashboard.html?{query}")
 
     if error or not code or not state:
         return redirect("error", "denied")

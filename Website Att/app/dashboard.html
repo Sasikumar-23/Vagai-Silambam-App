@@ -181,6 +181,15 @@
 
     .expiry-row { display: flex; align-items: center; gap: 10px; }
     .expiry-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    /* Google Sheet for attendance (academy admin) */
+    .google-card { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px;
+      margin-bottom: 22px; padding: 18px 20px; border: 1px solid var(--border); border-radius: var(--radius-lg, 14px);
+      background: var(--surface); }
+    .google-card h3 { font-size: 15px; font-weight: 800; margin: 0 0 4px; }
+    .google-card p { margin: 0; color: var(--text-muted); font-size: 13.5px; max-width: 60ch; }
+    .google-card-actions { display: flex; gap: 10px; }
+    /* .btn sets display, which would otherwise override the hidden attribute */
+    .google-card [hidden] { display: none !important; }
   </style>
   <link rel="icon" type="image/svg+xml" href="assets/img/logo.svg">
   <link rel="icon" type="image/png" sizes="96x96" href="assets/img/favicon.png">
@@ -210,6 +219,19 @@
         Refresh
       </button>
     </div>
+
+    ${sa ? '' : `
+    <!-- Google Sheet for attendance (academy admin) -->
+    <div class="google-card" id="google-card">
+      <div class="google-card-text">
+        <h3>Attendance Google Sheet</h3>
+        <p id="google-status">Checking…</p>
+      </div>
+      <div class="google-card-actions">
+        <button class="btn btn-primary" id="google-connect" hidden>Connect Google</button>
+        <button class="btn btn-ghost" id="google-disconnect" hidden>Disconnect</button>
+      </div>
+    </div>`}
 
     <!-- Metrics -->
     <div class="metric-grid" id="metrics">
@@ -378,6 +400,62 @@
 
   } catch(err) {
     toast('Failed to load dashboard: ' + err.message, 'error');
+  }
+  // Google Sheet for attendance (academy admin only). Google sends the browser back here
+  // with ?google=connected or ?google=error&detail=...
+  if (!sa) {
+    const statusEl = document.getElementById('google-status');
+    const connectBtn = document.getElementById('google-connect');
+    const disconnectBtn = document.getElementById('google-disconnect');
+
+    const params = new URLSearchParams(location.search);
+    if (params.get('google') === 'connected') {
+      toast(params.get('detail') === 'setup_incomplete'
+        ? 'Google is connected, but the attendance sheet was not created. Disconnect and connect again.'
+        : 'Google connected. Attendance taken in the app now goes to your Google Sheet.',
+        params.get('detail') ? 'info' : 'success');
+    } else if (params.get('google') === 'error') {
+      toast(`Google was not connected (${params.get('detail') || 'error'}). Please try again.`, 'error');
+    }
+    if (params.has('google')) history.replaceState(null, '', location.pathname);
+
+    const loadGoogle = async () => {
+      try {
+        const st = await api.googleConnectStatus();
+        statusEl.textContent = st.connected
+          ? `Connected to ${st.google_email || 'Google'}. Attendance taken in the app is saved in your Google Sheet.`
+          : 'Not connected. Connect Google so attendance taken in the app is saved in your own Google Sheet.';
+        connectBtn.hidden = !!st.connected;
+        disconnectBtn.hidden = !st.connected;
+      } catch (e) {
+        statusEl.textContent = 'Could not check the Google connection: ' + e.message;
+        connectBtn.hidden = false;
+      }
+    };
+
+    connectBtn.addEventListener('click', async () => {
+      connectBtn.disabled = true;
+      try {
+        const { authorization_url } = await api.googleConnect();
+        location.href = authorization_url;
+      } catch (e) {
+        toast(e.message || 'Could not start the Google connection.', 'error');
+        connectBtn.disabled = false;
+      }
+    });
+
+    disconnectBtn.addEventListener('click', async () => {
+      if (!confirm('Disconnect Google? Attendance from the app will wait on the phones until you connect again.')) return;
+      try {
+        await api.googleDisconnect();
+        toast('Google disconnected', 'success');
+        await loadGoogle();
+      } catch (e) {
+        toast(e.message, 'error');
+      }
+    });
+
+    loadGoogle();
   }
 </script>
 </body>
