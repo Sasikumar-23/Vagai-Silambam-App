@@ -30,6 +30,60 @@ export interface GoogleDriveStatus {
 
 const STORAGE_KEY_DRIVE_AUTH = '@vagai_google_drive_auth';
 const SETTING_DRIVE_FOLDER_CONFIG = 'google_drive_folder_config';
+
+type DriveFolderKey = 'studentPhotosFolderId' | 'certificatesFolderId';
+
+// The real Drive folder for this kind of file, or null to leave it in My Drive.
+async function driveFolderId(key: DriveFolderKey): Promise<string | null> {
+  const raw = await SettingsRepository.getSetting(SETTING_DRIVE_FOLDER_CONFIG, '');
+  if (!raw) return null;
+  try {
+    const id = JSON.parse(raw)[key];
+    return typeof id === 'string' && id && !id.startsWith('gdrive_') ? id : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Sends a file's bytes to Google Drive, then names it and moves it into the folder.
+ * (Posting only metadata to /drive/v3/files creates an empty file, which is what the earlier
+ * code did.) Returns the Drive file id, or null if the upload did not go through.
+ */
+async function uploadToDrive(
+  accessToken: string,
+  localUri: string,
+  fileName: string,
+  mimeType: string,
+  folderId: string | null
+): Promise<string | null> {
+  const upload = await FileSystem.uploadAsync(
+    'https://www.googleapis.com/upload/drive/v3/files?uploadType=media&fields=id',
+    localUri,
+    {
+      httpMethod: 'POST',
+      uploadType: FileSystem.FileSystemUploadType.BINARY_CONTENT,
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': mimeType },
+    }
+  );
+  if (upload.status < 200 || upload.status >= 300) {
+    console.warn('Drive upload failed:', upload.status, upload.body);
+    return null;
+  }
+  const fileId: string = JSON.parse(upload.body).id;
+
+  const move = folderId ? `?addParents=${encodeURIComponent(folderId)}&removeParents=root` : '';
+  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}${move}`, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: fileName }),
+  });
+  if (!res.ok) console.warn('Uploaded, but could not name or move the file:', res.status);
+  return fileId;
+}
+
+const extensionFor = (mimeType: string) =>
+  mimeType === 'application/pdf' ? 'pdf' : mimeType === 'image/png' ? 'png' : 'jpg';
 const SETTING_DRIVE_USER_EMAIL = 'google_drive_user_email';
 const SETTING_DRIVE_CUSTOM_ROOT_ID = 'google_drive_custom_root_id';
 const SETTING_SHEETS_WEBHOOK_URL = 'google_sheets_webhook_url';
@@ -412,46 +466,20 @@ export const GoogleDriveStorageService = {
     const webhookUrl = await SettingsRepository.getSetting(SETTING_SHEETS_WEBHOOK_URL, '');
     const accessToken = await GoogleOAuthService.getAccessToken();
 
-    // 1. If Direct OAuth token available, upload directly via Google Drive REST API
+    // 1. Signed in with Google on this phone: upload straight to Drive.
     if (accessToken && localUri && !localUri.startsWith('http')) {
       try {
-        const base64Data = await FileSystem.readAsStringAsync(localUri, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-
-        const folderRaw = await SettingsRepository.getSetting(SETTING_DRIVE_FOLDER_CONFIG, '');
-        let targetFolderId = 'root';
-        if (folderRaw) {
-          try {
-            const f = JSON.parse(folderRaw);
-            if (f.studentPhotosFolderId && !f.studentPhotosFolderId.startsWith('gdrive_')) {
-              targetFolderId = f.studentPhotosFolderId;
-            }
-          } catch {}
-        }
-
-        const fileName = `student_${studentId}_${Date.now()}.jpg`;
-
-        // Direct Drive REST API upload
-        const metadata = {
-          name: fileName,
-          parents: targetFolderId !== 'root' ? [targetFolderId] : undefined,
-        };
-
-        const res = await fetch('https://www.googleapis.com/drive/v3/files', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(metadata),
-        });
-
-        if (res.ok) {
-          const fileData = await res.json();
+        const fileId = await uploadToDrive(
+          accessToken,
+          localUri,
+          `student_${studentId}_${Date.now()}.jpg`,
+          'image/jpeg',
+          await driveFolderId('studentPhotosFolderId')
+        );
+        if (fileId) {
           return {
-            fileId: fileData.id,
-            photoUrl: `https://drive.google.com/uc?id=${fileData.id}&export=view`,
+            fileId,
+            photoUrl: `https://drive.google.com/uc?id=${fileId}&export=view`,
             syncedToDrive: true,
           };
         }
@@ -507,46 +535,22 @@ export const GoogleDriveStorageService = {
    * Upload certificate document to Google Drive
    * Reads certificate file as Base64 and uploads to Google Drive folder "Vagai Silambam/Certificates"
    */
-  async uploadCertificate(certificateNumber: string, localUri: string): Promise<{ fileId: string; driveUrl: string; syncedToDrive: boolean }> {
+  async uploadCertificate(
+    certificateNumber: string,
+    localUri: string,
+    mimeType: string = 'image/jpeg'
+  ): Promise<{ fileId: string; driveUrl: string; syncedToDrive: boolean }> {
     const webhookUrl = await SettingsRepository.getSetting(SETTING_SHEETS_WEBHOOK_URL, '');
     const accessToken = await GoogleOAuthService.getAccessToken();
 
-    // 1. If Direct OAuth token available, upload directly via Google Drive REST API
+    const fileName = `certificate_${certificateNumber}_${Date.now()}.${extensionFor(mimeType)}`;
+
+    // 1. Signed in with Google on this phone: upload straight to Drive.
     if (accessToken && localUri && !localUri.startsWith('http')) {
       try {
-        const folderRaw = await SettingsRepository.getSetting(SETTING_DRIVE_FOLDER_CONFIG, '');
-        let targetFolderId = 'root';
-        if (folderRaw) {
-          try {
-            const f = JSON.parse(folderRaw);
-            if (f.certificatesFolderId && !f.certificatesFolderId.startsWith('gdrive_')) {
-              targetFolderId = f.certificatesFolderId;
-            }
-          } catch {}
-        }
-
-        const fileName = `certificate_${certificateNumber}_${Date.now()}.png`;
-        const metadata = {
-          name: fileName,
-          parents: targetFolderId !== 'root' ? [targetFolderId] : undefined,
-        };
-
-        const res = await fetch('https://www.googleapis.com/drive/v3/files', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(metadata),
-        });
-
-        if (res.ok) {
-          const fileData = await res.json();
-          return {
-            fileId: fileData.id,
-            driveUrl: `https://drive.google.com/file/d/${fileData.id}/view`,
-            syncedToDrive: true,
-          };
+        const fileId = await uploadToDrive(accessToken, localUri, fileName, mimeType, await driveFolderId('certificatesFolderId'));
+        if (fileId) {
+          return { fileId, driveUrl: `https://drive.google.com/file/d/${fileId}/view`, syncedToDrive: true };
         }
       } catch (err) {
         console.warn('Direct OAuth certificate upload error:', err);
@@ -560,8 +564,6 @@ export const GoogleDriveStorageService = {
           encoding: FileSystem.EncodingType.Base64,
         });
 
-        const fileName = `certificate_${certificateNumber}_${Date.now()}.png`;
-
         const response = await fetch(webhookUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -569,7 +571,7 @@ export const GoogleDriveStorageService = {
             action: 'drive_upload',
             folderType: 'certificates',
             fileName,
-            mimeType: 'image/png',
+            mimeType,
             base64Data,
           }),
         });

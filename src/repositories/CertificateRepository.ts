@@ -89,5 +89,18 @@ export const CertificateRepository = {
     const cert = await db.getFirstAsync<Certificate>('SELECT * FROM certificates WHERE id = ?', id);
     if (!cert) throw new Error('Failed to issue certificate.');
     return cert;
+  },
+
+  // Where the certificate's file is: its Google Drive link once uploaded, else the copy on this phone.
+  async updateFileUrl(id: string, fileUrl: string, userId: string = 'system'): Promise<void> {
+    const db = await getDatabase();
+    await db.runAsync(
+      "UPDATE certificates SET file_url = ?, updated_at = datetime('now') WHERE id = ?",
+      fileUrl,
+      id
+    );
+    await AuditRepository.log('ATTACH_CERTIFICATE_FILE', 'certificates', id, userId, null, {
+      in_drive: fileUrl.startsWith('http'),
+    });
   }
 };

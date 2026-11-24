@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, Alert, ScrollView, Linking, ActivityIndicator } from 'react-native';
 import { TextInput } from 'react-native-paper';
 import { useIsFocused } from '@react-navigation/native';
-import { Award, Share2, Eye, Calendar, ShieldCheck, Plus, Check, Sparkles, X } from 'lucide-react-native';
+import { Award, Share2, Eye, Calendar, ShieldCheck, Plus, Check, Sparkles, X, Camera, FileText, Paperclip, Upload, ExternalLink } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as Sharing from 'expo-sharing';
 import { theme } from '../theme';
 import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
@@ -14,6 +18,48 @@ import { CertificateRepository, CertificateWithDetails } from '../repositories/C
 import { StudentRepository } from '../repositories/StudentRepository';
 import { EventRepository } from '../repositories/EventRepository';
 import { Student, EventItem } from '../models/types';
+import { GoogleDriveStorageService } from '../services/GoogleDriveStorageService';
+
+// A photo or PDF of the certificate. It is kept on the phone under the certificate number,
+// so it can always be shared, and uploaded to the academy's Google Drive.
+type Attachment = { uri: string; mimeType: string; name: string };
+
+const CERT_DIR = `${FileSystem.documentDirectory}certificates/`;
+const EXTENSIONS: Record<string, string> = { 'application/pdf': 'pdf', 'image/png': 'png' };
+const extensionFor = (mimeType: string) => EXTENSIONS[mimeType] || 'jpg';
+const mimeFor = (path: string) =>
+  path.endsWith('.pdf') ? 'application/pdf' : path.endsWith('.png') ? 'image/png' : 'image/jpeg';
+const isDriveLink = (url?: string | null) => !!url && url.startsWith('http');
+
+async function localCopyOf(certificateNumber: string): Promise<string | null> {
+  for (const ext of ['pdf', 'jpg', 'png']) {
+    const path = `${CERT_DIR}${certificateNumber}.${ext}`;
+    if ((await FileSystem.getInfoAsync(path)).exists) return path;
+  }
+  return null;
+}
+
+async function pickAttachment(source: 'camera' | 'gallery' | 'file'): Promise<Attachment | null> {
+  if (source === 'file') {
+    const res = await DocumentPicker.getDocumentAsync({ type: ['application/pdf', 'image/*'], copyToCacheDirectory: true });
+    if (res.canceled || !res.assets?.length) return null;
+    const a = res.assets[0];
+    return { uri: a.uri, mimeType: a.mimeType || mimeFor(a.name), name: a.name };
+  }
+  const permission = source === 'camera'
+    ? await ImagePicker.requestCameraPermissionsAsync()
+    : await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (permission.status !== 'granted') {
+    Alert.alert('Permission needed', source === 'camera' ? 'Allow camera access to photograph the certificate.' : 'Allow photo access to choose the certificate.');
+    return null;
+  }
+  const res = source === 'camera'
+    ? await ImagePicker.launchCameraAsync({ quality: 0.85 })
+    : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.85 });
+  if (res.canceled || !res.assets?.length) return null;
+  const a = res.assets[0];
+  return { uri: a.uri, mimeType: a.mimeType || 'image/jpeg', name: a.fileName || 'certificate.jpg' };
+}
 
 export default function CertificatesScreen({ navigation }: any) {
   const isFocused = useIsFocused();
@@ -34,6 +80,8 @@ export default function CertificatesScreen({ navigation }: any) {
   const [issueDate, setIssueDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [remarks, setRemarks] = useState('');
   const [saving, setSaving] = useState(false);
+  const [attachment, setAttachment] = useState<Attachment | null>(null);
+  const [busyCertId, setBusyCertId] = useState<string | null>(null);
 
   // Certificate Preview Modal
   const [previewCert, setPreviewCert] = useState<CertificateWithDetails | null>(null);
@@ -94,6 +142,70 @@ export default function CertificatesScreen({ navigation }: any) {
     },
   ];
 
+  // Copies the file next to the app's data, then uploads it. Returns true once it is in Drive.
+  const saveAndUpload = async (cert: { id: string; certificate_number: string }, file: Attachment): Promise<boolean> => {
+    await FileSystem.makeDirectoryAsync(CERT_DIR, { intermediates: true }).catch(() => {});
+    const existing = await localCopyOf(cert.certificate_number);
+    if (existing) await FileSystem.deleteAsync(existing, { idempotent: true });
+    const local = `${CERT_DIR}${cert.certificate_number}.${extensionFor(file.mimeType)}`;
+    await FileSystem.copyAsync({ from: file.uri, to: local });
+
+    const upload = await GoogleDriveStorageService.uploadCertificate(cert.certificate_number, local, file.mimeType);
+    await CertificateRepository.updateFileUrl(cert.id, upload.syncedToDrive ? upload.driveUrl : local, currentUser?.id || 'admin');
+    return upload.syncedToDrive;
+  };
+
+  const notSyncedMessage =
+    'The file is saved on this phone but not in Google Drive yet. Sign in to Google Drive in Settings, then tap Upload on the certificate.';
+
+  const attachLater = (item: CertificateWithDetails) => {
+    const run = (source: 'camera' | 'gallery' | 'file') => async () => {
+      const file = await pickAttachment(source);
+      if (!file) return;
+      setBusyCertId(item.id);
+      try {
+        const inDrive = await saveAndUpload(item, file);
+        Alert.alert(inDrive ? 'Saved to Google Drive' : 'Saved on this phone', inDrive ? 'The certificate file is in your Drive.' : notSyncedMessage);
+        loadCertificates();
+      } catch (e: any) {
+        Alert.alert('Error', e.message || 'Could not attach the file.');
+      } finally {
+        setBusyCertId(null);
+      }
+    };
+    Alert.alert(
+      'Attach certificate',
+      'Take a photo of the certificate, choose one from the gallery, or pick a PDF.',
+      [
+        { text: 'Camera', onPress: run('camera') },
+        { text: 'Gallery', onPress: run('gallery') },
+        { text: 'PDF / file', onPress: run('file') },
+      ],
+      { cancelable: true }
+    );
+  };
+
+  const uploadLater = async (item: CertificateWithDetails) => {
+    const local = item.file_url && !isDriveLink(item.file_url) ? item.file_url : await localCopyOf(item.certificate_number);
+    if (!local) {
+      attachLater(item);
+      return;
+    }
+    setBusyCertId(item.id);
+    try {
+      const upload = await GoogleDriveStorageService.uploadCertificate(item.certificate_number, local, mimeFor(local));
+      if (upload.syncedToDrive) {
+        await CertificateRepository.updateFileUrl(item.id, upload.driveUrl, currentUser?.id || 'admin');
+        Alert.alert('Saved to Google Drive', 'The certificate file is in your Drive.');
+        loadCertificates();
+      } else {
+        Alert.alert('Not uploaded', 'Could not reach Google Drive. Check the internet and that Google Drive is connected in Settings.');
+      }
+    } finally {
+      setBusyCertId(null);
+    }
+  };
+
   const handleIssueCertificate = async () => {
     if (!selectedStudentId) {
       Alert.alert('Required', 'Please select a student.');
@@ -106,7 +218,7 @@ export default function CertificatesScreen({ navigation }: any) {
 
     setSaving(true);
     try {
-      await CertificateRepository.issueCertificate(
+      const cert = await CertificateRepository.issueCertificate(
         {
           student_id: selectedStudentId,
           event_id: selectedEventId || undefined,
@@ -118,7 +230,17 @@ export default function CertificatesScreen({ navigation }: any) {
         currentUser?.id || 'admin'
       );
 
-      Alert.alert('Success', 'Certificate issued successfully!');
+      let message = 'Certificate issued successfully!';
+      if (attachment) {
+        try {
+          const inDrive = await saveAndUpload(cert, attachment);
+          message = inDrive ? 'Certificate issued and its file saved to Google Drive.' : `Certificate issued. ${notSyncedMessage}`;
+        } catch (fileErr: any) {
+          message = `Certificate issued, but the file could not be saved (${fileErr.message || 'error'}). Use Attach on the certificate to try again.`;
+        }
+      }
+      Alert.alert('Success', message);
+      setAttachment(null);
       setModalVisible(false);
       setTitleEn('');
       setTitleTa('');
@@ -131,11 +253,16 @@ export default function CertificatesScreen({ navigation }: any) {
     }
   };
 
-  const handleShare = (item: CertificateWithDetails) => {
-    Alert.alert(
-      'Share Certificate',
-      `Certificate ${item.certificate_number} for ${item.student_name_en} is ready to export as PDF and share with parent/student.`
-    );
+  const handleShare = async (item: CertificateWithDetails) => {
+    const local = await localCopyOf(item.certificate_number);
+    if (local && (await Sharing.isAvailableAsync())) {
+      await Sharing.shareAsync(local, { mimeType: mimeFor(local), dialogTitle: `Certificate ${item.certificate_number}` });
+    } else if (isDriveLink(item.file_url)) {
+      // Drive files are private to the academy: share from Drive to choose who can open it.
+      Linking.openURL(item.file_url!);
+    } else {
+      Alert.alert('No file yet', 'Attach a photo or PDF of the certificate first, then share it.');
+    }
   };
 
   return (
@@ -186,6 +313,36 @@ export default function CertificatesScreen({ navigation }: any) {
                 <Text style={styles.dateText}>Issued: {item.issue_date}</Text>
               </View>
               {item.remarks && <Text style={styles.remarksText} numberOfLines={1}>{item.remarks}</Text>}
+            </View>
+
+            <View style={styles.fileRow}>
+              <Text style={styles.fileStatus}>
+                {isDriveLink(item.file_url)
+                  ? 'Saved in Google Drive'
+                  : item.file_url
+                    ? 'On this phone only, not in Drive yet'
+                    : 'No certificate file attached'}
+              </Text>
+              {(currentRole === 'ADMIN' || currentRole === 'INSTRUCTOR') && (
+                busyCertId === item.id ? (
+                  <ActivityIndicator size="small" color={theme.colors.primary} />
+                ) : isDriveLink(item.file_url) ? (
+                  <TouchableOpacity style={styles.fileBtn} onPress={() => Linking.openURL(item.file_url!)}>
+                    <ExternalLink size={14} color={theme.colors.primary} />
+                    <Text style={styles.fileBtnText}>Open in Drive</Text>
+                  </TouchableOpacity>
+                ) : item.file_url ? (
+                  <TouchableOpacity style={styles.fileBtn} onPress={() => uploadLater(item)}>
+                    <Upload size={14} color={theme.colors.primary} />
+                    <Text style={styles.fileBtnText}>Upload</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity style={styles.fileBtn} onPress={() => attachLater(item)}>
+                    <Paperclip size={14} color={theme.colors.primary} />
+                    <Text style={styles.fileBtnText}>Attach</Text>
+                  </TouchableOpacity>
+                )
+              )}
             </View>
           </TouchableOpacity>
         )}
@@ -337,6 +494,40 @@ export default function CertificatesScreen({ navigation }: any) {
                 outlineStyle={styles.outline}
               />
 
+              <Text style={styles.modalLabel}>Certificate file (optional) / சான்றிதழ் கோப்பு</Text>
+              {attachment ? (
+                <View style={styles.attachChosen}>
+                  {attachment.mimeType === 'application/pdf'
+                    ? <FileText size={16} color={theme.colors.primary} />
+                    : <Camera size={16} color={theme.colors.primary} />}
+                  <Text style={styles.attachName} numberOfLines={1}>{attachment.name}</Text>
+                  <TouchableOpacity onPress={() => setAttachment(null)} accessibilityLabel="Remove file">
+                    <X size={16} color={theme.colors.textSecondary} />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View style={styles.attachRow}>
+                  {([
+                    ['camera', 'Camera', Camera],
+                    ['gallery', 'Gallery', Paperclip],
+                    ['file', 'PDF', FileText],
+                  ] as const).map(([source, label, Icon]) => (
+                    <TouchableOpacity
+                      key={source}
+                      style={styles.attachBtn}
+                      onPress={async () => {
+                        const file = await pickAttachment(source);
+                        if (file) setAttachment(file);
+                      }}
+                    >
+                      <Icon size={16} color={theme.colors.primary} />
+                      <Text style={styles.attachBtnText}>{label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+              <Text style={styles.attachHint}>Saved to the Certificates folder in your Google Drive.</Text>
+
         </View>
       </FormScreen>
 
@@ -468,6 +659,52 @@ const styles = StyleSheet.create({
     color: theme.colors.primary,
     marginTop: 2,
   },
+  fileRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.borderLight,
+  },
+  fileStatus: { flex: 1, fontSize: 12, color: theme.colors.textSecondary },
+  fileBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    minHeight: 36,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    backgroundColor: theme.colors.primaryMuted,
+  },
+  fileBtnText: { fontSize: 12, fontWeight: '700', color: theme.colors.primary },
+  attachRow: { flexDirection: 'row', gap: 8 },
+  attachBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    minHeight: 44,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
+  },
+  attachBtnText: { fontSize: 13, fontWeight: '700', color: theme.colors.primary },
+  attachChosen: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    minHeight: 44,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: theme.colors.primaryMuted,
+  },
+  attachName: { flex: 1, fontSize: 13, color: theme.colors.textPrimary },
+  attachHint: { fontSize: 11, color: theme.colors.textMuted, marginTop: 6, marginBottom: 10 },
   certFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
