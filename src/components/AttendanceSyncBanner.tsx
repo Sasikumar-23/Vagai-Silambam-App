@@ -18,7 +18,17 @@ const MESSAGES: Record<Exclude<SyncWaitReason, ''>, { en: string; ta: string }> 
     en: 'The plan has expired. Renew it to upload.',
     ta: 'திட்டம் காலாவதியாகிவிட்டது. புதுப்பித்ததும் அனுப்பப்படும்.',
   },
+  ACCOUNT: {
+    en: 'This account or academy is not active. Ask the academy admin.',
+    ta: 'இந்தக் கணக்கு அல்லது பள்ளி செயலில் இல்லை. பள்ளி நிர்வாகியிடம் கேளுங்கள்.',
+  },
+  SIGN_IN: {
+    en: 'Sign in while online to upload.',
+    ta: 'அனுப்ப, இணையத்துடன் உள்நுழையுங்கள்.',
+  },
 };
+
+const UPLOADING = { en: 'Uploading now…', ta: 'இப்போது அனுப்பப்படுகிறது…' };
 
 /** Shows how much attendance is waiting to reach the Google Sheet, and why. Hidden when none is. */
 export const AttendanceSyncBanner: React.FC = () => {
@@ -43,7 +53,7 @@ export const AttendanceSyncBanner: React.FC = () => {
   if (state.pending === 0) return null;
 
   const ta = language === 'ta';
-  const message = MESSAGES[state.reason || 'OFFLINE'];
+  const message = state.reason ? MESSAGES[state.reason] : UPLOADING;
   const title = ta
     ? `${state.pending} வருகைப் பதிவுகள் Google Sheet-க்கு அனுப்பக் காத்திருக்கின்றன`
     : `${state.pending} attendance ${state.pending === 1 ? 'record is' : 'records are'} waiting to upload to the Google Sheet`;

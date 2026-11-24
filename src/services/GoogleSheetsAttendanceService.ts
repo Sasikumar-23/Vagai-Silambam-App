@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SettingsRepository } from '../repositories/SettingsRepository';
 import { api, ApiError, AttendanceBatchItem } from './ApiClient';
+import { TokenStore } from './TokenStore';
 
 export interface SheetAttendanceRecord {
   attendance_id: string;
@@ -12,6 +13,7 @@ export interface SheetAttendanceRecord {
   remarks?: string;
   marked_by: string;
   created_at: string; // HH:mm or ISO
+  owner_id?: string; // the signed-in person who queued it; only they upload it
 }
 
 export interface AttendanceDashboardStats {
@@ -37,28 +39,40 @@ const STORAGE_KEY_PENDING_SYNC_QUEUE = '@vagai_google_sheets_sync_queue';
 
 const STORAGE_KEY_SYNC_REASON = '@vagai_attendance_sync_reason';
 
-// Why attendance is still waiting, so the screen can say what to do about it.
-export type SyncWaitReason = '' | 'OFFLINE' | 'GOOGLE_NOT_CONNECTED' | 'SUBSCRIPTION';
+// Why attendance is still waiting, so the screen can say what to do about it. '' while it is
+// simply on its way.
+export type SyncWaitReason = '' | 'OFFLINE' | 'GOOGLE_NOT_CONNECTED' | 'SUBSCRIPTION' | 'ACCOUNT' | 'SIGN_IN';
 
 const BATCH_SIZE = 500;   // the server takes up to 1000 rows per request
 const MAX_QUEUE = 5000;   // keeps the queue well inside AsyncStorage's per-item limit
 
-// Refusals the academy can fix (connect Google, renew the plan): keep the records until then.
+// Refusals the academy can fix (connect Google, renew, reactivate the account): keep the
+// records until then.
 const WAIT_CODES: Record<string, SyncWaitReason> = {
   GOOGLE_NOT_CONNECTED: 'GOOGLE_NOT_CONNECTED',
   ATTENDANCE_SHEET_NOT_CONFIGURED: 'GOOGLE_NOT_CONNECTED',
   TRIAL_EXPIRED: 'SUBSCRIPTION',
   SUBSCRIPTION_EXPIRED: 'SUBSCRIPTION',
+  SUBSCRIPTION_INACTIVE: 'SUBSCRIPTION',
+  NO_SUBSCRIPTION: 'SUBSCRIPTION',
+  ORGANIZATION_SUSPENDED: 'ACCOUNT',
+  LICENSE_REVOKED: 'ACCOUNT',
+  ACCOUNT_DISABLED: 'ACCOUNT',
+  SIGNED_OUT: 'SIGN_IN',
+  SESSION_EXPIRED: 'SIGN_IN',
 };
 
-// null means the server refused the records for good (not permitted, invalid): drop them.
-// They are still saved on the phone either way.
+// null means the server refused the records for good: drop them. They are still saved on the
+// phone either way. Only a plain bad request lands here; anything that might work later waits.
 function waitReason(err: unknown): SyncWaitReason | null {
   if (!(err instanceof ApiError)) return 'OFFLINE';
-  if (err.isNetworkError || err.status === 401 || err.status === 408 || err.status === 429 || err.status >= 500) {
-    return 'OFFLINE';
-  }
-  return WAIT_CODES[err.code] ?? null;
+  if (WAIT_CODES[err.code]) return WAIT_CODES[err.code];
+  if (err.isNetworkError || err.status === 408 || err.status === 429 || err.status >= 500) return 'OFFLINE';
+  // 404/405: the server has not been updated with the upload endpoint yet.
+  if (err.status === 404 || err.status === 405) return 'OFFLINE';
+  if (err.status === 401) return 'SIGN_IN';
+  if (err.status === 402 || err.status === 403) return 'ACCOUNT';
+  return null;
 }
 
 const keyOf = (r: SheetAttendanceRecord) => `${r.date}|${r.session_name || ''}|${r.student_id}`;
@@ -66,13 +80,14 @@ const keyOf = (r: SheetAttendanceRecord) => `${r.date}|${r.session_name || ''}|$
 const sameRecord = (a: SheetAttendanceRecord, b: SheetAttendanceRecord) =>
   keyOf(a) === keyOf(b) && a.status === b.status && (a.remarks || '') === (b.remarks || '') && a.created_at === b.created_at;
 
+// Trimmed to the server's limits, so one long remark cannot get a row refused.
 const toPayload = (r: SheetAttendanceRecord): AttendanceBatchItem => ({
-  student_id: r.student_id,
-  student_name: r.student_name,
+  student_id: r.student_id.slice(0, 60),
+  student_name: (r.student_name || r.student_id).slice(0, 200),
   date: r.date,
-  session_name: r.session_name || 'Daily Training',
+  session_name: (r.session_name || 'Daily Training').slice(0, 120),
   status: r.status,
-  remarks: r.remarks || null,
+  remarks: r.remarks ? r.remarks.slice(0, 500) : null,
 });
 
 async function readQueue(): Promise<SheetAttendanceRecord[]> {
@@ -81,7 +96,27 @@ async function readQueue(): Promise<SheetAttendanceRecord[]> {
   return Array.isArray(queue) ? queue : [];
 }
 
-let syncInFlight: Promise<{ success: boolean; syncedCount: number; error?: string }> | null = null;
+async function writeReason(reason: SyncWaitReason): Promise<void> {
+  if (reason) await AsyncStorage.setItem(STORAGE_KEY_SYNC_REASON, reason);
+  else await AsyncStorage.removeItem(STORAGE_KEY_SYNC_REASON);
+}
+
+// Every read-change-write of the queue runs one at a time, so a save during a sync is never
+// overwritten by the sync's own write.
+let queueLock: Promise<unknown> = Promise.resolve();
+function withQueueLock<T>(fn: () => Promise<T>): Promise<T> {
+  const run = queueLock.then(fn, fn);
+  queueLock = run.catch(() => undefined);
+  return run;
+}
+
+// Records queued before owners were recorded belong to whoever is signed in.
+let queueOwner: string | null = null;
+const ownedBy = (owner: string | null) => (r: SheetAttendanceRecord) => !r.owner_id || r.owner_id === owner;
+
+type SyncResult = { success: boolean; syncedCount: number; error?: string };
+let syncInFlight: Promise<SyncResult> | null = null;
+let syncAgain = false;
 const SETTING_SHEETS_WEBHOOK_URL = 'google_sheets_webhook_url';
 const SETTING_SHEETS_SPREADSHEET_ID = 'google_sheets_spreadsheet_id';
 const SETTING_LATE_ATTENDANCE_WEIGHT = 'attendance_late_weight';
@@ -129,6 +164,11 @@ export const GoogleSheetsAttendanceService = {
     }
   },
 
+  /** Set by AuthContext whenever someone signs in or out. */
+  setQueueOwner(userId: string | null): void {
+    queueOwner = userId;
+  },
+
   /**
    * Take Attendance hands a saved session over here. It goes into the outbox first, so a
    * closed app or a dropped signal cannot lose it, and is then sent in the background.
@@ -152,6 +192,7 @@ export const GoogleSheetsAttendanceService = {
         remarks: r.remarks || '',
         marked_by: markedBy,
         created_at: createdAt,
+        owner_id: queueOwner ?? undefined,
       }))
     );
     void this.syncPendingQueue();
@@ -163,30 +204,33 @@ export const GoogleSheetsAttendanceService = {
    */
   async addToSyncQueue(records: SheetAttendanceRecord[]): Promise<void> {
     try {
-      const queue = await readQueue();
-      for (const rec of records) {
-        const idx = queue.findIndex(q => keyOf(q) === keyOf(rec));
-        if (idx >= 0) {
-          queue[idx] = rec;
-        } else {
-          queue.push(rec);
+      await withQueueLock(async () => {
+        const queue = await readQueue();
+        for (const rec of records) {
+          const idx = queue.findIndex(q => keyOf(q) === keyOf(rec));
+          if (idx >= 0) {
+            queue[idx] = rec;
+          } else {
+            queue.push(rec);
+          }
         }
-      }
-      // Past the cap, the oldest waiting records go first; every record is still on the phone.
-      if (queue.length > MAX_QUEUE) queue.splice(0, queue.length - MAX_QUEUE);
-      await AsyncStorage.setItem(STORAGE_KEY_PENDING_SYNC_QUEUE, JSON.stringify(queue));
+        // Past the cap, the oldest waiting records go first; every record is still on the phone.
+        if (queue.length > MAX_QUEUE) queue.splice(0, queue.length - MAX_QUEUE);
+        await AsyncStorage.setItem(STORAGE_KEY_PENDING_SYNC_QUEUE, JSON.stringify(queue));
+      });
     } catch (e) {
       console.warn('Failed to update sync queue:', e);
     }
   },
 
   /**
-   * How many records are waiting, and why.
+   * How many of the signed-in person's records are waiting, and why.
    */
   async getSyncState(): Promise<{ pending: number; reason: SyncWaitReason }> {
     try {
       const [queue, reason] = await Promise.all([readQueue(), AsyncStorage.getItem(STORAGE_KEY_SYNC_REASON)]);
-      return { pending: queue.length, reason: queue.length ? ((reason as SyncWaitReason) || 'OFFLINE') : '' };
+      const pending = queue.filter(ownedBy(queueOwner)).length;
+      return { pending, reason: pending ? ((reason as SyncWaitReason) || '') : '' };
     } catch {
       return { pending: 0, reason: '' };
     }
@@ -198,58 +242,88 @@ export const GoogleSheetsAttendanceService = {
 
   /**
    * Send the outbox to the academy's Google Sheet (through the server), and to the Apps
-   * Script webhook if one is set up.
+   * Script webhook if one is set up. A call made while a sync is running is not lost: the
+   * sync runs once more afterwards, to pick up whatever was queued in the meantime.
    */
-  async syncPendingQueue(): Promise<{ success: boolean; syncedCount: number; error?: string }> {
-    // One sync at a time: two overlapping runs would send the same records twice.
-    if (!syncInFlight) {
-      syncInFlight = this.flushQueueOnce().finally(() => { syncInFlight = null; });
+  async syncPendingQueue(): Promise<SyncResult> {
+    if (syncInFlight) {
+      syncAgain = true;
+      return syncInFlight;
     }
+    syncInFlight = (async () => {
+      let result: SyncResult;
+      do {
+        syncAgain = false;
+        result = await this.flushQueueOnce();
+      } while (syncAgain && result.success);
+      return result;
+    })().finally(() => { syncInFlight = null; });
     return syncInFlight;
   },
 
-  async flushQueueOnce(): Promise<{ success: boolean; syncedCount: number; error?: string }> {
+  async flushQueueOnce(): Promise<SyncResult> {
     try {
-      const queue = await readQueue();
-      if (queue.length === 0) {
-        await AsyncStorage.removeItem(STORAGE_KEY_SYNC_REASON);
+      const mine = (await readQueue()).filter(ownedBy(queueOwner));
+      if (mine.length === 0) {
+        await writeReason('');
         return { success: true, syncedCount: 0 };
+      }
+      // Signed in offline (no token): uploading would only be refused.
+      if (!queueOwner || !(await TokenStore.hasSession())) {
+        await writeReason('SIGN_IN');
+        return { success: false, syncedCount: 0, error: 'SIGN_IN' };
       }
 
       const finished: SheetAttendanceRecord[] = [];
-      let reason: SyncWaitReason = '';
       let sent = 0;
 
-      for (let i = 0; i < queue.length; i += BATCH_SIZE) {
-        const chunk = queue.slice(i, i + BATCH_SIZE);
+      // A row the server calls invalid (422) is found by halving the batch and dropped on its
+      // own, instead of taking the rest of the batch with it. Returns why sending stopped, if it did.
+      const send = async (batch: SheetAttendanceRecord[]): Promise<SyncWaitReason> => {
         try {
-          await api.syncAttendanceBatch(chunk.map(toPayload));
-          finished.push(...chunk);
-          sent += chunk.length;
+          await api.syncAttendanceBatch(batch.map(toPayload));
+          finished.push(...batch);
+          sent += batch.length;
+          return '';
         } catch (err) {
+          if (err instanceof ApiError && err.status === 422) {
+            if (batch.length === 1) {
+              console.warn('Attendance row refused as invalid; not retried:', batch[0], err);
+              finished.push(batch[0]);
+              return '';
+            }
+            const half = Math.ceil(batch.length / 2);
+            return (await send(batch.slice(0, half))) || send(batch.slice(half));
+          }
           const why = waitReason(err);
           if (why === null) {
             console.warn('Attendance refused by the server; not retried:', err);
-            finished.push(...chunk);
-          } else {
-            reason = why;
-            break; // the rest would fail the same way
+            finished.push(...batch);
+            return '';
           }
+          return why;
         }
+      };
+
+      let reason: SyncWaitReason = '';
+      for (let i = 0; i < mine.length && !reason; i += BATCH_SIZE) {
+        reason = await send(mine.slice(i, i + BATCH_SIZE));
       }
 
-      // The Apps Script webhook, if set up, takes the whole outbox.
+      // The Apps Script webhook, if set up. It answers HTTP 200 even when its script fails, so
+      // only a reply that says success counts.
       const webhookUrl = await this.getWebhookUrl();
       if (webhookUrl) {
         try {
           const response = await fetch(webhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'sync_queue', sheetName: 'Attendance', records: queue }),
+            body: JSON.stringify({ action: 'sync_queue', sheetName: 'Attendance', records: mine }),
           });
-          if (response.ok) {
-            finished.splice(0, finished.length, ...queue);
-            sent = queue.length;
+          const reply = response.ok ? await response.json().catch(() => null) : null;
+          if (reply && reply.status === 'success') {
+            finished.splice(0, finished.length, ...mine);
+            sent = mine.length;
             reason = '';
           }
         } catch (sheetErr) {
@@ -257,18 +331,18 @@ export const GoogleSheetsAttendanceService = {
         }
       }
 
-      // Re-read before writing: attendance marked while this was running must not be lost.
-      const latest = await readQueue();
-      const remaining = latest.filter(rec => !finished.some(f => sameRecord(f, rec)));
-      if (remaining.length > 0) {
-        await AsyncStorage.setItem(STORAGE_KEY_PENDING_SYNC_QUEUE, JSON.stringify(remaining));
-        await AsyncStorage.setItem(STORAGE_KEY_SYNC_REASON, reason || 'OFFLINE');
-      } else {
-        await AsyncStorage.multiRemove([STORAGE_KEY_PENDING_SYNC_QUEUE, STORAGE_KEY_SYNC_REASON]);
-      }
-      return remaining.length === 0
-        ? { success: true, syncedCount: sent }
-        : { success: false, syncedCount: sent, error: reason || 'OFFLINE' };
+      // Remove what was handled, keeping anything queued while this ran.
+      await withQueueLock(async () => {
+        const latest = await readQueue();
+        const remaining = latest.filter(rec => !finished.some(f => sameRecord(f, rec)));
+        if (remaining.length > 0) {
+          await AsyncStorage.setItem(STORAGE_KEY_PENDING_SYNC_QUEUE, JSON.stringify(remaining));
+        } else {
+          await AsyncStorage.removeItem(STORAGE_KEY_PENDING_SYNC_QUEUE);
+        }
+        await writeReason(remaining.some(ownedBy(queueOwner)) ? reason : '');
+      });
+      return reason ? { success: false, syncedCount: sent, error: reason } : { success: true, syncedCount: sent };
     } catch (err: any) {
       return { success: false, syncedCount: 0, error: err.message || 'Sync failed.' };
     }
@@ -482,8 +556,8 @@ function doPost(e) {
     var sheet = ss.getSheetByName(data.sheetName || 'Attendance');
     if (!sheet) {
       sheet = ss.insertSheet(data.sheetName || 'Attendance');
-      sheet.appendRow(['attendance_id', 'date', 'student_id', 'student_name', 'status', 'remarks', 'marked_by', 'created_at']);
-      sheet.getRange(1, 1, 1, 8).setFontWeight('bold').setBackground('#0F4C81').setFontColor('#FFFFFF');
+      sheet.appendRow(['attendance_id', 'date', 'student_id', 'student_name', 'status', 'remarks', 'marked_by', 'created_at', 'session_name']);
+      sheet.getRange(1, 1, 1, 9).setFontWeight('bold').setBackground('#0F4C81').setFontColor('#FFFFFF');
     }
 
     if (data.action === 'record_attendance' || data.action === 'sync_queue') {
@@ -494,9 +568,10 @@ function doPost(e) {
         var rec = records[i];
         var foundRow = -1;
         
-        // Duplicate check: student_id + date
+        // Duplicate check: student_id + date + session, so morning and evening stay separate rows
         for (var r = 1; r < existingData.length; r++) {
-          if (existingData[r][1] == rec.date && existingData[r][2] == rec.student_id) {
+          if (existingData[r][1] == rec.date && existingData[r][2] == rec.student_id &&
+              (existingData[r][8] || '') == (rec.session_name || '')) {
             foundRow = r + 1;
             break;
           }
@@ -510,11 +585,12 @@ function doPost(e) {
           rec.status,
           rec.remarks || '',
           rec.marked_by || 'Instructor',
-          rec.created_at || new Date().toLocaleTimeString()
+          rec.created_at || new Date().toLocaleTimeString(),
+          rec.session_name || ''
         ];
         
         if (foundRow > 0) {
-          sheet.getRange(foundRow, 1, 1, 8).setValues([rowValues]);
+          sheet.getRange(foundRow, 1, 1, 9).setValues([rowValues]);
         } else {
           sheet.appendRow(rowValues);
         }
@@ -559,8 +635,8 @@ function setupVagaiSilambamDrive() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sheet = ss.getSheetByName('Attendance') || ss.insertSheet('Attendance');
   if (sheet.getLastRow() === 0) {
-    sheet.appendRow(['attendance_id', 'date', 'student_id', 'student_name', 'status', 'remarks', 'marked_by', 'created_at']);
-    sheet.getRange(1, 1, 1, 8).setFontWeight('bold').setBackground('#0F4C81').setFontColor('#FFFFFF');
+    sheet.appendRow(['attendance_id', 'date', 'student_id', 'student_name', 'status', 'remarks', 'marked_by', 'created_at', 'session_name']);
+    sheet.getRange(1, 1, 1, 9).setFontWeight('bold').setBackground('#0F4C81').setFontColor('#FFFFFF');
     sheet.setFrozenRows(1);
   }
 

@@ -53,6 +53,13 @@ function ageOn(dob: string | null | undefined, on: Date): number | null {
   return age >= 0 ? age : null;
 }
 
+// A day with two sessions shows its better mark; the totals still count every session.
+const RANK: AttendanceStatus[] = ['PRESENT', 'LATE', 'LEAVE', 'ABSENT'];
+function bestOf(statuses?: AttendanceStatus[]): AttendanceStatus | null {
+  if (!statuses || statuses.length === 0) return null;
+  return RANK.find(status => statuses.includes(status)) ?? null;
+}
+
 // Saturdays and Sundays of one month, in order.
 function weekendDates(year: number, month: number): Date[] {
   const days: Date[] = [];
@@ -98,7 +105,8 @@ export default function StudentHistoryCardScreen({ route, navigation }: any) {
   const [guardian, setGuardian] = useState<ParentGuardian | null>(null);
   const [centerName, setCenterName] = useState<{ en: string; ta: string }>({ en: 'Vagai Silambam', ta: 'வாகை சிலம்பம்' });
   const [rate, setRate] = useState(0);
-  const [records, setRecords] = useState<Record<string, AttendanceStatus>>({});
+  // Every session's mark, by date: a day can have a morning and an evening session.
+  const [records, setRecords] = useState<Record<string, AttendanceStatus[]>>({});
   const [year, setYear] = useState(new Date().getFullYear());
   const [loading, setLoading] = useState(true);
 
@@ -119,10 +127,10 @@ export default function StudentHistoryCardScreen({ route, navigation }: any) {
           stu.training_center_id
         );
 
-        const byDate: Record<string, AttendanceStatus> = {};
+        const byDate: Record<string, AttendanceStatus[]> = {};
         for (const row of attendance) {
           const day = String(row.session_date).slice(0, 10);
-          if (!byDate[day]) byDate[day] = row.status as AttendanceStatus;
+          (byDate[day] ??= []).push(row.status as AttendanceStatus);
         }
 
         if (cancelled) return;
@@ -144,9 +152,9 @@ export default function StudentHistoryCardScreen({ route, navigation }: any) {
 
   const totals = useMemo(() => {
     const counts: Record<AttendanceStatus, number> = { PRESENT: 0, LATE: 0, ABSENT: 0, LEAVE: 0 };
-    Object.entries(records).forEach(([day, status]) => {
+    Object.entries(records).forEach(([day, statuses]) => {
       const date = parseIso(day);
-      if (date && date.getFullYear() === year) counts[status] += 1;
+      if (date && date.getFullYear() === year) statuses.forEach(status => { counts[status] += 1; });
     });
     return counts;
   }, [records, year]);
@@ -264,13 +272,13 @@ export default function StudentHistoryCardScreen({ route, navigation }: any) {
                     <View style={styles.monthCol}>
                       <Text style={styles.colHead}>Sat</Text>
                       {saturdays.map(d => (
-                        <DayCell key={isoOf(d)} date={d} status={records[isoOf(d)] ?? null} active={isActive(isoOf(d), joined, todayIso)} />
+                        <DayCell key={isoOf(d)} date={d} status={bestOf(records[isoOf(d)])} active={isActive(isoOf(d), joined, todayIso)} />
                       ))}
                     </View>
                     <View style={styles.monthCol}>
                       <Text style={styles.colHead}>Sun</Text>
                       {sundays.map(d => (
-                        <DayCell key={isoOf(d)} date={d} status={records[isoOf(d)] ?? null} active={isActive(isoOf(d), joined, todayIso)} />
+                        <DayCell key={isoOf(d)} date={d} status={bestOf(records[isoOf(d)])} active={isActive(isoOf(d), joined, todayIso)} />
                       ))}
                     </View>
                   </View>
@@ -280,7 +288,7 @@ export default function StudentHistoryCardScreen({ route, navigation }: any) {
           </View>
 
           <Text style={styles.legend}>
-            ✓ Present · L Late · ✗ Absent · V Leave · – no record · blank = before joining or not yet
+            ✓ Present · L Late · ✗ Absent · V Leave · – no record · blank = before joining or not yet. A day with two sessions shows the better mark; the totals count every session.
           </Text>
 
           <View style={styles.footer}>

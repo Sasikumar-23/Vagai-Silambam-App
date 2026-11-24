@@ -49,8 +49,9 @@ async function offlineGraceValid(): Promise<boolean> {
   return last <= now && now - last <= OFFLINE_GRACE_MS;
 }
 
-// Sends attendance that was marked without a connection. Cheap when nothing is waiting.
-function flushOfflineAttendance(): void {
+// Sends this user's attendance that is waiting to upload. Cheap when nothing is waiting.
+function flushOfflineAttendance(userId: string): void {
+  GoogleSheetsAttendanceService.setQueueOwner(userId);
   void GoogleSheetsAttendanceService.syncPendingQueue();
 }
 
@@ -116,14 +117,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initSession();
   }, []);
 
+  // The upload queue only sends the signed-in person's own attendance, so a second account on
+  // the same phone (perhaps another academy) never uploads the first one's records.
+  useEffect(() => {
+    GoogleSheetsAttendanceService.setQueueOwner(currentUser?.id ?? null);
+  }, [currentUser?.id]);
+
   // Coming back to the app is the usual moment the signal has returned.
   useEffect(() => {
     if (!currentUser) return;
+    const userId = currentUser.id;
     const subscription = AppState.addEventListener('change', state => {
-      if (state === 'active') flushOfflineAttendance();
+      if (state === 'active') flushOfflineAttendance(userId);
     });
     return () => subscription.remove();
-  }, [currentUser]);
+  }, [currentUser?.id]);
 
   const handleSessionExpired = useCallback(async () => {
     setCurrentUser(null);
@@ -151,11 +159,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setConnectionMode('online');
       await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify({ id: localUser.id }));
       await markOnlineVerified();
-      flushOfflineAttendance();
+      flushOfflineAttendance(localUser.id);
       return 'online';
     } catch (e) {
-      if (e instanceof ApiError && !e.isNetworkError) {
-        // The server answered and refused: revoked, disabled or session ended.
+      // Only a refusal ends the session: 401 (session over) or 403 (disabled, revoked). A server
+      // fault or rate limit while the server is being deployed is treated like no signal.
+      if (e instanceof ApiError && (e.status === 401 || e.status === 403)) {
         await forgetOfflineAccess();
         await TokenStore.clear();
         await AsyncStorage.removeItem(AUTH_USER_KEY);
@@ -190,9 +199,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // offline access has run out if it can't be reached.
         await verifyWithServer();
       } else {
-        // No token — try local SQLite session (legacy or offline-registered)
+        // No token: an offline sign-in. It is honoured only inside the same grace window as an
+        // offline sign-in itself, so a revoked account cannot stay signed in indefinitely.
         const stored = await AsyncStorage.getItem(AUTH_USER_KEY);
-        if (stored) {
+        if (stored && !(await offlineGraceValid())) {
+          await AsyncStorage.removeItem(AUTH_USER_KEY);
+        } else if (stored) {
           const localUser = await UserRepository.findById(JSON.parse(stored).id);
           if (localUser) {
             setCurrentUser(localUser);
@@ -226,7 +238,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setConnectionMode('online');
       await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify({ id: localUser.id }));
       await markOnlineVerified();
-      flushOfflineAttendance();
+      flushOfflineAttendance(localUser.id);
       return { success: true, user: localUser };
     } catch (err) {
       if (err instanceof ApiError && err.isNetworkError) {

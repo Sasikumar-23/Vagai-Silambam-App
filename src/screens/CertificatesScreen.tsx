@@ -201,6 +201,8 @@ export default function CertificatesScreen({ navigation }: any) {
       } else {
         Alert.alert('Not uploaded', 'Could not reach Google Drive. Check the internet and that Google Drive is connected in Settings.');
       }
+    } catch (e: any) {
+      Alert.alert('Not uploaded', e.message || 'Could not upload the certificate file.');
     } finally {
       setBusyCertId(null);
     }

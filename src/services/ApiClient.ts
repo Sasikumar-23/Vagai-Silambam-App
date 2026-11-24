@@ -79,9 +79,13 @@ async function request<T>(
   const { method = 'GET', body, auth = true, retry = true } = options;
 
   const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  let sentToken = false;
   if (auth) {
     const token = await TokenStore.getAccessToken();
-    if (token) headers['Authorization'] = `Bearer ${token}`;
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+      sentToken = true;
+    }
   }
 
   let response: Response;
@@ -101,10 +105,18 @@ async function request<T>(
 
   // Silent refresh on 401
   if (response.status === 401 && auth && retry) {
+    // Signed in offline, so there was no token to send: that is not an expired session.
+    if (!sentToken) {
+      throw new ApiError(401, 'SIGNED_OUT', 'Sign in while online to use this.');
+    }
     const refreshToken = await TokenStore.getRefreshToken();
     if (refreshToken) {
-      const refreshed = await tryRefresh(refreshToken);
-      if (refreshed) return request<T>(path, { ...options, retry: false });
+      const outcome = await refreshSession(refreshToken);
+      if (outcome === 'ok') return request<T>(path, { ...options, retry: false });
+      // A dropped signal during the refresh must not sign the user out.
+      if (outcome === 'unreachable') {
+        throw new ApiError(0, 'NETWORK_ERROR', 'Cannot reach the server. Check your internet connection.');
+      }
     }
     await TokenStore.clear();
     _onSessionExpired?.();
@@ -116,19 +128,40 @@ async function request<T>(
   return response.json() as Promise<T>;
 }
 
-async function tryRefresh(refreshToken: string): Promise<boolean> {
+type RefreshOutcome = 'ok' | 'rejected' | 'unreachable';
+let refreshInFlight: Promise<RefreshOutcome> | null = null;
+
+// One refresh at a time: requests that expire together share it.
+function refreshSession(refreshToken: string): Promise<RefreshOutcome> {
+  if (!refreshInFlight) {
+    refreshInFlight = tryRefresh(refreshToken).finally(() => { refreshInFlight = null; });
+  }
+  return refreshInFlight;
+}
+
+// 'rejected' only when the server answered that the session is over; anything else (no signal,
+// a timeout, a server fault) is 'unreachable', so the session is kept for another try.
+async function tryRefresh(refreshToken: string): Promise<RefreshOutcome> {
+  let response: Response;
   try {
-    const response = await fetch(`${API_V1}/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: refreshToken }),
-    });
-    if (!response.ok) return false;
-    const data = await response.json();
-    await TokenStore.set(data);
-    return true;
+    response = await withTimeout(
+      fetch(`${API_V1}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      }),
+      REQUEST_TIMEOUT_MS,
+    );
   } catch {
-    return false;
+    return 'unreachable';
+  }
+  if (response.status === 401 || response.status === 403) return 'rejected';
+  if (!response.ok) return 'unreachable';
+  try {
+    await TokenStore.set(await response.json());
+    return 'ok';
+  } catch {
+    return 'unreachable';
   }
 }
 

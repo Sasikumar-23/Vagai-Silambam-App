@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity,
   Alert, ActivityIndicator
@@ -44,6 +44,9 @@ export default function TakeAttendanceScreen({ navigation }: any) {
 
   const [loading, setLoading] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
+  // Changing date or session quickly starts overlapping loads; only the newest may fill the
+  // screen, or Save would store the previous session's marks under the new one.
+  const loadSeq = useRef(0);
 
   useEffect(() => {
     initAttendanceWorkflow();
@@ -75,6 +78,7 @@ export default function TakeAttendanceScreen({ navigation }: any) {
   };
 
   const loadCenterStudents = async (centerId: string) => {
+    const seq = ++loadSeq.current;
     setLoading(true);
     try {
       // 1. Fetch active students for this center from SQLite
@@ -82,7 +86,6 @@ export default function TakeAttendanceScreen({ navigation }: any) {
         trainingCenterId: centerId,
         status: 'ACTIVE',
       });
-      setStudents(stuList);
 
       // 2. Reload whatever was already marked for this date from the database
       const session = await AttendanceRepository.getOrCreateSession(
@@ -102,12 +105,14 @@ export default function TakeAttendanceScreen({ navigation }: any) {
         if (record?.remarks) initialRemarks[s.id] = record.remarks;
       });
 
+      if (seq !== loadSeq.current) return;
+      setStudents(stuList);
       setAttendanceState(initialMap);
       setRemarksState(initialRemarks);
     } catch (e) {
       console.error('Failed to load attendance session:', e);
     } finally {
-      setLoading(false);
+      if (seq === loadSeq.current) setLoading(false);
     }
   };
 

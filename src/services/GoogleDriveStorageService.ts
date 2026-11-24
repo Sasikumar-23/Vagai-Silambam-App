@@ -39,7 +39,8 @@ async function driveFolderId(key: DriveFolderKey): Promise<string | null> {
   if (!raw) return null;
   try {
     const id = JSON.parse(raw)[key];
-    return typeof id === 'string' && id && !id.startsWith('gdrive_') ? id : null;
+    // Placeholder ids from the demo and webhook set-ups are not real folders this app can use.
+    return typeof id === 'string' && id && !id.startsWith('gdrive_') && !id.startsWith('demo_') ? id : null;
   } catch {
     return null;
   }
@@ -72,13 +73,22 @@ async function uploadToDrive(
   }
   const fileId: string = JSON.parse(upload.body).id;
 
-  const move = folderId ? `?addParents=${encodeURIComponent(folderId)}&removeParents=root` : '';
-  const res = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}${move}`, {
+  // Naming always works on a file this app created; moving can fail if the folder belongs to
+  // another account, so it is a separate step and the file stays named in My Drive if it does.
+  const headers = { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' };
+  const rename = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}`, {
     method: 'PATCH',
-    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ name: fileName }),
   });
-  if (!res.ok) console.warn('Uploaded, but could not name or move the file:', res.status);
+  if (!rename.ok) console.warn('Uploaded, but could not name the file:', rename.status);
+  if (folderId) {
+    const move = await fetch(
+      `https://www.googleapis.com/drive/v3/files/${fileId}?addParents=${encodeURIComponent(folderId)}&removeParents=root`,
+      { method: 'PATCH', headers, body: '{}' }
+    );
+    if (!move.ok) console.warn('Saved in My Drive, but could not move it into the folder:', move.status);
+  }
   return fileId;
 }
 
