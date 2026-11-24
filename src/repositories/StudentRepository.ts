@@ -181,7 +181,9 @@ export const StudentRepository = {
     return row?.total ?? 0;
   },
 
-  async getAllStudents(filters?: StudentFilters, limit: number = 200, offset: number = 0): Promise<Student[]> {
+  // The data is on the phone, so loading every student is cheap. A cap would silently drop
+  // students from attendance, pickers and exports (plans allow up to 500 students).
+  async getAllStudents(filters?: StudentFilters, limit: number = 100_000, offset: number = 0): Promise<Student[]> {
     const db = await getDatabase();
     const conditions: string[] = [];
     const params: any[] = [];

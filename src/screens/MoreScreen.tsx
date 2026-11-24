@@ -6,6 +6,7 @@ import {
 } from 'lucide-react-native';
 import { theme } from '../theme';
 import { useI18n } from '../i18n';
+import { roleLabel } from '../utils/roles';
 import { useAuth } from '../context/AuthContext';
 import { AppHeader } from '../components/AppHeader';
 
@@ -88,7 +89,7 @@ export default function MoreScreen({ navigation }: any) {
             <Text style={styles.userName}>
               {language === 'ta' && currentUser?.full_name_ta ? currentUser.full_name_ta : currentUser?.full_name_en}
             </Text>
-            <Text style={styles.userRoleBadge}>{currentRole}</Text>
+            <Text style={styles.userRoleBadge}>{roleLabel(currentRole, language)}</Text>
           </View>
         </View>
 

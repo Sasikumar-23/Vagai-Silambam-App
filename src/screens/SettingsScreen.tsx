@@ -13,6 +13,7 @@ import {
 import * as DocumentPicker from 'expo-document-picker';
 import { theme } from '../theme';
 import { useI18n } from '../i18n';
+import { useAuth } from '../context/AuthContext';
 import { SettingsRepository } from '../repositories/SettingsRepository';
 import { GoogleDriveStorageService, GoogleDriveStatus } from '../services/GoogleDriveStorageService';
 import { GoogleOAuthService } from '../services/GoogleOAuthService';
@@ -22,6 +23,10 @@ import * as Sharing from 'expo-sharing';
 
 export default function SettingsScreen({ navigation }: any) {
   const { t, language, setLanguage } = useI18n();
+  // A backup holds every student's medical notes, guardian phones and every user's password
+  // hash, and a restore overwrites the accounts on this phone: only the academy admin may do either.
+  const { currentRole } = useAuth();
+  const isAdmin = currentRole === 'ADMIN';
 
   // Organization Information state
   const [orgNameEn, setOrgNameEn] = useState('Vagai Silambam Academy');
@@ -141,6 +146,7 @@ export default function SettingsScreen({ navigation }: any) {
   };
 
   const handleBackupDatabase = async () => {
+    if (!isAdmin) return;
     setBackingUp(true);
     try {
       const backupData: BackupData = await createDatabaseBackup();
@@ -168,6 +174,7 @@ export default function SettingsScreen({ navigation }: any) {
   };
 
   const handleRestoreDatabase = async () => {
+    if (!isAdmin) return;
     try {
       const docRes = await DocumentPicker.getDocumentAsync({
         type: ['application/json', 'text/json', '*/*'],
@@ -546,7 +553,8 @@ export default function SettingsScreen({ navigation }: any) {
           </View>
         </View>
 
-        {/* SQLite Local Database — Backup & Restore */}
+        {/* SQLite Local Database — Backup & Restore (academy admin only) */}
+        {isAdmin && (
         <View style={styles.card}>
           <View style={styles.cardTitleRow}>
             <Database size={20} color={theme.colors.accent} />
@@ -580,6 +588,7 @@ export default function SettingsScreen({ navigation }: any) {
             </TouchableOpacity>
           </View>
         </View>
+        )}
 
         {/* About Card */}
         <View style={styles.card}>

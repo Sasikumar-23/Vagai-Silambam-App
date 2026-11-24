@@ -47,7 +47,7 @@ export default function UniformsScreen({ navigation }: any) {
       const [list, types, stuList] = await Promise.all([
         UniformRepository.getAllUniforms(),
         UniformRepository.getUniformTypes(),
-        StudentRepository.getAllStudents(undefined, 100),
+        StudentRepository.getAllStudents(),
       ]);
       setUniforms(list);
       setUniformTypes(types);
@@ -178,7 +178,7 @@ export default function UniformsScreen({ navigation }: any) {
 
             <View style={styles.cardBottomRow}>
               <Text style={styles.issueDate}>Issued on: {item.issue_date}</Text>
-              {item.condition !== 'RETURNED' && (currentRole === 'ADMIN' || currentRole === 'STAFF') && (
+              {item.condition !== 'RETURNED' && (currentRole === 'ADMIN' || currentRole === 'STAFF' || currentRole === 'STAFF_ACCOUNTANT') && (
                 <TouchableOpacity style={styles.returnBtn} onPress={() => handleReturn(item)}>
                   <RotateCcw size={13} color={theme.colors.primary} />
                   <Text style={styles.returnBtnText}>Return</Text>
@@ -192,14 +192,14 @@ export default function UniformsScreen({ navigation }: any) {
             icon={<Shirt size={32} color={theme.colors.primary} />}
             title="No uniforms issued yet"
             subtitle="Record traditional kurta, dhoti, sticks and sashes issued to practitioners."
-            actionLabel={currentRole === 'ADMIN' || currentRole === 'STAFF' ? t.uniforms.issueUniform : undefined}
+            actionLabel={currentRole === 'ADMIN' || currentRole === 'STAFF' || currentRole === 'STAFF_ACCOUNTANT' ? t.uniforms.issueUniform : undefined}
             onAction={() => setModalVisible(true)}
           />
         }
       />
 
       {/* FAB to Issue Uniform */}
-      {(currentRole === 'ADMIN' || currentRole === 'STAFF') && (
+      {(currentRole === 'ADMIN' || currentRole === 'STAFF' || currentRole === 'STAFF_ACCOUNTANT') && (
         <TouchableOpacity
           style={styles.fab}
           onPress={() => setModalVisible(true)}

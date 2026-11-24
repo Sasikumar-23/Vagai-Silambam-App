@@ -66,7 +66,7 @@ export default function FeesScreen({ navigation }: any) {
   const loadModalData = async () => {
     try {
       const [stuList, types] = await Promise.all([
-        StudentRepository.getAllStudents(undefined, 100),
+        StudentRepository.getAllStudents(),
         FeeRepository.getFeeTypes(),
       ]);
       setStudents(stuList);
@@ -236,7 +236,7 @@ export default function FeesScreen({ navigation }: any) {
               icon={<Text style={{ fontSize: 32, fontWeight: '900', color: theme.colors.primary }}>₹</Text>}
               title="No fee records found"
               subtitle="Assign monthly training fees, tournament fees or belt exam fees."
-              actionLabel={currentRole === 'ADMIN' || currentRole === 'STAFF' ? 'Assign New Fee' : undefined}
+              actionLabel={currentRole === 'ADMIN' || currentRole === 'STAFF' || currentRole === 'STAFF_ACCOUNTANT' ? 'Assign New Fee' : undefined}
               onAction={() => setModalVisible(true)}
             />
           ) : null
@@ -244,7 +244,7 @@ export default function FeesScreen({ navigation }: any) {
       />
 
       {/* FAB to Assign / Create Fee */}
-      {(currentRole === 'ADMIN' || currentRole === 'STAFF') && (
+      {(currentRole === 'ADMIN' || currentRole === 'STAFF' || currentRole === 'STAFF_ACCOUNTANT') && (
         <TouchableOpacity
           style={styles.fab}
           onPress={() => setModalVisible(true)}

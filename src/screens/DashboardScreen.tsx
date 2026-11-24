@@ -130,7 +130,7 @@ export default function DashboardScreen({ navigation }: any) {
               />
             )}
 
-            {(currentRole === 'ADMIN' || currentRole === 'STAFF') && (
+            {(currentRole === 'ADMIN' || currentRole === 'STAFF' || currentRole === 'STAFF_ACCOUNTANT') && (
               <QuickActionCard
                 title={t.quickActions.addStudent}
                 subtitle="New Practitioner"
@@ -141,7 +141,7 @@ export default function DashboardScreen({ navigation }: any) {
               />
             )}
 
-            {(currentRole === 'ADMIN' || currentRole === 'STAFF') && (
+            {(currentRole === 'ADMIN' || currentRole === 'STAFF' || currentRole === 'STAFF_ACCOUNTANT') && (
               <QuickActionCard
                 title={t.quickActions.collectFee}
                 subtitle="UPI / Cash"

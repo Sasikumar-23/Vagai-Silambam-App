@@ -60,7 +60,7 @@ export default function CertificatesScreen({ navigation }: any) {
   const loadModalDependencies = async () => {
     try {
       const [stuList, evList] = await Promise.all([
-        StudentRepository.getAllStudents(undefined, 100),
+        StudentRepository.getAllStudents(),
         EventRepository.getAllEvents(),
       ]);
       setStudents(stuList);

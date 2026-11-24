@@ -55,7 +55,7 @@ export default function EventDetailScreen({ route, navigation }: any) {
         EventRepository.getEventById(eventId),
         EventRepository.getEventRegistrations(eventId),
         EventRepository.getCustomFields(eventId),
-        StudentRepository.getAllStudents(undefined, 100),
+        StudentRepository.getAllStudents(),
       ]);
 
       setEvent(ev);

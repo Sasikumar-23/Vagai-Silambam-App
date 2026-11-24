@@ -1,4 +1,5 @@
-export type UserRole = 'ADMIN' | 'INSTRUCTOR' | 'STAFF';
+// STAFF_ACCOUNTANT is the Accountant an academy admin assigns in the portal; it works like STAFF here.
+export type UserRole = 'ADMIN' | 'INSTRUCTOR' | 'STAFF' | 'STAFF_ACCOUNTANT';
 
 export type StudentStatus = 'ACTIVE' | 'INACTIVE';
 

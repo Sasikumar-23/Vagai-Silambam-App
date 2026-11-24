@@ -194,7 +194,7 @@ export const UserRepository = {
     const db = await getDatabase();
     const existing = (await this.findById(apiUser.id)) || (await this.findByUsername(apiUser.username));
     const now = new Date().toISOString();
-    const role: UserRole = (['ADMIN', 'INSTRUCTOR', 'STAFF', 'STUDENT', 'PARENT'].includes(apiUser.role)
+    const role: UserRole = (['ADMIN', 'INSTRUCTOR', 'STAFF', 'STAFF_ACCOUNTANT', 'STUDENT', 'PARENT'].includes(apiUser.role)
       ? apiUser.role
       : 'INSTRUCTOR') as UserRole;
 

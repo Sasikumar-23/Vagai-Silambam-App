@@ -4,6 +4,7 @@ import { Bell, Globe, Settings as SettingsIcon, ShieldCheck, ArrowLeft } from 'l
 import { theme } from '../theme';
 import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
+import { roleLabel } from '../utils/roles';
 import { NotificationRepository } from '../repositories/NotificationRepository';
 
 interface AppHeaderProps {
@@ -72,7 +73,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             ) : (
               <View style={styles.rolePill}>
                 <ShieldCheck size={12} color={theme.colors.accent} />
-                <Text style={styles.roleText}>{currentRole}</Text>
+                <Text style={styles.roleText}>{roleLabel(currentRole, language)}</Text>
               </View>
             )}
           </View>
