@@ -149,7 +149,7 @@ export interface LoginResponse {
     full_name_ta: string;
     email?: string;
     phone?: string;
-    role: 'ADMIN' | 'INSTRUCTOR' | 'STAFF' | 'SUPER_ADMIN';
+    role: 'ADMIN' | 'INSTRUCTOR' | 'STAFF' | 'STAFF_ACCOUNTANT' | 'SUPER_ADMIN';
   };
 }
 
@@ -217,6 +217,17 @@ export interface AttendanceMarkPayload {
   remarks?: string | null;
 }
 
+// One row of a session uploaded from Take Attendance. Students live on the phone, so the
+// student is named by its code and display name rather than a server id.
+export interface AttendanceBatchItem {
+  student_id: string;
+  student_name: string;
+  date: string;          // YYYY-MM-DD
+  session_name: string;
+  status: 'Present' | 'Absent' | 'Late' | 'Leave';
+  remarks?: string | null;
+}
+
 export interface AttendanceSyncResult {
   synced: number;
   failed: number;
@@ -256,8 +267,9 @@ export const api = {
   markAttendance: (payload: AttendanceMarkPayload) =>
     request<{ success: boolean }>('/attendance/mark', { method: 'POST', body: payload }),
 
-  syncAttendanceBatch: (records: AttendanceMarkPayload[]) =>
-    Promise.allSettled(records.map(r => api.markAttendance(r))),
+  // A whole session in one request (at most 1000 rows), written to the academy's Google Sheet.
+  syncAttendanceBatch: (records: AttendanceBatchItem[]) =>
+    request<{ saved: number }>('/attendance/batch', { method: 'POST', body: { records } }),
 
   // Google Connect status (for settings screen)
   googleConnectStatus: () =>

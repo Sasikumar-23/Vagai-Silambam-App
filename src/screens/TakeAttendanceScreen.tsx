@@ -12,15 +12,24 @@ import { theme } from '../theme';
 import { useI18n } from '../i18n';
 import { useAuth } from '../context/AuthContext';
 import { OfflineBanner } from '../components/OfflineBanner';
+import { AttendanceSyncBanner } from '../components/AttendanceSyncBanner';
+import { GoogleSheetsAttendanceService } from '../services/GoogleSheetsAttendanceService';
 import { StudentRepository } from '../repositories/StudentRepository';
 import { TrainingCenterRepository } from '../repositories/TrainingCenterRepository';
 import { AttendanceRepository } from '../repositories/AttendanceRepository';
 import { todayLocalDate } from '../utils/date';
 import { Student, TrainingCenter, Instructor, AttendanceStatus } from '../models/types';
 
+const SHEET_STATUS: Record<AttendanceStatus, 'Present' | 'Absent' | 'Late' | 'Leave'> = {
+  PRESENT: 'Present',
+  ABSENT: 'Absent',
+  LATE: 'Late',
+  LEAVE: 'Leave',
+};
+
 export default function TakeAttendanceScreen({ navigation }: any) {
   const { t, language } = useI18n();
-  const { currentUser } = useAuth();
+  const { currentUser, currentRole } = useAuth();
 
   const [centers, setCenters] = useState<TrainingCenter[]>([]);
   const [selectedCenterId, setSelectedCenterId] = useState<string>('');
@@ -124,7 +133,7 @@ export default function TakeAttendanceScreen({ navigation }: any) {
     }
     setSaving(true);
     try {
-      // Attendance is kept on this device only; nothing is uploaded on save.
+      // Saved on the phone first, so nothing is lost without a signal.
       const session = await AttendanceRepository.getOrCreateSession(
         selectedCenterId,
         sessionDate,
@@ -140,6 +149,22 @@ export default function TakeAttendanceScreen({ navigation }: any) {
         })),
         currentUser?.full_name_en || 'Instructor'
       );
+
+      // Then queued for the academy's Google Sheet; it uploads in the background, now or once
+      // the signal is back. The server accepts attendance from admins and instructors.
+      if (currentRole === 'ADMIN' || currentRole === 'INSTRUCTOR') {
+        await GoogleSheetsAttendanceService.queueSession(
+          students.map(s => ({
+            student_id: s.student_id,
+            student_name: s.name_en,
+            date: sessionDate,
+            session_name: sessionName,
+            status: SHEET_STATUS[attendanceState[s.id] || 'PRESENT'],
+            remarks: remarksState[s.id] || undefined,
+          })),
+          currentUser?.full_name_en || 'Instructor'
+        );
+      }
 
       Alert.alert(
         'Attendance Saved',
@@ -178,6 +203,7 @@ export default function TakeAttendanceScreen({ navigation }: any) {
       </View>
 
       <OfflineBanner />
+      <AttendanceSyncBanner />
 
       {/* Selectors Bar */}
       <View style={styles.selectorsCard}>

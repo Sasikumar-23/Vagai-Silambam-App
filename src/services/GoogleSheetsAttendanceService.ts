@@ -1,12 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SettingsRepository } from '../repositories/SettingsRepository';
-import { api } from './ApiClient';
+import { api, ApiError, AttendanceBatchItem } from './ApiClient';
 
 export interface SheetAttendanceRecord {
   attendance_id: string;
   date: string; // YYYY-MM-DD
   student_id: string; // e.g. VS001
   student_name: string;
+  session_name?: string;
   status: 'Present' | 'Absent' | 'Late' | 'Leave';
   remarks?: string;
   marked_by: string;
@@ -33,6 +34,54 @@ export interface StudentAttendanceMetrics {
 
 const STORAGE_KEY_ATTENDANCE_RECORDS = '@vagai_google_sheets_attendance_records';
 const STORAGE_KEY_PENDING_SYNC_QUEUE = '@vagai_google_sheets_sync_queue';
+
+const STORAGE_KEY_SYNC_REASON = '@vagai_attendance_sync_reason';
+
+// Why attendance is still waiting, so the screen can say what to do about it.
+export type SyncWaitReason = '' | 'OFFLINE' | 'GOOGLE_NOT_CONNECTED' | 'SUBSCRIPTION';
+
+const BATCH_SIZE = 500;   // the server takes up to 1000 rows per request
+const MAX_QUEUE = 5000;   // keeps the queue well inside AsyncStorage's per-item limit
+
+// Refusals the academy can fix (connect Google, renew the plan): keep the records until then.
+const WAIT_CODES: Record<string, SyncWaitReason> = {
+  GOOGLE_NOT_CONNECTED: 'GOOGLE_NOT_CONNECTED',
+  ATTENDANCE_SHEET_NOT_CONFIGURED: 'GOOGLE_NOT_CONNECTED',
+  TRIAL_EXPIRED: 'SUBSCRIPTION',
+  SUBSCRIPTION_EXPIRED: 'SUBSCRIPTION',
+};
+
+// null means the server refused the records for good (not permitted, invalid): drop them.
+// They are still saved on the phone either way.
+function waitReason(err: unknown): SyncWaitReason | null {
+  if (!(err instanceof ApiError)) return 'OFFLINE';
+  if (err.isNetworkError || err.status === 401 || err.status === 408 || err.status === 429 || err.status >= 500) {
+    return 'OFFLINE';
+  }
+  return WAIT_CODES[err.code] ?? null;
+}
+
+const keyOf = (r: SheetAttendanceRecord) => `${r.date}|${r.session_name || ''}|${r.student_id}`;
+
+const sameRecord = (a: SheetAttendanceRecord, b: SheetAttendanceRecord) =>
+  keyOf(a) === keyOf(b) && a.status === b.status && (a.remarks || '') === (b.remarks || '') && a.created_at === b.created_at;
+
+const toPayload = (r: SheetAttendanceRecord): AttendanceBatchItem => ({
+  student_id: r.student_id,
+  student_name: r.student_name,
+  date: r.date,
+  session_name: r.session_name || 'Daily Training',
+  status: r.status,
+  remarks: r.remarks || null,
+});
+
+async function readQueue(): Promise<SheetAttendanceRecord[]> {
+  const raw = await AsyncStorage.getItem(STORAGE_KEY_PENDING_SYNC_QUEUE);
+  const queue = raw ? JSON.parse(raw) : [];
+  return Array.isArray(queue) ? queue : [];
+}
+
+let syncInFlight: Promise<{ success: boolean; syncedCount: number; error?: string }> | null = null;
 const SETTING_SHEETS_WEBHOOK_URL = 'google_sheets_webhook_url';
 const SETTING_SHEETS_SPREADSHEET_ID = 'google_sheets_spreadsheet_id';
 const SETTING_LATE_ATTENDANCE_WEIGHT = 'attendance_late_weight';
@@ -81,133 +130,50 @@ export const GoogleSheetsAttendanceService = {
   },
 
   /**
-   * Save attendance batch to Google Sheets & local cache with DUPLICATE PREVENTION (student_id + date)
+   * Take Attendance hands a saved session over here. It goes into the outbox first, so a
+   * closed app or a dropped signal cannot lose it, and is then sent in the background.
    */
-  async saveAttendanceBatch(
+  async queueSession(
     records: Array<{
       student_id: string;
       student_name: string;
       date: string;
+      session_name: string;
       status: 'Present' | 'Absent' | 'Late' | 'Leave';
       remarks?: string;
-      marked_by?: string;
     }>,
-    markedBy: string = 'Instructor'
-  ): Promise<{ savedCount: number; updatedCount: number; syncedToGoogle: boolean }> {
-    const existing = await this.getAllLocalRecords();
-    const timeNow = new Date().toTimeString().slice(0, 5); // HH:mm
-    const nowIso = new Date().toISOString();
-
-    let savedCount = 0;
-    let updatedCount = 0;
-
-    const updatedList = [...existing];
-    const newItemsToPush: SheetAttendanceRecord[] = [];
-
-    for (const item of records) {
-      const existingIdx = updatedList.findIndex(
-        r => r.student_id === item.student_id && r.date === item.date
-      );
-
-      const recordId = `ATT_${item.date.replace(/-/g, '')}_${item.student_id}`;
-
-      const newRecord: SheetAttendanceRecord = {
-        attendance_id: recordId,
-        date: item.date,
-        student_id: item.student_id,
-        student_name: item.student_name,
-        status: item.status,
-        remarks: item.remarks || '',
-        marked_by: item.marked_by || markedBy,
-        created_at: timeNow,
-      };
-
-      if (existingIdx >= 0) {
-        // Update existing record for that student + date
-        updatedList[existingIdx] = newRecord;
-        updatedCount++;
-      } else {
-        // Insert new unique record
-        updatedList.push(newRecord);
-        savedCount++;
-      }
-
-      newItemsToPush.push(newRecord);
-    }
-
-    // Save to local cache
-    await AsyncStorage.setItem(STORAGE_KEY_ATTENDANCE_RECORDS, JSON.stringify(updatedList));
-
-    // 1. Push to FastAPI Backend (Supabase PostgreSQL permanent store)
-    let syncedToBackend = false;
-    try {
-      await api.syncAttendanceBatch(
-        newItemsToPush.map(r => ({
-          student_id: r.student_id,
-          date: r.date,
-          session_name: 'Regular',
-          status: r.status,
-          remarks: r.remarks || null,
-        }))
-      );
-      syncedToBackend = true;
-    } catch (apiErr) {
-      console.warn('Backend API sync offline/queued:', apiErr);
-    }
-
-    // 2. Push to Google Sheets API / Webhook (permanent sheet mirror)
-    let syncedToGoogle = false;
-    const webhookUrl = await this.getWebhookUrl();
-
-    if (webhookUrl) {
-      try {
-        const response = await fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'record_attendance',
-            sheetName: 'Attendance',
-            records: newItemsToPush,
-            timestamp: nowIso,
-          }),
-        });
-
-        if (response.ok) {
-          syncedToGoogle = true;
-        } else if (!syncedToBackend) {
-          await this.addToSyncQueue(newItemsToPush);
-        }
-      } catch (err) {
-        console.warn('Network error pushing to Google Sheets, queued offline:', err);
-        if (!syncedToBackend) {
-          await this.addToSyncQueue(newItemsToPush);
-        }
-      }
-    } else if (!syncedToBackend) {
-      // Queued for when connectivity or webhook is restored
-      await this.addToSyncQueue(newItemsToPush);
-    }
-
-    return { savedCount, updatedCount, syncedToGoogle: syncedToGoogle || syncedToBackend };
+    markedBy: string
+  ): Promise<void> {
+    const createdAt = new Date().toISOString();
+    await this.addToSyncQueue(
+      records.map(r => ({
+        attendance_id: `ATT_${r.date.replace(/-/g, '')}_${r.student_id}`,
+        ...r,
+        remarks: r.remarks || '',
+        marked_by: markedBy,
+        created_at: createdAt,
+      }))
+    );
+    void this.syncPendingQueue();
   },
 
   /**
-   * Add records to offline sync queue
+   * Add records to the outbox. Marking the same student in the same session again replaces
+   * the waiting record instead of adding a second one.
    */
   async addToSyncQueue(records: SheetAttendanceRecord[]): Promise<void> {
     try {
-      const queueRaw = await AsyncStorage.getItem(STORAGE_KEY_PENDING_SYNC_QUEUE);
-      const queue: SheetAttendanceRecord[] = queueRaw ? JSON.parse(queueRaw) : [];
-
+      const queue = await readQueue();
       for (const rec of records) {
-        const idx = queue.findIndex(q => q.student_id === rec.student_id && q.date === rec.date);
+        const idx = queue.findIndex(q => keyOf(q) === keyOf(rec));
         if (idx >= 0) {
           queue[idx] = rec;
         } else {
           queue.push(rec);
         }
       }
-
+      // Past the cap, the oldest waiting records go first; every record is still on the phone.
+      if (queue.length > MAX_QUEUE) queue.splice(0, queue.length - MAX_QUEUE);
       await AsyncStorage.setItem(STORAGE_KEY_PENDING_SYNC_QUEUE, JSON.stringify(queue));
     } catch (e) {
       console.warn('Failed to update sync queue:', e);
@@ -215,75 +181,94 @@ export const GoogleSheetsAttendanceService = {
   },
 
   /**
-   * Get pending offline sync queue count
+   * How many records are waiting, and why.
    */
-  async getPendingSyncCount(): Promise<number> {
+  async getSyncState(): Promise<{ pending: number; reason: SyncWaitReason }> {
     try {
-      const queueRaw = await AsyncStorage.getItem(STORAGE_KEY_PENDING_SYNC_QUEUE);
-      if (!queueRaw) return 0;
-      const queue = JSON.parse(queueRaw);
-      return Array.isArray(queue) ? queue.length : 0;
+      const [queue, reason] = await Promise.all([readQueue(), AsyncStorage.getItem(STORAGE_KEY_SYNC_REASON)]);
+      return { pending: queue.length, reason: queue.length ? ((reason as SyncWaitReason) || 'OFFLINE') : '' };
     } catch {
-      return 0;
+      return { pending: 0, reason: '' };
     }
   },
 
+  async getPendingSyncCount(): Promise<number> {
+    return (await this.getSyncState()).pending;
+  },
+
   /**
-   * Flush pending offline sync queue to FastAPI Backend & Google Sheets
+   * Send the outbox to the academy's Google Sheet (through the server), and to the Apps
+   * Script webhook if one is set up.
    */
   async syncPendingQueue(): Promise<{ success: boolean; syncedCount: number; error?: string }> {
+    // One sync at a time: two overlapping runs would send the same records twice.
+    if (!syncInFlight) {
+      syncInFlight = this.flushQueueOnce().finally(() => { syncInFlight = null; });
+    }
+    return syncInFlight;
+  },
+
+  async flushQueueOnce(): Promise<{ success: boolean; syncedCount: number; error?: string }> {
     try {
-      const queueRaw = await AsyncStorage.getItem(STORAGE_KEY_PENDING_SYNC_QUEUE);
-      if (!queueRaw) return { success: true, syncedCount: 0 };
-      const queue: SheetAttendanceRecord[] = JSON.parse(queueRaw);
-      if (queue.length === 0) return { success: true, syncedCount: 0 };
-
-      let backendSynced = false;
-      let sheetsSynced = false;
-
-      // 1. Sync to FastAPI Backend (Supabase PostgreSQL permanent store)
-      try {
-        const results = await api.syncAttendanceBatch(
-          queue.map(r => ({
-            student_id: r.student_id,
-            date: r.date,
-            session_name: 'Regular',
-            status: r.status,
-            remarks: r.remarks || null,
-          }))
-        );
-        backendSynced = results.some(r => r.status === 'fulfilled');
-      } catch (backendErr) {
-        console.warn('Backend sync error:', backendErr);
+      const queue = await readQueue();
+      if (queue.length === 0) {
+        await AsyncStorage.removeItem(STORAGE_KEY_SYNC_REASON);
+        return { success: true, syncedCount: 0 };
       }
 
-      // 2. Sync to Google Sheets Webhook if configured
+      const finished: SheetAttendanceRecord[] = [];
+      let reason: SyncWaitReason = '';
+      let sent = 0;
+
+      for (let i = 0; i < queue.length; i += BATCH_SIZE) {
+        const chunk = queue.slice(i, i + BATCH_SIZE);
+        try {
+          await api.syncAttendanceBatch(chunk.map(toPayload));
+          finished.push(...chunk);
+          sent += chunk.length;
+        } catch (err) {
+          const why = waitReason(err);
+          if (why === null) {
+            console.warn('Attendance refused by the server; not retried:', err);
+            finished.push(...chunk);
+          } else {
+            reason = why;
+            break; // the rest would fail the same way
+          }
+        }
+      }
+
+      // The Apps Script webhook, if set up, takes the whole outbox.
       const webhookUrl = await this.getWebhookUrl();
       if (webhookUrl) {
         try {
           const response = await fetch(webhookUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              action: 'sync_queue',
-              sheetName: 'Attendance',
-              records: queue,
-            }),
+            body: JSON.stringify({ action: 'sync_queue', sheetName: 'Attendance', records: queue }),
           });
           if (response.ok) {
-            sheetsSynced = true;
+            finished.splice(0, finished.length, ...queue);
+            sent = queue.length;
+            reason = '';
           }
         } catch (sheetErr) {
-          console.warn('Google Sheets sync error:', sheetErr);
+          console.warn('Google Sheets webhook error:', sheetErr);
         }
       }
 
-      if (backendSynced || sheetsSynced) {
-        await AsyncStorage.removeItem(STORAGE_KEY_PENDING_SYNC_QUEUE);
-        return { success: true, syncedCount: queue.length };
+      // Re-read before writing: attendance marked while this was running must not be lost.
+      const latest = await readQueue();
+      const remaining = latest.filter(rec => !finished.some(f => sameRecord(f, rec)));
+      if (remaining.length > 0) {
+        await AsyncStorage.setItem(STORAGE_KEY_PENDING_SYNC_QUEUE, JSON.stringify(remaining));
+        await AsyncStorage.setItem(STORAGE_KEY_SYNC_REASON, reason || 'OFFLINE');
       } else {
-        return { success: false, syncedCount: 0, error: 'Network unavailable. Queue preserved for sync when reconnected.' };
+        await AsyncStorage.multiRemove([STORAGE_KEY_PENDING_SYNC_QUEUE, STORAGE_KEY_SYNC_REASON]);
       }
+      return remaining.length === 0
+        ? { success: true, syncedCount: sent }
+        : { success: false, syncedCount: sent, error: reason || 'OFFLINE' };
     } catch (err: any) {
       return { success: false, syncedCount: 0, error: err.message || 'Sync failed.' };
     }

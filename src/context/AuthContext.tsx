@@ -20,6 +20,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { api, ApiError, registerSessionExpiredHandler, LoginResponse, RegisterPayload } from '../services/ApiClient';
 import { TokenStore } from '../services/TokenStore';
@@ -27,6 +28,7 @@ import { UserRepository } from '../repositories/UserRepository';
 import { User, UserRole } from '../models/types';
 
 import { GoogleOAuthService } from '../services/GoogleOAuthService';
+import { GoogleSheetsAttendanceService } from '../services/GoogleSheetsAttendanceService';
 
 const AUTH_USER_KEY = '@vagai_auth_user_v3';
 const LAST_VERIFIED_KEY = '@vagai_last_online_verified_v1';
@@ -45,6 +47,11 @@ async function offlineGraceValid(): Promise<boolean> {
   if (!raw || !Number.isFinite(last)) return false;
   const now = Date.now();
   return last <= now && now - last <= OFFLINE_GRACE_MS;
+}
+
+// Sends attendance that was marked without a connection. Cheap when nothing is waiting.
+function flushOfflineAttendance(): void {
+  void GoogleSheetsAttendanceService.syncPendingQueue();
 }
 
 async function forgetOfflineAccess(): Promise<void> {
@@ -109,6 +116,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     initSession();
   }, []);
 
+  // Coming back to the app is the usual moment the signal has returned.
+  useEffect(() => {
+    if (!currentUser) return;
+    const subscription = AppState.addEventListener('change', state => {
+      if (state === 'active') flushOfflineAttendance();
+    });
+    return () => subscription.remove();
+  }, [currentUser]);
+
   const handleSessionExpired = useCallback(async () => {
     setCurrentUser(null);
     await AsyncStorage.removeItem(AUTH_USER_KEY);
@@ -135,6 +151,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setConnectionMode('online');
       await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify({ id: localUser.id }));
       await markOnlineVerified();
+      flushOfflineAttendance();
       return 'online';
     } catch (e) {
       if (e instanceof ApiError && !e.isNetworkError) {
@@ -209,6 +226,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setConnectionMode('online');
       await AsyncStorage.setItem(AUTH_USER_KEY, JSON.stringify({ id: localUser.id }));
       await markOnlineVerified();
+      flushOfflineAttendance();
       return { success: true, user: localUser };
     } catch (err) {
       if (err instanceof ApiError && err.isNetworkError) {

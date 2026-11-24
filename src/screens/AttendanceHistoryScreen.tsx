@@ -28,6 +28,7 @@ import {
 import { theme } from '../theme';
 import { useI18n } from '../i18n';
 import { AppHeader } from '../components/AppHeader';
+import { AttendanceSyncBanner } from '../components/AttendanceSyncBanner';
 import { EmptyState } from '../components/EmptyState';
 import { AttendanceRepository } from '../repositories/AttendanceRepository';
 
@@ -427,6 +428,7 @@ export default function AttendanceHistoryScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
       <AppHeader navigation={navigation} title={t.attendance.historyTitle} />
+      <AttendanceSyncBanner />
 
       {/* Device Database Header */}
       <View style={styles.sheetEngineBar}>
